@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-gray-100: #F2F4F7;
+  --color-gray-200: #EAECF0;
+  --color-gray-500: #667085;
+  --color-gray-900: #101828;
+}
+
+body {
+  background: #ffffff;
+  color: #000000;
+  font-family: "Mona Sans", "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hide scrollbar for horizontal scroll containers */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

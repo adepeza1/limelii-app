@@ -1,0 +1,132 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import type { Experience, Place } from "@/app/page";
+
+function getPlaceImage(place: Place): string | null {
+  if (place.display_images && place.display_images.length > 0) {
+    return place.display_images[0].url;
+  }
+  return null;
+}
+
+function getPlaceLocation(place: Place): string {
+  if (place.neighborhood) return place.neighborhood;
+  if (place.borough) return place.borough;
+  return "";
+}
+
+export function ExperienceCard({
+  experience,
+  onClick,
+}: {
+  experience: Experience;
+  onClick?: () => void;
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [visible, setVisible] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const placesWithImages = experience.places_id.filter(
+    (p) => p.display_images && p.display_images.length > 0
+  );
+
+  const activePlace =
+    placesWithImages[activeIndex] ?? experience.places_id[0];
+  const mainImage = activePlace ? getPlaceImage(activePlace) : null;
+  const location = activePlace ? getPlaceLocation(activePlace) : "";
+  const placeCount = experience.places_id.length;
+
+  return (
+    <div
+      ref={cardRef}
+      className="shrink-0 w-[280px] sm:w-[330px] md:w-full aspect-[33/38] rounded-[20px] overflow-hidden relative bg-gray-200 cursor-pointer"
+      onClick={onClick}
+    >
+      {/* Main image – only rendered when near viewport */}
+      {visible && mainImage && (
+        <Image
+          src={mainImage}
+          alt={experience.title}
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 280px, (max-width: 768px) 330px, 50vw"
+        />
+      )}
+
+      {/* Inset place thumbnails – bottom-right box */}
+      {visible && placesWithImages.length > 1 && (
+        <div className="absolute right-3 bottom-3 z-[1] bg-black/30 backdrop-blur-sm rounded-2xl p-2 flex flex-col gap-2">
+          {placesWithImages.map((place, i) => {
+            const thumbUrl = getPlaceImage(place);
+            if (!thumbUrl) return null;
+            return (
+              <button
+                key={place.id}
+                onClick={(e) => { e.stopPropagation(); setActiveIndex(i); }}
+                className={`w-10 h-10 sm:w-[52px] sm:h-[52px] rounded-xl overflow-hidden border-2 shadow-md ${i === activeIndex ? "border-white" : "border-white/60"}`}
+              >
+                <Image
+                  src={thumbUrl}
+                  alt={place.name}
+                  width={52}
+                  height={52}
+                  className="object-cover w-full h-full"
+                />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Bottom info overlay */}
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-5 pt-16">
+        <div className="flex items-center gap-2 mb-2">
+          {placeCount > 0 && (
+            <span className="text-white/80 text-xs">
+              {placeCount} {placeCount === 1 ? "option" : "options"}
+            </span>
+          )}
+          {experience.rating > 0 && (
+            <span className="bg-green-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+              {experience.rating.toFixed(1)}
+            </span>
+          )}
+        </div>
+        <h3 className="text-white text-lg font-semibold leading-tight">
+          {experience.title}
+        </h3>
+        {location && (
+          <p className="text-white/70 text-sm flex items-center gap-1 mt-0.5">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              className="shrink-0"
+            >
+              <path
+                d="M6 1C3.79 1 2 2.79 2 5C2 7.75 6 11 6 11C6 11 10 7.75 10 5C10 2.79 8.21 1 6 1ZM6 6.5C5.17 6.5 4.5 5.83 4.5 5C4.5 4.17 5.17 3.5 6 3.5C6.83 3.5 7.5 4.17 7.5 5C7.5 5.83 6.83 6.5 6 6.5Z"
+                fill="currentColor"
+              />
+            </svg>
+            {location}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

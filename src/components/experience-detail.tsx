@@ -1,0 +1,284 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import { ChevronLeft, MoreVertical, Phone, Globe, MapPin, Clock, Plus, Star, Maximize2 } from "lucide-react";
+import dynamic from "next/dynamic";
+import type { Experience, Place } from "@/app/page";
+
+const ExperienceMap = dynamic(
+  () => import("./experience-map").then((m) => m.ExperienceMap),
+  { ssr: false, loading: () => <div className="w-full h-[320px] bg-gray-100 rounded-xl" /> }
+);
+
+const FullscreenMap = dynamic(
+  () => import("./experience-map").then((m) => m.FullscreenMap),
+  { ssr: false }
+);
+
+function getPlaceImage(place: Place): string | null {
+  if (place.display_images && place.display_images.length > 0) {
+    return place.display_images[0].url;
+  }
+  return null;
+}
+
+function getFullAddress(place: Place): string {
+  if (place.address) return place.address;
+  const parts = [place.address_line_1, place.city, place.state, place.zipcode].filter(Boolean);
+  return parts.join(", ");
+}
+
+function StarRating({ rating }: { rating: number }) {
+  const fullStars = Math.floor(rating);
+  const hasHalf = rating - fullStars >= 0.5;
+  return (
+    <div className="flex items-center gap-[2px]">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Star
+          key={i}
+          className="w-4 h-4"
+          fill={i < fullStars || (i === fullStars && hasHalf) ? "#facc15" : "none"}
+          stroke={i < fullStars || (i === fullStars && hasHalf) ? "#facc15" : "#9ca3af"}
+          strokeWidth={1.5}
+        />
+      ))}
+    </div>
+  );
+}
+
+function PlaceImageCard({
+  place,
+  rating,
+}: {
+  place: Place;
+  rating: number;
+}) {
+  const images = (place.display_images || []).slice(0, 4).map((img) => img.url);
+  if (images.length === 0) return null;
+
+  return (
+    <div className="shrink-0 w-[85vw] max-w-[330px] aspect-[33/38] rounded-2xl overflow-hidden relative bg-gray-200">
+      {images.length === 1 ? (
+        <Image
+          src={images[0]}
+          alt={place.name}
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 85vw, 330px"
+        />
+      ) : (
+        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-[2px]">
+          {images.map((url, i) => (
+            <div key={i} className="relative overflow-hidden">
+              <Image
+                src={url}
+                alt={`${place.name} ${i + 1}`}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 42vw, 165px"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+      {/* Bottom overlay with rating */}
+      <div className="absolute inset-x-0 bottom-0 p-4">
+        <div className="backdrop-blur-[10px] bg-black/20 rounded-2xl px-4 py-3 flex items-center gap-4">
+          <div className="flex flex-col gap-[2px]">
+            <span className="text-white text-xs font-medium">234 people rated</span>
+            <div className="flex items-center gap-1.5">
+              <StarRating rating={rating} />
+              <span className="text-white text-sm font-medium">{rating.toFixed(1)}</span>
+            </div>
+          </div>
+          <button className="bg-[#416f7b] rounded-lg p-[2px] ml-auto">
+            <Plus className="w-6 h-6 text-white" strokeWidth={2} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ExperienceDetail({
+  experience,
+  onBack,
+}: {
+  experience: Experience;
+  onBack: () => void;
+}) {
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [mapExpanded, setMapExpanded] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const placesWithImages = experience.places_id.filter(
+    (p) => p.display_images && p.display_images.length > 0
+  );
+
+  // Track active slide via scroll position
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const scrollLeft = el.scrollLeft;
+      const cardWidth = el.firstElementChild
+        ? (el.firstElementChild as HTMLElement).offsetWidth
+        : 1;
+      const index = Math.round(scrollLeft / (cardWidth + 8)); // 8 = gap-2
+      setActiveSlide(Math.min(index, placesWithImages.length - 1));
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [placesWithImages.length]);
+
+  // Get details from the first place that has them
+  const firstPlaceWithDetails = experience.places_id.find(
+    (p) => p._location_details
+  );
+  const details = firstPlaceWithDetails?._location_details;
+  const address = firstPlaceWithDetails ? getFullAddress(firstPlaceWithDetails) : "";
+
+  return (
+    <div className="bg-white min-h-screen max-w-5xl mx-auto relative">
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-white">
+        <div className="h-[44px]" />
+        <div className="flex items-center gap-3 px-4 py-3 h-12">
+          <button onClick={onBack} aria-label="Back">
+            <ChevronLeft className="w-6 h-6 text-black" />
+          </button>
+          <h1 className="flex-1 text-center text-lg font-medium text-black truncate">
+            {experience.title}
+          </h1>
+          <button aria-label="More options">
+            <MoreVertical className="w-6 h-6 text-black" />
+          </button>
+        </div>
+      </header>
+
+      {/* Scrollable content */}
+      <div className="py-4">
+        {/* Image carousel */}
+        <div
+          ref={scrollRef}
+          className="flex gap-2 overflow-x-auto hide-scrollbar pl-[22px] pr-4 snap-x snap-mandatory"
+        >
+          {placesWithImages.map((place) => (
+            <div key={place.id} className="snap-start">
+              <PlaceImageCard place={place} rating={experience.rating} />
+            </div>
+          ))}
+        </div>
+
+        {/* Dot indicators */}
+        {placesWithImages.length > 1 && (
+          <div className="flex items-center justify-center gap-1.5 py-3">
+            {placesWithImages.map((_, i) => (
+              <div
+                key={i}
+                className={`rounded-full transition-all ${
+                  i === activeSlide
+                    ? "w-2 h-2 bg-gray-900"
+                    : "w-1.5 h-1.5 bg-gray-300"
+                }`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Title & Description */}
+        <div className="px-4 flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-base font-medium text-black">
+              {experience.places_id[0] && (
+                <span className="text-[#416f7b]">{experience.places_id[0].name}</span>
+              )}
+              {experience.places_id[0]?.neighborhood && (
+                <span>-{experience.places_id[0].neighborhood}</span>
+              )}
+            </h2>
+            <p className="text-sm text-black leading-5">{experience.description}</p>
+          </div>
+
+          {/* Details card */}
+          {(details || address) && (
+            <div className="border border-[#eaecf0] rounded-2xl px-4 pt-2 pb-4 flex flex-col gap-3">
+              <h3 className="text-lg font-medium text-[#1d2939]">Details</h3>
+              <div className="flex flex-col gap-2">
+                {details?.phone && (
+                  <div className="flex items-center gap-1.5">
+                    <Phone className="w-5 h-5 text-[#416f7b] shrink-0" strokeWidth={1.5} />
+                    <a href={`tel:${details.phone}`} className="text-sm text-[#416f7b]">
+                      {details.phone}
+                    </a>
+                  </div>
+                )}
+                {details?.url && (
+                  <div className="flex items-center gap-1.5">
+                    <Globe className="w-5 h-5 text-[#416f7b] shrink-0" strokeWidth={1.5} />
+                    <a
+                      href={details.url.startsWith("http") ? details.url : `https://${details.url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-[#416f7b] truncate"
+                    >
+                      {details.url.replace(/^https?:\/\//, "")}
+                    </a>
+                  </div>
+                )}
+                {address && (
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-5 h-5 text-[#416f7b] shrink-0" strokeWidth={1.5} />
+                    <span className="text-sm font-medium text-[#416f7b]">{address}</span>
+                  </div>
+                )}
+                {details?.operating_hours && (
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-5 h-5 text-[#667085] shrink-0" strokeWidth={1.5} />
+                    <span className="text-sm text-[#667085]">{details.operating_hours}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Map */}
+          <div className="relative">
+            <div className="bg-white rounded-2xl shadow-[0px_4px_32px_0px_rgba(0,0,0,0.07)] overflow-hidden">
+              <ExperienceMap places={experience.places_id} />
+            </div>
+            <button
+              onClick={() => setMapExpanded(true)}
+              className="absolute top-3 right-3 z-[1000] bg-white rounded-lg p-2 shadow-md"
+              aria-label="Expand map"
+            >
+              <Maximize2 className="w-5 h-5 text-[#344054]" />
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Fullscreen map overlay */}
+      {mapExpanded && (
+        <FullscreenMap
+          places={experience.places_id}
+          onClose={() => setMapExpanded(false)}
+        />
+      )}
+
+      {/* Bottom CTA buttons */}
+      <div className="sticky bottom-0 bg-white px-4 pb-8 pt-3">
+        <div className="flex gap-3">
+          <button className="flex-1 border border-[#416f7b] rounded-xl py-3 px-5 text-base font-semibold text-[#344054] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)]">
+            Save idea
+          </button>
+          <button className="flex-1 bg-[#a11043] border border-[#a11043] rounded-xl py-3 px-5 text-base font-semibold text-white shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)]">
+            Going
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
