@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, User } from "lucide-react";
+import { ClipboardList, User, Bookmark } from "lucide-react";
 import Image from "next/image";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
@@ -11,9 +11,10 @@ import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 const tabs = [
   { label: "Discover", iconSrc: "/images/Search.svg", href: "/" },
   { label: "Plan", icon: ClipboardList, href: "/plan" },
-  { label: "Create", iconSrc: "/images/limeliFavicon.svg", href: "/create", center: true },
+  { label: "Create", iconSrc: "/images/limelii-logo.svg", href: "/create", center: true },
+  { label: "Saved", icon: Bookmark, href: "/saved" },
   { label: "Profile", icon: User, href: "/profile" },
-] as const;
+];
 
 export function BottomNav() {
   const pathname = usePathname();
