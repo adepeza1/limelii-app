@@ -3,16 +3,36 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, User } from "lucide-react";
+import { ClipboardList, User, Bookmark } from "lucide-react";
 import Image from "next/image";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 
-const tabs = [
+// Types
+import type { LucideIcon } from "lucide-react";
+
+type ImageTab = {
+  label: string;
+  href: string;
+  iconSrc: string;
+  center?: boolean;
+};
+
+type IconTab = {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  center?: boolean;
+};
+
+type Tab = ImageTab | IconTab;
+
+// Tabs definition
+const tabs: Tab[] = [
   { label: "Discover", iconSrc: "/images/Search.svg", href: "/" },
   { label: "Plan", icon: ClipboardList, href: "/plan" },
   { label: "Create", iconSrc: "/images/limelii-logo.svg", href: "/create", center: true },
-  { label: "Saved", iconScr: "/images/heart-alt.svg", href: "/" },
+  { label: "Saved", icon: Bookmark, href: "/saved" },
   { label: "Profile", icon: User, href: "/profile" },
 ];
 
@@ -56,29 +76,25 @@ export function BottomNav() {
               key={tab.href}
               href={tab.href}
               className={`flex flex-col items-center gap-1 min-w-[56px] ${
-                isCenter ? "-mt-6" : ""
+                isCenter ? "-mt-8 scale-110" : ""
               }`}
             >
               {"iconSrc" in tab ? (
                 <Image
-                  src={tab.iconSrc!}
+                  src={tab.iconSrc}
                   alt={tab.label}
-                  width={isCenter ? 42 : 24}
-                  height={isCenter ? 42 : 24}
-                  className={isCenter ? "rounded-full shadow-md" : ""}
+                  width={isCenter ? 48 : 24}
+                  height={isCenter ? 48 : 24}
+                  priority
+                  className={isCenter ? "rounded-full shadow-md object-contain" : ""}
                 />
               ) : (
-                (() => {
-                  const Icon = tab.icon;
-                  return (
-                    <Icon
-                      className={`${
-                        isCenter ? "w-10 h-10" : "w-6 h-6"
-                      } ${isActive ? "text-[#416f7b]" : "text-gray-400"}`}
-                      strokeWidth={1.6}
-                    />
-                  );
-                })()
+                <tab.icon
+                  className={`${isCenter ? "w-10 h-10" : "w-6 h-6"} ${
+                    isActive ? "text-[#416f7b]" : "text-gray-400"
+                  }`}
+                  strokeWidth={1.6}
+                />
               )}
 
               {!isCenter && (
