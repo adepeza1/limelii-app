@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { ChevronLeft, MoreVertical, Phone, Globe, MapPin, Clock, Plus, Star, Maximize2 } from "lucide-react";
+import { ChevronLeft, MoreVertical, Plus, Star, Maximize2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { Experience, Place } from "@/app/page";
 
@@ -209,38 +209,38 @@ export function ExperienceDetail({
           {(details || address) && (
             <div className="border border-[#eaecf0] rounded-2xl px-4 pt-2 pb-4 flex flex-col gap-3">
               <h3 className="text-lg font-medium text-[#1d2939]">Details</h3>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 {hasValue(details?.phone) && (
-                  <div className="flex items-center gap-1.5">
-                    <Phone className="w-5 h-5 text-[#416f7b] shrink-0" strokeWidth={1.5} />
-                    <a href={`tel:${details.phone}`} className="text-sm text-[#416f7b]">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium text-[#c2550a]">Phone</span>
+                    <a href={`tel:${details.phone}`} className="text-sm text-black">
                       {details.phone}
                     </a>
                   </div>
                 )}
                 {hasValue(details?.url) && (
-                  <div className="flex items-center gap-1.5">
-                    <Globe className="w-5 h-5 text-[#416f7b] shrink-0" strokeWidth={1.5} />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium text-[#c2550a]">Website</span>
                     <a
                       href={details.url.startsWith("http") ? details.url : `https://${details.url}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-[#416f7b] truncate"
+                      className="text-sm text-[#c2550a] break-all"
                     >
-                      {details.url.replace(/^https?:\/\//, "")}
+                      {details.url}
                     </a>
                   </div>
                 )}
                 {hasValue(address) && (
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="w-5 h-5 text-[#416f7b] shrink-0" strokeWidth={1.5} />
-                    <span className="text-sm font-medium text-[#416f7b]">{address}</span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium text-[#c2550a]">Address</span>
+                    <span className="text-sm text-black">{address}</span>
                   </div>
                 )}
                 {hasValue(details?.operating_hours) && (
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-5 h-5 text-[#667085] shrink-0" strokeWidth={1.5} />
-                    <span className="text-sm text-[#667085]">{details.operating_hours}</span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium text-[#c2550a]">Hours</span>
+                    <span className="text-sm text-black whitespace-pre-line">{details.operating_hours}</span>
                   </div>
                 )}
               </div>
