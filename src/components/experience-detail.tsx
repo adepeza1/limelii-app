@@ -2,7 +2,37 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { ChevronLeft, MoreVertical, Plus, Star, Maximize2 } from "lucide-react";
+import { ChevronLeft, MoreVertical, Plus, Star, Maximize2, Bookmark } from "lucide-react";
+
+const SAVED_KEY = "limelii_saved";
+
+function getSaved(): number[] {
+  if (typeof window === "undefined") return [];
+  try { return JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]"); } catch { return []; }
+}
+
+const SAVED_ITEMS_KEY = "limelii_saved_items";
+
+function getSavedItems(): Record<string, Experience> {
+  if (typeof window === "undefined") return {};
+  try { return JSON.parse(localStorage.getItem(SAVED_ITEMS_KEY) ?? "{}"); } catch { return {}; }
+}
+
+function toggleSaved(experience: Experience): boolean {
+  const ids = getSaved();
+  const items = getSavedItems();
+  const idx = ids.indexOf(experience.id);
+  if (idx === -1) {
+    ids.push(experience.id);
+    items[experience.id] = experience;
+  } else {
+    ids.splice(idx, 1);
+    delete items[experience.id];
+  }
+  localStorage.setItem(SAVED_KEY, JSON.stringify(ids));
+  localStorage.setItem(SAVED_ITEMS_KEY, JSON.stringify(items));
+  return idx === -1;
+}
 import dynamic from "next/dynamic";
 import type { Experience, Place } from "@/app/page";
 
@@ -114,7 +144,13 @@ export function ExperienceDetail({
 }) {
   const [activeSlide, setActiveSlide] = useState(0);
   const [mapExpanded, setMapExpanded] = useState(false);
+  const [saved, setSaved] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Sync saved state from localStorage on mount
+  useEffect(() => {
+    setSaved(getSaved().includes(experience.id));
+  }, [experience.id]);
 
   const placesWithImages = experience.places_id.filter(
     (p) => p.display_images && p.display_images.length > 0
@@ -279,16 +315,20 @@ export function ExperienceDetail({
         />
       )}
 
-      {/* Bottom CTA buttons */}
+      {/* Bottom CTA */}
       <div className="sticky bottom-0 bg-white px-4 pb-8 pt-3">
-        <div className="flex gap-3">
-          <button className="flex-1 border border-[#416f7b] rounded-xl py-3 px-5 text-base font-semibold text-[#344054] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)]">
-            Save idea
-          </button>
-          <button className="flex-1 bg-[#a11043] border border-[#a11043] rounded-xl py-3 px-5 text-base font-semibold text-white shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)]">
-            Going
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setSaved(toggleSaved(experience))}
+          className={`w-full flex items-center justify-center gap-2 rounded-xl py-3 px-5 text-base font-semibold shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] transition-colors ${
+            saved
+              ? "bg-[#FB6983] border border-[#FB6983] text-white"
+              : "border border-[#416f7b] text-[#344054]"
+          }`}
+        >
+          <Bookmark className="w-5 h-5" fill={saved ? "white" : "none"} strokeWidth={1.8} />
+          {saved ? "Saved" : "Save idea"}
+        </button>
       </div>
     </div>
   );
