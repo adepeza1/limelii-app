@@ -234,7 +234,14 @@ export function ExperienceDetail({
                 {hasValue(address) && (
                   <div className="flex flex-col gap-0.5">
                     <span className="text-sm font-medium text-[#c2550a]">Address</span>
-                    <span className="text-sm text-black">{address}</span>
+                    <a
+                      href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 underline"
+                    >
+                      {address}
+                    </a>
                   </div>
                 )}
                 {hasValue(details?.operating_hours) && (
