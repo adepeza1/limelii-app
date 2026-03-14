@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, ClipboardList, User, PlusSquare } from "lucide-react";
+import Image from "next/image";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 
 const tabs = [
-  { label: "Discover", icon: Search, href: "/" },
-  { label: "Create", icon: PlusSquare, href: "/create" },
+  { label: "Discover", icon: "/images/Search.svg", href: "/" },
   { label: "Plan", icon: ClipboardList, href: "/plan" },
+  { label: "Create", icon: "/images/limelii-logo.svg", href: "/create" },
   { label: "Profile", icon: User, href: "/profile" },
 ] as const;
 
