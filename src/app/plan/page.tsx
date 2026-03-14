@@ -35,23 +35,83 @@ const NEIGHBORHOODS: Record<string, string[]> = {
   ],
 };
 
-const VIBES = [
-  "Food & Drink",
-  "Nightlife",
-  "Wellness",
-  "Adventure",
-  "Arts & Culture",
-  "Date Night",
-];
-
+const VIBES = ["Food & Drink", "Nightlife", "Wellness", "Adventure", "Arts & Culture", "Date Night"];
 const BUDGETS = ["Free", "$", "$$", "$$$"];
-
 const SETTINGS = ["Indoor", "Outdoor"];
 
-function SkeletonCard() {
-  return (
-    <div className="w-full aspect-[33/38] rounded-[20px] bg-gray-100 animate-pulse" />
+// Maps our UI labels to activity keywords in the data
+const VIBE_KEYWORDS: Record<string, string[]> = {
+  "Food & Drink": ["food", "drink", "drinks", "dining", "cuisine", "restaurant"],
+  "Nightlife":    ["nightlife", "drink", "drinks", "bar", "club", "entertainment"],
+  "Wellness":     ["wellness", "spa", "fitness", "yoga", "health"],
+  "Adventure":    ["outdoor activity", "recreation activity", "adventure", "experience"],
+  "Arts & Culture": ["art gallery", "cultural", "museum", "arts", "culture", "gallery"],
+  "Date Night":   ["nightlife", "food", "drink", "entertainment", "dining", "romance"],
+};
+
+function parseMaxBudget(b: string): number {
+  if (b === "NA" || !b) return 0;
+  const nums = b.match(/\d+/g);
+  if (!nums) return 0;
+  return Math.max(...nums.map(Number));
+}
+
+function vibeMatches(activities: string[], vibe: string): boolean {
+  if (!vibe) return true;
+  const keywords = VIBE_KEYWORDS[vibe] ?? [vibe.toLowerCase()];
+  return activities.some((a) =>
+    keywords.some((k) => a.toLowerCase().includes(k) || k.includes(a.toLowerCase()))
   );
+}
+
+function budgetMatches(budgets: string[], budget: string): boolean {
+  if (!budget) return true;
+  if (!budgets?.length) return true;
+  if (budget === "Free") return budgets.some((b) => b === "NA" || parseMaxBudget(b) <= 10);
+  if (budget === "$")    return budgets.some((b) => parseMaxBudget(b) <= 30);
+  if (budget === "$$")   return budgets.some((b) => { const m = parseMaxBudget(b); return m > 20 && m <= 75; });
+  if (budget === "$$$")  return budgets.some((b) => parseMaxBudget(b) > 50);
+  return true;
+}
+
+function settingMatches(settings: string[], setting: string): boolean {
+  if (!setting) return true;
+  if (!settings?.length) return true;
+  const lower = setting.toLowerCase();
+  return settings.some((s) => s === lower || s === "both");
+}
+
+function locationMatches(exp: Experience, borough: string, neighborhood: string): boolean {
+  if (borough === "All NYC" || borough === "__current__") return true;
+  const places = exp.places_id ?? [];
+  if (neighborhood) {
+    const needle = neighborhood.toLowerCase();
+    const expNeighborhoods = (exp.neighborhoods ?? []).map((n) => n.toLowerCase());
+    const placeNeighborhoods = places.map((p) => (p.neighborhood ?? "").toLowerCase());
+    return [...expNeighborhoods, ...placeNeighborhoods].some(
+      (n) => n.includes(needle) || needle.includes(n)
+    );
+  }
+  return places.some((p) => p.borough === borough);
+}
+
+function filterExperiences(
+  all: Experience[],
+  { borough, neighborhood, vibe, budget, setting }: {
+    borough: string; neighborhood: string; vibe: string; budget: string; setting: string;
+  }
+) {
+  return all.filter(
+    (exp) =>
+      locationMatches(exp, borough, neighborhood) &&
+      vibeMatches(exp.activities ?? [], vibe) &&
+      budgetMatches(exp.budget ?? [], budget) &&
+      settingMatches(exp.indoor_outdoor ?? [], setting)
+  );
+}
+
+function SkeletonCard() {
+  return <div className="w-full aspect-[33/38] rounded-[20px] bg-gray-100 animate-pulse" />;
 }
 
 export default function PlanPage() {
@@ -61,42 +121,35 @@ export default function PlanPage() {
   const [budget, setBudget] = useState("");
   const [setting, setSetting] = useState("");
 
-  const [currentLocationCoords, setCurrentLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationLoading, setLocationLoading] = useState(false);
+  const currentCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const [results, setResults] = useState<Experience[] | null>(null);
+  const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
 
   const neighborhoodOptions = NEIGHBORHOODS[location] ?? [];
 
-  function fetchCurrentLocation() {
-    if (!navigator.geolocation) return;
-    setLocationLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setCurrentLocationCoords({ lat: latitude, lng: longitude });
-        setLocation("__current__");
-        setNeighborhood("");
-        setLocationLoading(false);
-      },
-      () => {
-        setLocationLoading(false);
-      }
-    );
+  function handleCurrentLocation() {
+    // Select the pill immediately — resolve coords silently in background
+    setLocation("__current__");
+    setNeighborhood("");
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          currentCoordsRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        },
+        () => { /* silently ignore — will search all NYC */ },
+        { timeout: 10000 }
+      );
+    }
   }
 
   function handleSelectLocation(loc: string) {
-    if (loc === "__current__") {
-      fetchCurrentLocation();
-      return;
-    }
     if (location === loc) {
-      // deselect — fall back to All NYC
       setLocation("All NYC");
       setNeighborhood("");
     } else {
@@ -108,22 +161,17 @@ export default function PlanPage() {
   async function handleSearch() {
     setLoading(true);
     setSearched(true);
+    setFallbackMessage(null);
     setSelectedExperience(null);
+
     try {
+      // Fetch all experiences — API location/budget/setting filters are unreliable;
+      // we apply all filtering client-side for accuracy.
       const body: Record<string, string> = {};
-
-      if (location === "__current__" && currentLocationCoords) {
-        body.lat = String(currentLocationCoords.lat);
-        body.lng = String(currentLocationCoords.lng);
-      } else if (neighborhood) {
-        body.location = neighborhood;
-      } else if (location && location !== "All NYC") {
-        body.location = location;
+      if (location === "__current__" && currentCoordsRef.current) {
+        body.lat = String(currentCoordsRef.current.lat);
+        body.lng = String(currentCoordsRef.current.lng);
       }
-
-      if (vibe) body.activity = vibe;
-      if (budget) body.budget = budget;
-      if (setting) body.indooroutdoor = setting;
 
       const res = await fetch(`${API_BASE}/search`, {
         method: "POST",
@@ -131,8 +179,36 @@ export default function PlanPage() {
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Search failed");
-      const data: Experience[] = await res.json();
-      setResults(data);
+      const all: Experience[] = await res.json();
+
+      const filters = { borough: location, neighborhood, vibe, budget, setting };
+
+      // Try exact match with all filters
+      let matched = filterExperiences(all, filters);
+
+      if (matched.length === 0 && (neighborhood || vibe || budget || setting)) {
+        // Relax neighborhood first, then other filters one by one
+        const relaxations: Array<{ label: string; overrides: Partial<typeof filters> }> = [
+          { label: `${location} (any neighborhood)`, overrides: { neighborhood: "" } },
+          { label: `your vibe in ${neighborhood || location}`, overrides: { vibe: "" } },
+          { label: `${neighborhood || location} (any budget)`, overrides: { budget: "" } },
+          { label: `${neighborhood || location} (indoor & outdoor)`, overrides: { setting: "" } },
+          { label: "all of NYC", overrides: { borough: "All NYC", neighborhood: "", vibe: "", budget: "", setting: "" } },
+        ];
+
+        for (const { label, overrides } of relaxations) {
+          const relaxed = filterExperiences(all, { ...filters, ...overrides });
+          if (relaxed.length > 0) {
+            matched = relaxed;
+            setFallbackMessage(
+              `No exact matches found — showing experiences in ${label} instead.`
+            );
+            break;
+          }
+        }
+      }
+
+      setResults(matched);
     } catch {
       setResults([]);
     } finally {
@@ -177,15 +253,15 @@ export default function PlanPage() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => handleSelectLocation("__current__")}
+              onClick={handleCurrentLocation}
               className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${
                 location === "__current__"
                   ? "bg-[#FB6983] text-white"
                   : "bg-[#f2f4f7] text-[#1d2939]"
-              } ${locationLoading ? "opacity-60" : ""}`}
+              }`}
             >
               <MapPin className="w-3.5 h-3.5" strokeWidth={2} />
-              {locationLoading ? "Locating..." : "Current Location"}
+              Current Location
             </button>
             {BOROUGHS.map((loc) => (
               <button
@@ -316,11 +392,16 @@ export default function PlanPage() {
 
       {/* Results */}
       <div ref={resultsRef} />
+
       {loading && (
         <div className="px-5 flex flex-col gap-4 pb-8">
-          {[1, 2, 3].map((i) => (
-            <SkeletonCard key={i} />
-          ))}
+          {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+        </div>
+      )}
+
+      {!loading && fallbackMessage && (
+        <div className="px-5 pb-3">
+          <p className="text-[#667085] text-sm italic">{fallbackMessage}</p>
         </div>
       )}
 

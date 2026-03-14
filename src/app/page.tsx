@@ -34,6 +34,8 @@ export interface Experience {
   category_id: number;
   neighborhoods: string[];
   activities: string[];
+  budget: string[];
+  indoor_outdoor: string[];
 }
 
 export interface ExperienceCategory {
