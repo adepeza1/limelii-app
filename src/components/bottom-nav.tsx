@@ -32,7 +32,7 @@ const tabs: Tab[] = [
   { label: "Discover", iconSrc: "/images/Search.svg", href: "/" },
   { label: "Plan", icon: ClipboardList, href: "/plan" },
   { label: "Create", iconSrc: "/images/limeliFavicon.svg", href: "/create", center: true },
-  { label: "Saved", iconScr: "/images/heart-alt.svg", href: "/" },
+  { label: "Saved", iconScr: "/images/heart-alt.svg", href: "/saved" },
   { label: "Profile", icon: User, href: "/profile" },
 ];
 
