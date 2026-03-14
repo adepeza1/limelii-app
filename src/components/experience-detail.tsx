@@ -29,6 +29,10 @@ function getFullAddress(place: Place): string {
   return parts.join(", ");
 }
 
+function hasValue(val: string | null | undefined): val is string {
+  return !!val && val.trim() !== "" && val.trim().toUpperCase() !== "NA";
+}
+
 function StarRating({ rating }: { rating: number }) {
   const fullStars = Math.floor(rating);
   const hasHalf = rating - fullStars >= 0.5;
@@ -206,7 +210,7 @@ export function ExperienceDetail({
             <div className="border border-[#eaecf0] rounded-2xl px-4 pt-2 pb-4 flex flex-col gap-3">
               <h3 className="text-lg font-medium text-[#1d2939]">Details</h3>
               <div className="flex flex-col gap-2">
-                {details?.phone && (
+                {hasValue(details?.phone) && (
                   <div className="flex items-center gap-1.5">
                     <Phone className="w-5 h-5 text-[#416f7b] shrink-0" strokeWidth={1.5} />
                     <a href={`tel:${details.phone}`} className="text-sm text-[#416f7b]">
@@ -214,7 +218,7 @@ export function ExperienceDetail({
                     </a>
                   </div>
                 )}
-                {details?.url && (
+                {hasValue(details?.url) && (
                   <div className="flex items-center gap-1.5">
                     <Globe className="w-5 h-5 text-[#416f7b] shrink-0" strokeWidth={1.5} />
                     <a
@@ -227,13 +231,13 @@ export function ExperienceDetail({
                     </a>
                   </div>
                 )}
-                {address && (
+                {hasValue(address) && (
                   <div className="flex items-center gap-1.5">
                     <MapPin className="w-5 h-5 text-[#416f7b] shrink-0" strokeWidth={1.5} />
                     <span className="text-sm font-medium text-[#416f7b]">{address}</span>
                   </div>
                 )}
-                {details?.operating_hours && (
+                {hasValue(details?.operating_hours) && (
                   <div className="flex items-center gap-1.5">
                     <Clock className="w-5 h-5 text-[#667085] shrink-0" strokeWidth={1.5} />
                     <span className="text-sm text-[#667085]">{details.operating_hours}</span>
