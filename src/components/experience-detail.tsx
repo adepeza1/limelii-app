@@ -13,12 +13,12 @@ function getSaved(): number[] {
 
 const SAVED_ITEMS_KEY = "limelii_saved_items";
 
-function getSavedItems(): Record<number, unknown> {
+function getSavedItems(): Record<string, Experience> {
   if (typeof window === "undefined") return {};
   try { return JSON.parse(localStorage.getItem(SAVED_ITEMS_KEY) ?? "{}"); } catch { return {}; }
 }
 
-function toggleSaved(experience: { id: number;[key: string]: unknown }): boolean {
+function toggleSaved(experience: Experience): boolean {
   const ids = getSaved();
   const items = getSavedItems();
   const idx = ids.indexOf(experience.id);
