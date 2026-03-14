@@ -10,6 +10,31 @@ const API_BASE = "https://xyhl-mgrz-aokj.n7c.xano.io/api:58lfyMpE";
 
 const BOROUGHS = ["All NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
 
+// TODO: Replace with API call to /neighborhoods?borough=<borough> when endpoint is available
+const NEIGHBORHOODS: Record<string, string[]> = {
+  Manhattan: [
+    "Harlem", "Upper West Side", "Upper East Side", "Midtown", "Hell's Kitchen",
+    "Chelsea", "Flatiron", "Kips Bay", "Murray Hill", "Greenwich Village",
+    "SoHo", "NoHo", "Tribeca", "Lower East Side", "Financial District",
+  ],
+  Brooklyn: [
+    "Williamsburg", "DUMBO", "Park Slope", "Greenpoint", "Bushwick",
+    "Bed-Stuy", "Crown Heights", "Flatbush", "Carroll Gardens", "Cobble Hill",
+    "Red Hook", "Bay Ridge", "Sunset Park", "Coney Island",
+  ],
+  Queens: [
+    "Astoria", "Long Island City", "Jackson Heights", "Flushing", "Sunnyside",
+    "Woodside", "Forest Hills", "Jamaica", "Bayside", "Ridgewood",
+  ],
+  Bronx: [
+    "Fordham", "Riverdale", "Mott Haven", "Pelham Bay", "Kingsbridge",
+    "Tremont", "Hunts Point", "Concourse",
+  ],
+  "Staten Island": [
+    "St. George", "Stapleton", "New Dorp", "Tottenville", "Great Kills", "Dongan Hills",
+  ],
+};
+
 const VIBES = [
   "Food & Drink",
   "Nightlife",
@@ -21,7 +46,7 @@ const VIBES = [
 
 const BUDGETS = ["Free", "$", "$$", "$$$"];
 
-const SETTINGS = ["Any", "Indoor", "Outdoor"];
+const SETTINGS = ["Indoor", "Outdoor"];
 
 function SkeletonCard() {
   return (
@@ -31,9 +56,10 @@ function SkeletonCard() {
 
 export default function PlanPage() {
   const [location, setLocation] = useState("All NYC");
+  const [neighborhood, setNeighborhood] = useState("");
   const [vibe, setVibe] = useState("");
-  const [budget, setBudget] = useState("Free");
-  const [setting, setSetting] = useState("Any");
+  const [budget, setBudget] = useState("");
+  const [setting, setSetting] = useState("");
 
   const [currentLocationLabel, setCurrentLocationLabel] = useState("Current Location");
   const [currentLocationCoords, setCurrentLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -43,6 +69,8 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+
+  const neighborhoodOptions = NEIGHBORHOODS[location] ?? [];
 
   function fetchCurrentLocation() {
     if (!navigator.geolocation) return;
@@ -57,18 +85,19 @@ export default function PlanPage() {
           );
           const data = await res.json();
           const addr = data.address;
-          const neighborhood =
+          const label =
             addr.suburb ||
             addr.neighbourhood ||
             addr.borough ||
             addr.city_district ||
             addr.city ||
             "Near Me";
-          setCurrentLocationLabel(neighborhood);
+          setCurrentLocationLabel(label);
         } catch {
           setCurrentLocationLabel("Near Me");
         }
         setLocation("__current__");
+        setNeighborhood("");
         setLocationLoading(false);
       },
       () => {
@@ -80,8 +109,15 @@ export default function PlanPage() {
   function handleSelectLocation(loc: string) {
     if (loc === "__current__") {
       fetchCurrentLocation();
+      return;
+    }
+    if (location === loc) {
+      // deselect — fall back to All NYC
+      setLocation("All NYC");
+      setNeighborhood("");
     } else {
       setLocation(loc);
+      setNeighborhood("");
     }
   }
 
@@ -95,13 +131,15 @@ export default function PlanPage() {
       if (location === "__current__" && currentLocationCoords) {
         body.lat = String(currentLocationCoords.lat);
         body.lng = String(currentLocationCoords.lng);
+      } else if (neighborhood) {
+        body.location = neighborhood;
       } else if (location && location !== "All NYC") {
         body.location = location;
       }
 
       if (vibe) body.activity = vibe;
-      if (budget && budget !== "Free") body.budget = budget;
-      if (setting && setting !== "Any") body.indooroutdoor = setting;
+      if (budget) body.budget = budget;
+      if (setting) body.indooroutdoor = setting;
 
       const res = await fetch(`${API_BASE}/search`, {
         method: "POST",
@@ -133,10 +171,7 @@ export default function PlanPage() {
 
       {/* Header */}
       <div className="px-5 pt-4 pb-6">
-        <span className="text-[#f78539] font-bold text-xl tracking-tight font-[family-name:var(--font-poppins),sans-serif]">
-          limelii
-        </span>
-        <h1 className="text-[#101828] text-[2.25rem] font-bold leading-tight mt-3">
+        <h1 className="text-[#101828] text-[2.25rem] font-bold leading-tight">
           Plan your<br />experience
         </h1>
         <p className="text-[#667085] text-sm mt-2">
@@ -179,6 +214,30 @@ export default function PlanPage() {
               </button>
             ))}
           </div>
+
+          {/* Neighborhood sub-picker */}
+          {neighborhoodOptions.length > 0 && (
+            <div className="mt-3">
+              <p className="text-[#667085] text-xs font-semibold uppercase tracking-widest mb-2">
+                Neighborhood
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {neighborhoodOptions.map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setNeighborhood(neighborhood === n ? "" : n)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                      neighborhood === n
+                        ? "bg-[#FB6983] text-white"
+                        : "bg-[#f2f4f7] text-[#1d2939]"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Vibe */}
@@ -212,7 +271,7 @@ export default function PlanPage() {
             {BUDGETS.map((b) => (
               <button
                 key={b}
-                onClick={() => setBudget(b)}
+                onClick={() => setBudget(budget === b ? "" : b)}
                 className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
                   budget === b
                     ? "bg-[#FB6983] text-white"
@@ -230,15 +289,15 @@ export default function PlanPage() {
           <p className="text-[#667085] text-xs font-semibold uppercase tracking-widest mb-3">
             Setting
           </p>
-          <div className="flex bg-[#f2f4f7] rounded-full p-1">
+          <div className="flex gap-2">
             {SETTINGS.map((s) => (
               <button
                 key={s}
-                onClick={() => setSetting(s)}
-                className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-colors ${
+                onClick={() => setSetting(setting === s ? "" : s)}
+                className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
                   setting === s
                     ? "bg-[#FB6983] text-white"
-                    : "text-[#667085]"
+                    : "bg-[#f2f4f7] text-[#1d2939]"
                 }`}
               >
                 {s}
