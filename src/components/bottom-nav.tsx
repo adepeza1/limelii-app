@@ -11,7 +11,7 @@ import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 const tabs = [
   { label: "Discover", iconSrc: "/images/Search.svg", href: "/" },
   { label: "Plan", icon: ClipboardList, href: "/plan" },
-  { label: "Create", iconSrc: "/images/limelii-logo.svg", href: "/create", center: true },
+  { label: "Create", iconSrc: "/images/limeliFavicon.svg", href: "/create", center: true },
   { label: "Profile", icon: User, href: "/profile" },
 ] as const;
 
