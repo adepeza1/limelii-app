@@ -158,7 +158,7 @@ export default function PlanPage() {
               disabled={locationLoading}
               className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${
                 location === "__current__"
-                  ? "bg-[#416f7b] text-white"
+                  ? "bg-[#FB6983] text-white"
                   : "bg-[#f2f4f7] text-[#1d2939]"
               }`}
             >
@@ -171,7 +171,7 @@ export default function PlanPage() {
                 onClick={() => handleSelectLocation(loc)}
                 className={`px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${
                   location === loc
-                    ? "bg-[#416f7b] text-white"
+                    ? "bg-[#FB6983] text-white"
                     : "bg-[#f2f4f7] text-[#1d2939]"
                 }`}
               >
@@ -193,7 +193,7 @@ export default function PlanPage() {
                 onClick={() => setVibe(vibe === v ? "" : v)}
                 className={`rounded-2xl py-5 px-3 text-sm font-medium text-center transition-colors ${
                   vibe === v
-                    ? "bg-[#416f7b] text-white"
+                    ? "bg-[#FB6983] text-white"
                     : "bg-[#f2f4f7] text-[#1d2939]"
                 }`}
               >
@@ -215,7 +215,7 @@ export default function PlanPage() {
                 onClick={() => setBudget(b)}
                 className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
                   budget === b
-                    ? "bg-[#416f7b] text-white"
+                    ? "bg-[#FB6983] text-white"
                     : "bg-[#f2f4f7] text-[#1d2939]"
                 }`}
               >
@@ -237,7 +237,7 @@ export default function PlanPage() {
                 onClick={() => setSetting(s)}
                 className={`flex-1 py-2.5 rounded-full text-sm font-medium transition-colors ${
                   setting === s
-                    ? "bg-[#416f7b] text-white"
+                    ? "bg-[#FB6983] text-white"
                     : "text-[#667085]"
                 }`}
               >
@@ -256,13 +256,13 @@ export default function PlanPage() {
         <button
           onClick={handleSearch}
           disabled={loading}
-          className="w-full bg-[#416f7b] text-white font-bold text-base rounded-full py-4 flex items-center justify-center gap-3 disabled:opacity-60 active:opacity-80 transition-opacity"
+          className="w-full bg-[#FB6983] text-white font-bold text-base rounded-full py-4 flex items-center justify-center gap-3 disabled:opacity-60 active:opacity-80 transition-opacity"
         >
           {loading ? "Finding..." : "Find experiences"}
           {!loading && (
             <span className="w-7 h-7 bg-white rounded-full flex items-center justify-center">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M2 7h10M8 3l4 4-4 4" stroke="#416f7b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 7h10M8 3l4 4-4 4" stroke="#FB6983" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </span>
           )}
