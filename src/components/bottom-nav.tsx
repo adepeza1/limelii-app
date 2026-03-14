@@ -61,7 +61,7 @@ export function BottomNav() {
             >
               {"iconSrc" in tab ? (
                 <Image
-                  src={tab.iconSrc}
+                  src={tab.iconSrc!}
                   alt={tab.label}
                   width={isCenter ? 42 : 24}
                   height={isCenter ? 42 : 24}
