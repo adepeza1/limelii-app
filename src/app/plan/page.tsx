@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { MapPin } from "lucide-react";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
@@ -61,9 +61,10 @@ export default function PlanPage() {
   const [budget, setBudget] = useState("");
   const [setting, setSetting] = useState("");
 
-  const [currentLocationLabel, setCurrentLocationLabel] = useState("Current Location");
   const [currentLocationCoords, setCurrentLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
+
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const [results, setResults] = useState<Experience[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -76,26 +77,9 @@ export default function PlanPage() {
     if (!navigator.geolocation) return;
     setLocationLoading(true);
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
+      (pos) => {
         const { latitude, longitude } = pos.coords;
         setCurrentLocationCoords({ lat: latitude, lng: longitude });
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-          );
-          const data = await res.json();
-          const addr = data.address;
-          const label =
-            addr.suburb ||
-            addr.neighbourhood ||
-            addr.borough ||
-            addr.city_district ||
-            addr.city ||
-            "Near Me";
-          setCurrentLocationLabel(label);
-        } catch {
-          setCurrentLocationLabel("Near Me");
-        }
         setLocation("__current__");
         setNeighborhood("");
         setLocationLoading(false);
@@ -153,6 +137,9 @@ export default function PlanPage() {
       setResults([]);
     } finally {
       setLoading(false);
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
     }
   }
 
@@ -189,19 +176,20 @@ export default function PlanPage() {
           </p>
           <div className="flex flex-wrap gap-2">
             <button
+              type="button"
               onClick={() => handleSelectLocation("__current__")}
-              disabled={locationLoading}
               className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${
                 location === "__current__"
                   ? "bg-[#FB6983] text-white"
                   : "bg-[#f2f4f7] text-[#1d2939]"
-              }`}
+              } ${locationLoading ? "opacity-60" : ""}`}
             >
               <MapPin className="w-3.5 h-3.5" strokeWidth={2} />
-              {locationLoading ? "Locating..." : currentLocationLabel}
+              {locationLoading ? "Locating..." : "Current Location"}
             </button>
             {BOROUGHS.map((loc) => (
               <button
+                type="button"
                 key={loc}
                 onClick={() => handleSelectLocation(loc)}
                 className={`px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${
@@ -224,6 +212,7 @@ export default function PlanPage() {
               <div className="flex flex-wrap gap-2">
                 {neighborhoodOptions.map((n) => (
                   <button
+                    type="button"
                     key={n}
                     onClick={() => setNeighborhood(neighborhood === n ? "" : n)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
@@ -248,6 +237,7 @@ export default function PlanPage() {
           <div className="grid grid-cols-3 gap-2.5">
             {VIBES.map((v) => (
               <button
+                type="button"
                 key={v}
                 onClick={() => setVibe(vibe === v ? "" : v)}
                 className={`rounded-2xl py-5 px-3 text-sm font-medium text-center transition-colors ${
@@ -270,6 +260,7 @@ export default function PlanPage() {
           <div className="flex gap-2">
             {BUDGETS.map((b) => (
               <button
+                type="button"
                 key={b}
                 onClick={() => setBudget(budget === b ? "" : b)}
                 className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
@@ -292,6 +283,7 @@ export default function PlanPage() {
           <div className="flex gap-2">
             {SETTINGS.map((s) => (
               <button
+                type="button"
                 key={s}
                 onClick={() => setSetting(setting === s ? "" : s)}
                 className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
@@ -313,22 +305,17 @@ export default function PlanPage() {
           <p className="text-[#667085] text-sm">Choose your filters above</p>
         )}
         <button
+          type="button"
           onClick={handleSearch}
           disabled={loading}
-          className="w-full bg-[#FB6983] text-white font-bold text-base rounded-full py-4 flex items-center justify-center gap-3 disabled:opacity-60 active:opacity-80 transition-opacity"
+          className="w-full bg-[#FB6983] text-white font-bold text-base rounded-full py-4 flex items-center justify-center disabled:opacity-60 active:opacity-80 transition-opacity"
         >
           {loading ? "Finding..." : "Find experiences"}
-          {!loading && (
-            <span className="w-7 h-7 bg-white rounded-full flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M2 7h10M8 3l4 4-4 4" stroke="#FB6983" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </span>
-          )}
         </button>
       </div>
 
       {/* Results */}
+      <div ref={resultsRef} />
       {loading && (
         <div className="px-5 flex flex-col gap-4 pb-8">
           {[1, 2, 3].map((i) => (
