@@ -47,7 +47,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100">
-      <div className="max-w-5xl mx-auto flex items-center justify-around px-4 pt-3 pb-7">
+      <div className="max-w-5xl mx-auto flex items-center justify-around px-4 pt-2 pb-4">
         {tabs.map((tab) => {
           const isActive =
             tab.href === "/"
@@ -76,7 +76,7 @@ export function BottomNav() {
               key={tab.href}
               href={tab.href}
               className={`flex flex-col items-center gap-1 min-w-[56px] ${
-                isCenter ? "-mt-8 scale-110" : ""
+                isCenter ? "-mt-4 scale-110" : ""
               }`}
             >
               {"iconSrc" in tab ? (
