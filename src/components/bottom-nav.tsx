@@ -3,15 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, ClipboardList, User, PlusSquare } from "lucide-react";
+import { ClipboardList, User } from "lucide-react";
 import Image from "next/image";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 
 const tabs = [
-  { label: "Discover", icon: "/images/Search.svg", href: "/" },
+  { label: "Discover", iconSrc: "/images/Search.svg", href: "/" },
   { label: "Plan", icon: ClipboardList, href: "/plan" },
-  { label: "Create", icon: "/images/limelii-logo.svg", href: "/create" },
+  { label: "Create", iconSrc: "/images/limelii-logo.svg", href: "/create", center: true },
   { label: "Profile", icon: User, href: "/profile" },
 ] as const;
 
@@ -26,15 +26,16 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100">
-      <div className="max-w-5xl mx-auto flex items-center justify-around px-4 pt-2 pb-6">
+      <div className="max-w-5xl mx-auto flex items-center justify-around px-4 pt-3 pb-7">
         {tabs.map((tab) => {
-          const Icon = tab.icon;
           const isActive =
             tab.href === "/"
               ? pathname === "/"
               : pathname.startsWith(tab.href);
 
-          // Profile tab: show LoginLink when not authenticated
+          const isCenter = "center" in tab;
+
+          // Profile tab when NOT logged in
           if (tab.href === "/profile" && mounted && !isAuthenticated) {
             return (
               <LoginLink
@@ -43,15 +44,8 @@ export function BottomNav() {
                 className="flex flex-col items-center gap-1 min-w-[56px]"
                 suppressHydrationWarning
               >
-                <Icon
-                  className={`w-6 h-6 ${isActive ? "text-[#416f7b]" : "text-gray-400"}`}
-                  strokeWidth={1.6}
-                />
-                <span
-                  className={`text-[11px] ${isActive ? "text-[#416f7b] font-medium" : "text-gray-400"}`}
-                >
-                  Log In
-                </span>
+                <User className="w-6 h-6 text-gray-400" strokeWidth={1.6} />
+                <span className="text-[11px] text-gray-400">Log In</span>
               </LoginLink>
             );
           }
@@ -60,17 +54,43 @@ export function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              className="flex flex-col items-center gap-1 min-w-[56px]"
+              className={`flex flex-col items-center gap-1 min-w-[56px] ${
+                isCenter ? "-mt-6" : ""
+              }`}
             >
-              <Icon
-                className={`w-6 h-6 ${isActive ? "text-[#416f7b]" : "text-gray-400"}`}
-                strokeWidth={1.6}
-              />
-              <span
-                className={`text-[11px] ${isActive ? "text-[#416f7b] font-medium" : "text-gray-400"}`}
-              >
-                {tab.label}
-              </span>
+              {"iconSrc" in tab ? (
+                <Image
+                  src={tab.iconSrc}
+                  alt={tab.label}
+                  width={isCenter ? 42 : 24}
+                  height={isCenter ? 42 : 24}
+                  className={isCenter ? "rounded-full shadow-md" : ""}
+                />
+              ) : (
+                (() => {
+                  const Icon = tab.icon;
+                  return (
+                    <Icon
+                      className={`${
+                        isCenter ? "w-10 h-10" : "w-6 h-6"
+                      } ${isActive ? "text-[#416f7b]" : "text-gray-400"}`}
+                      strokeWidth={1.6}
+                    />
+                  );
+                })()
+              )}
+
+              {!isCenter && (
+                <span
+                  className={`text-[11px] ${
+                    isActive
+                      ? "text-[#416f7b] font-medium"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {tab.label}
+                </span>
+              )}
             </Link>
           );
         })}
