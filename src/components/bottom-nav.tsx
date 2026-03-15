@@ -86,7 +86,7 @@ export function BottomNav() {
                   width={isCenter ? 48 : 24}
                   height={isCenter ? 48 : 24}
                   priority
-                  className={isCenter ? "object-contain"}
+                  className={"object-contain"}
                   style={{ filter: "none" }}
                 />
               ) : (
