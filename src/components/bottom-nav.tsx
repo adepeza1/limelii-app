@@ -86,7 +86,8 @@ export function BottomNav() {
                   width={isCenter ? 48 : 24}
                   height={isCenter ? 48 : 24}
                   priority
-                  className={isCenter ? "rounded-full shadow-md object-contain" : ""}
+                  className={isCenter ? "object-contain"}
+                  style={{ filter: "none" }}
                 />
               ) : (
                 <tab.icon
