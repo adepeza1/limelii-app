@@ -49,8 +49,8 @@ function useLeafletMap(
     });
     mapInstanceRef.current = map;
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors",
+    L.tileLayer("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
+      attribution: "&copy; Google",
     }).addTo(map);
 
     L.control

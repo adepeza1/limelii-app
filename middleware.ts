@@ -15,5 +15,5 @@ export default withAuth(async function middleware(req: NextRequest) {
 });
 
 export const config = {
-  matcher: ["/create/:path*", "/plan/:path*", "/profile/:path*"],
+  matcher: ["/create/:path*", "/profile/:path*"],
 };

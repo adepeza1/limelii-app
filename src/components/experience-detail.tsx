@@ -172,12 +172,6 @@ export function ExperienceDetail({
     return () => el.removeEventListener("scroll", handleScroll);
   }, [placesWithImages.length]);
 
-  // Get details from the first place that has them
-  const firstPlaceWithDetails = experience.places_id.find(
-    (p) => p._location_details
-  );
-  const details = firstPlaceWithDetails?._location_details;
-  const address = firstPlaceWithDetails ? getFullAddress(firstPlaceWithDetails) : "";
 
   return (
     <div className="bg-white min-h-screen max-w-5xl mx-auto relative">
@@ -197,18 +191,86 @@ export function ExperienceDetail({
         </div>
       </header>
 
+      {/* Experience description subtitle */}
+      <div className="px-4 pt-2 pb-4">
+        <p className="text-sm text-gray-600 leading-5">{experience.description}</p>
+      </div>
+
       {/* Scrollable content */}
-      <div className="py-4">
-        {/* Image carousel */}
+      <div className="pb-4">
+        {/* Swipeable location carousel: images + location description */}
         <div
           ref={scrollRef}
           className="flex gap-2 overflow-x-auto hide-scrollbar pl-[22px] pr-4 snap-x snap-mandatory"
         >
-          {placesWithImages.map((place) => (
-            <div key={place.id} className="snap-start">
-              <PlaceImageCard place={place} rating={experience.rating} />
-            </div>
-          ))}
+          {placesWithImages.map((place) => {
+            const details = place._location_details;
+            const address = getFullAddress(place);
+            return (
+              <div key={place.id} className="snap-start shrink-0 w-[85vw] max-w-[330px] flex flex-col">
+                <PlaceImageCard place={place} rating={experience.rating} />
+                <div className="mt-2 px-1">
+                  <h3 className="text-base font-medium text-black">{place.name}</h3>
+                  {place.neighborhood && (
+                    <span className="text-xs text-gray-500">{place.neighborhood}</span>
+                  )}
+                  {details?.Description && (
+                    <p className="text-sm text-gray-600 leading-5 mt-1">
+                      {details.Description}
+                    </p>
+                  )}
+                  {/* Per-location details */}
+                  {(details || address) && (
+                    <div className="border border-[#eaecf0] rounded-2xl px-4 pt-2 pb-4 mt-3 flex flex-col gap-3">
+                      <h4 className="text-base font-medium text-[#1d2939]">Details</h4>
+                      <div className="flex flex-col gap-3">
+                        {hasValue(details?.phone) && (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-medium text-[#c2550a]">Phone</span>
+                            <a href={`tel:${details!.phone}`} className="text-sm text-black">
+                              {details!.phone}
+                            </a>
+                          </div>
+                        )}
+                        {hasValue(details?.url) && (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-medium text-[#c2550a]">Website</span>
+                            <a
+                              href={details!.url!.startsWith("http") ? details!.url! : `https://${details!.url}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-[#c2550a] break-all"
+                            >
+                              {details!.url}
+                            </a>
+                          </div>
+                        )}
+                        {hasValue(address) && (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-medium text-[#c2550a]">Address</span>
+                            <a
+                              href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 underline"
+                            >
+                              {address}
+                            </a>
+                          </div>
+                        )}
+                        {hasValue(details?.operating_hours) && (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-medium text-[#c2550a]">Hours</span>
+                            <span className="text-sm text-black whitespace-pre-line">{details!.operating_hours}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Dot indicators */}
@@ -227,69 +289,8 @@ export function ExperienceDetail({
           </div>
         )}
 
-        {/* Title & Description */}
+        {/* Map */}
         <div className="px-4 flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-base font-medium text-black">
-              {experience.places_id[0] && (
-                <span className="text-[#416f7b]">{experience.places_id[0].name}</span>
-              )}
-              {experience.places_id[0]?.neighborhood && (
-                <span>-{experience.places_id[0].neighborhood}</span>
-              )}
-            </h2>
-            <p className="text-sm text-black leading-5">{experience.description}</p>
-          </div>
-
-          {/* Details card */}
-          {(details || address) && (
-            <div className="border border-[#eaecf0] rounded-2xl px-4 pt-2 pb-4 flex flex-col gap-3">
-              <h3 className="text-lg font-medium text-[#1d2939]">Details</h3>
-              <div className="flex flex-col gap-3">
-                {hasValue(details?.phone) && (
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium text-[#c2550a]">Phone</span>
-                    <a href={`tel:${details.phone}`} className="text-sm text-black">
-                      {details.phone}
-                    </a>
-                  </div>
-                )}
-                {hasValue(details?.url) && (
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium text-[#c2550a]">Website</span>
-                    <a
-                      href={details.url.startsWith("http") ? details.url : `https://${details.url}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-[#c2550a] break-all"
-                    >
-                      {details.url}
-                    </a>
-                  </div>
-                )}
-                {hasValue(address) && (
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium text-[#c2550a]">Address</span>
-                    <a
-                      href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 underline"
-                    >
-                      {address}
-                    </a>
-                  </div>
-                )}
-                {hasValue(details?.operating_hours) && (
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium text-[#c2550a]">Hours</span>
-                    <span className="text-sm text-black whitespace-pre-line">{details.operating_hours}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Map */}
           <div className="relative">
             <div className="bg-white rounded-2xl shadow-[0px_4px_32px_0px_rgba(0,0,0,0.07)] overflow-hidden">
