@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { ChevronLeft, MoreVertical, Plus, Star, Maximize2, Bookmark } from "lucide-react";
+import { ChevronLeft, MoreVertical, Plus, Star, Maximize2 } from "lucide-react";
 
 const SAVED_KEY = "limelii_saved";
 
@@ -192,8 +192,24 @@ export function ExperienceDetail({
       </header>
 
       {/* Experience description subtitle */}
-      <div className="px-4 pt-2 pb-4">
-        <p className="text-sm text-gray-600 leading-5">{experience.description}</p>
+      <div className="px-4 pt-2 pb-4 flex items-start gap-3">
+        <p className="flex-1 text-sm text-gray-600 leading-5">{experience.description}</p>
+        <button
+          onClick={() => setSaved(toggleSaved(experience))}
+          aria-label={saved ? "Unsave" : "Save"}
+          className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-gray-100"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M15.7 4C18.87 4 21 6.98 21 9.76C21 15.39 12.16 20 12 20C11.84 20 3 15.39 3 9.76C3 6.98 5.13 4 8.3 4C10.12 4 11.31 4.91 12 5.71C12.69 4.91 13.88 4 15.7 4Z"
+              stroke={saved ? "#FB6983" : "#667085"}
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill={saved ? "#FB6983" : "none"}
+            />
+          </svg>
+        </button>
       </div>
 
       {/* Scrollable content */}
@@ -316,21 +332,6 @@ export function ExperienceDetail({
         />
       )}
 
-      {/* Bottom CTA */}
-      <div className="sticky bottom-0 bg-white px-4 pb-8 pt-3">
-        <button
-          type="button"
-          onClick={() => setSaved(toggleSaved(experience))}
-          className={`w-full flex items-center justify-center gap-2 rounded-xl py-3 px-5 text-base font-semibold shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] transition-colors ${
-            saved
-              ? "bg-[#FB6983] border border-[#FB6983] text-white"
-              : "border border-[#416f7b] text-[#344054]"
-          }`}
-        >
-          <Bookmark className="w-5 h-5" fill={saved ? "white" : "none"} strokeWidth={1.8} />
-          {saved ? "Saved" : "Save idea"}
-        </button>
-      </div>
     </div>
   );
 }
