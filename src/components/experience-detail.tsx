@@ -239,7 +239,7 @@ export function ExperienceDetail({
                               href={details!.url!.startsWith("http") ? details!.url! : `https://${details!.url}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm text-[#c2550a] break-all"
+                              className="text-sm text-blue-600 break-all"
                             >
                               {details!.url}
                             </a>
@@ -252,7 +252,7 @@ export function ExperienceDetail({
                               href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm text-blue-600 underline"
+                              className="text-sm text-black underline"
                             >
                               {address}
                             </a>
