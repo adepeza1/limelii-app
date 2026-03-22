@@ -89,6 +89,7 @@ function PlaceImageCard({
   rating: number;
 }) {
   const images = (place.display_images || []).slice(0, 4).map((img) => img.url);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   if (images.length === 0) return null;
 
   return (
@@ -101,10 +102,29 @@ function PlaceImageCard({
           className="object-cover"
           sizes="(max-width: 640px) 85vw, 330px"
         />
+      ) : expandedIndex !== null ? (
+        <button
+          className="absolute inset-0 w-full h-full"
+          onClick={() => setExpandedIndex(null)}
+          aria-label="Collapse photo"
+        >
+          <Image
+            src={images[expandedIndex]}
+            alt={`${place.name} ${expandedIndex + 1}`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 85vw, 330px"
+          />
+        </button>
       ) : (
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-[2px]">
           {images.map((url, i) => (
-            <div key={i} className="relative overflow-hidden">
+            <button
+              key={i}
+              className="relative overflow-hidden"
+              onClick={() => setExpandedIndex(i)}
+              aria-label={`Expand photo ${i + 1}`}
+            >
               <Image
                 src={url}
                 alt={`${place.name} ${i + 1}`}
@@ -112,25 +132,27 @@ function PlaceImageCard({
                 className="object-cover"
                 sizes="(max-width: 640px) 42vw, 165px"
               />
-            </div>
+            </button>
           ))}
         </div>
       )}
       {/* Bottom overlay with rating */}
-      <div className="absolute inset-x-0 bottom-0 p-4">
-        <div className="backdrop-blur-[10px] bg-black/20 rounded-2xl px-4 py-3 flex items-center gap-4">
-          <div className="flex flex-col gap-[2px]">
-            <span className="text-white text-xs font-medium">234 people rated</span>
-            <div className="flex items-center gap-1.5">
-              <StarRating rating={rating} />
-              <span className="text-white text-sm font-medium">{rating.toFixed(1)}</span>
+      {expandedIndex === null && (
+        <div className="absolute inset-x-0 bottom-0 p-4">
+          <div className="backdrop-blur-[10px] bg-black/20 rounded-2xl px-4 py-3 flex items-center gap-4">
+            <div className="flex flex-col gap-[2px]">
+              <span className="text-white text-xs font-medium">234 people rated</span>
+              <div className="flex items-center gap-1.5">
+                <StarRating rating={rating} />
+                <span className="text-white text-sm font-medium">{rating.toFixed(1)}</span>
+              </div>
             </div>
+            <button className="bg-[#416f7b] rounded-lg p-[2px] ml-auto">
+              <Plus className="w-6 h-6 text-white" strokeWidth={2} />
+            </button>
           </div>
-          <button className="bg-[#416f7b] rounded-lg p-[2px] ml-auto">
-            <Plus className="w-6 h-6 text-white" strokeWidth={2} />
-          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }
