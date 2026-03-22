@@ -29,6 +29,29 @@ export function ExperienceCard({
   const [saved, setSaved] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
+  const SAVED_KEY = "limelii_saved_items";
+
+  useEffect(() => {
+    try {
+      const items = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "{}");
+      setSaved(!!items[experience.id]);
+    } catch { /* ignore */ }
+  }, [experience.id]);
+
+  function toggleSave(e: React.MouseEvent) {
+    e.stopPropagation();
+    try {
+      const items = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "{}");
+      if (saved) {
+        delete items[experience.id];
+      } else {
+        items[experience.id] = experience;
+      }
+      localStorage.setItem(SAVED_KEY, JSON.stringify(items));
+    } catch { /* ignore */ }
+    setSaved((s) => !s);
+  }
+
   useEffect(() => {
     const el = cardRef.current;
     if (!el) return;
@@ -70,7 +93,7 @@ export function ExperienceCard({
 
       {/* Save button – top-right */}
       <button
-        onClick={(e) => { e.stopPropagation(); setSaved((s) => !s); }}
+        onClick={toggleSave}
         aria-label={saved ? "Unsave" : "Save"}
         className="absolute top-3 right-3 z-[2] w-9 h-9 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm"
       >
