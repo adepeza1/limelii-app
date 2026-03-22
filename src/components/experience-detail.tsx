@@ -215,7 +215,7 @@ export function ExperienceDetail({
 
       {/* Experience description subtitle */}
       <div className="px-4 pt-2 pb-4 flex items-start gap-3">
-        <p className="flex-1 text-sm text-gray-600 leading-5">{experience.description}</p>
+        <p className="flex-1 text-[13px] text-black leading-5">{experience.description}</p>
         <button
           onClick={() => setSaved(toggleSaved(experience))}
           aria-label={saved ? "Unsave" : "Save"}
@@ -253,19 +253,18 @@ export function ExperienceDetail({
                     <span className="text-xs text-gray-500">{place.neighborhood}</span>
                   )}
                   {details?.Description && (
-                    <p className="text-sm text-gray-600 leading-5 mt-1">
+                    <p className="text-[13px] text-black leading-5 mt-1">
                       {details.Description}
                     </p>
                   )}
                   {/* Per-location details */}
                   {(details || address) && (
                     <div className="border border-[#eaecf0] rounded-2xl px-4 pt-2 pb-4 mt-3 flex flex-col gap-3">
-                      <h4 className="text-base font-medium text-[#1d2939]">Details</h4>
                       <div className="flex flex-col gap-3">
                         {hasValue(details?.phone) && (
                           <div className="flex flex-col gap-0.5">
                             <span className="text-sm font-medium text-[#c2550a]">Phone</span>
-                            <a href={`tel:${details!.phone}`} className="text-sm text-black">
+                            <a href={`tel:${details!.phone}`} className="text-[13px] text-black">
                               {details!.phone}
                             </a>
                           </div>
@@ -277,7 +276,7 @@ export function ExperienceDetail({
                               href={details!.url!.startsWith("http") ? details!.url! : `https://${details!.url}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm text-blue-600 break-all"
+                              className="text-[13px] text-blue-600 break-all"
                             >
                               {details!.url}
                             </a>
@@ -290,7 +289,7 @@ export function ExperienceDetail({
                               href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm text-black underline"
+                              className="text-[13px] text-black underline"
                             >
                               {address}
                             </a>
@@ -299,7 +298,7 @@ export function ExperienceDetail({
                         {hasValue(details?.operating_hours) && (
                           <div className="flex flex-col gap-0.5">
                             <span className="text-sm font-medium text-[#c2550a]">Hours</span>
-                            <span className="text-sm text-black whitespace-pre-line">{details!.operating_hours}</span>
+                            <span className="text-[13px] text-black whitespace-pre-line">{details!.operating_hours}</span>
                           </div>
                         )}
                       </div>
