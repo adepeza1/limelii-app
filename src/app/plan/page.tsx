@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { MapPin } from "lucide-react";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
@@ -10,30 +10,34 @@ const API_BASE = "https://xyhl-mgrz-aokj.n7c.xano.io/api:58lfyMpE";
 
 const BOROUGHS = ["All NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
 
-// TODO: Replace with API call to /neighborhoods?borough=<borough> when endpoint is available
-const NEIGHBORHOODS: Record<string, string[]> = {
-  Manhattan: [
-    "Harlem", "Upper West Side", "Upper East Side", "Midtown", "Hell's Kitchen",
-    "Chelsea", "Flatiron", "Kips Bay", "Murray Hill", "Greenwich Village",
-    "SoHo", "NoHo", "Tribeca", "Lower East Side", "Financial District",
-  ],
-  Brooklyn: [
-    "Williamsburg", "DUMBO", "Park Slope", "Greenpoint", "Bushwick",
-    "Bed-Stuy", "Crown Heights", "Flatbush", "Carroll Gardens", "Cobble Hill",
-    "Red Hook", "Bay Ridge", "Sunset Park", "Coney Island",
-  ],
-  Queens: [
-    "Astoria", "Long Island City", "Jackson Heights", "Flushing", "Sunnyside",
-    "Woodside", "Forest Hills", "Jamaica", "Bayside", "Ridgewood",
-  ],
-  Bronx: [
-    "Fordham", "Riverdale", "Mott Haven", "Pelham Bay", "Kingsbridge",
-    "Tremont", "Hunts Point", "Concourse",
-  ],
-  "Staten Island": [
-    "St. George", "Stapleton", "New Dorp", "Tottenville", "Great Kills", "Dongan Hills",
-  ],
-};
+// Neighborhoods are fetched from the API on mount
+type NeighborhoodMap = Record<string, string[]>;
+
+// Known valid boroughs — used to filter out malformed data
+const VALID_BOROUGHS = new Set(["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"]);
+
+function extractNeighborhoods(experiences: Experience[]): NeighborhoodMap {
+  const map: Record<string, Set<string>> = {};
+  for (const exp of experiences) {
+    for (const place of exp.places_id ?? []) {
+      const borough = (place.borough ?? "").trim();
+      const neighborhood = (place.neighborhood ?? "").trim();
+      // Skip missing, unknown, or multi-borough/descriptive values
+      if (
+        !VALID_BOROUGHS.has(borough) ||
+        !neighborhood ||
+        neighborhood.toLowerCase() === "unknown" ||
+        neighborhood.length > 40
+      ) continue;
+      (map[borough] ??= new Set()).add(neighborhood);
+    }
+  }
+  const result: NeighborhoodMap = {};
+  for (const [borough, hoods] of Object.entries(map)) {
+    result[borough] = [...hoods].sort((a, b) => a.localeCompare(b));
+  }
+  return result;
+}
 
 const VIBES = ["Food & Drink", "Nightlife", "Wellness", "Adventure", "Arts & Culture", "Date Night"];
 const BUDGETS = ["Free", "$", "$$", "$$$"];
@@ -120,10 +124,22 @@ export default function PlanPage() {
   const [vibe, setVibe] = useState("");
   const [budget, setBudget] = useState("");
   const [setting, setSetting] = useState("");
+  const [neighborhoods, setNeighborhoods] = useState<NeighborhoodMap>({});
 
   const currentCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
-
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/discovery`)
+      .then((r) => r.json())
+      .then((data) => {
+        const all: Experience[] = Object.values(
+          (data as { experiences: Record<string, Experience[]> }).experiences
+        ).flat();
+        setNeighborhoods(extractNeighborhoods(all));
+      })
+      .catch(() => { /* silently fall back to empty */ });
+  }, []);
 
   const [results, setResults] = useState<Experience[] | null>(null);
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
@@ -131,7 +147,7 @@ export default function PlanPage() {
   const [searched, setSearched] = useState(false);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
 
-  const neighborhoodOptions = NEIGHBORHOODS[location] ?? [];
+  const neighborhoodOptions = neighborhoods[location] ?? [];
 
   function handleCurrentLocation() {
     // Select the pill immediately — resolve coords silently in background
