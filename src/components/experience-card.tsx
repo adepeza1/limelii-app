@@ -26,6 +26,7 @@ export function ExperienceCard({
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [visible, setVisible] = useState(false);
+  const [saved, setSaved] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -66,6 +67,24 @@ export function ExperienceCard({
           sizes="(max-width: 640px) 280px, (max-width: 768px) 330px, 50vw"
         />
       )}
+
+      {/* Save button – top-right */}
+      <button
+        onClick={(e) => { e.stopPropagation(); setSaved((s) => !s); }}
+        aria-label={saved ? "Unsave" : "Save"}
+        className="absolute top-3 right-3 z-[2] w-9 h-9 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M15.7 4C18.87 4 21 6.98 21 9.76C21 15.39 12.16 20 12 20C11.84 20 3 15.39 3 9.76C3 6.98 5.13 4 8.3 4C10.12 4 11.31 4.91 12 5.71C12.69 4.91 13.88 4 15.7 4Z"
+            stroke="white"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill={saved ? "white" : "none"}
+          />
+        </svg>
+      </button>
 
       {/* Inset place thumbnails – bottom-right box */}
       {visible && placesWithImages.length > 1 && (
