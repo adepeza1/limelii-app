@@ -137,7 +137,7 @@ export function ExperienceCard({
       )}
 
       {/* Bottom info overlay */}
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 pt-10">
+      <div className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 pt-10 ${placesWithImages.length > 1 ? "pr-16" : ""}`}>
         <div className="flex items-center gap-2 mb-2">
           {placeCount > 0 && (
             <span className="text-white/80 text-xs">
