@@ -299,7 +299,7 @@ export default function PlanPage() {
                     onClick={() => toggleItem(selectedNeighborhoods, setSelectedNeighborhoods, n)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                       selectedNeighborhoods.includes(n)
-                        ? "bg-[#c2550a] text-white"
+                        ? "bg-[#FF9A56] text-white"
                         : "bg-[#f2f4f7] text-[#1d2939]"
                     }`}
                   >
@@ -324,7 +324,7 @@ export default function PlanPage() {
                 onClick={() => toggleItem(vibes, setVibes, v)}
                 className={`rounded-2xl py-5 px-3 text-sm font-medium text-center transition-colors ${
                   vibes.includes(v)
-                    ? "bg-[#c2550a] text-white"
+                    ? "bg-[#FF9A56] text-white"
                     : "bg-[#f2f4f7] text-[#1d2939]"
                 }`}
               >
@@ -347,7 +347,7 @@ export default function PlanPage() {
                 onClick={() => toggleItem(budgets, setBudgets, b)}
                 className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
                   budgets.includes(b)
-                    ? "bg-[#c2550a] text-white"
+                    ? "bg-[#FF9A56] text-white"
                     : "bg-[#f2f4f7] text-[#1d2939]"
                 }`}
               >
@@ -426,6 +426,7 @@ export default function PlanPage() {
               key={exp.id}
               experience={exp}
               onClick={() => setSelectedExperience(exp)}
+              className="w-full"
             />
           ))}
         </div>

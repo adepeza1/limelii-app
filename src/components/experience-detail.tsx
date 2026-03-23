@@ -263,7 +263,7 @@ export function ExperienceDetail({
                       <div className="flex flex-col gap-3">
                         {hasValue(details?.phone) && (
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-medium text-[#c2550a]">Phone</span>
+                            <span className="text-sm font-medium text-[#FF9A56]">Phone</span>
                             <a href={`tel:${details!.phone}`} className="text-[13px] text-black">
                               {details!.phone}
                             </a>
@@ -271,7 +271,7 @@ export function ExperienceDetail({
                         )}
                         {hasValue(details?.url) && (
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-medium text-[#c2550a]">Website</span>
+                            <span className="text-sm font-medium text-[#FF9A56]">Website</span>
                             <a
                               href={details!.url!.startsWith("http") ? details!.url! : `https://${details!.url}`}
                               target="_blank"
@@ -284,7 +284,7 @@ export function ExperienceDetail({
                         )}
                         {hasValue(address) && (
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-medium text-[#c2550a]">Address</span>
+                            <span className="text-sm font-medium text-[#FF9A56]">Address</span>
                             <a
                               href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
                               target="_blank"
@@ -297,7 +297,7 @@ export function ExperienceDetail({
                         )}
                         {hasValue(details?.operating_hours) && (
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-medium text-[#c2550a]">Hours</span>
+                            <span className="text-sm font-medium text-[#FF9A56]">Hours</span>
                             <span className="text-[13px] text-black whitespace-pre-line">{details!.operating_hours}</span>
                           </div>
                         )}
