@@ -21,12 +21,32 @@ function formatSectionTitle(key: string): string {
     .join(" ");
 }
 
+// Maps curated category names to activity tag values returned by the API
+const CATEGORY_ACTIVITY_MAP: Record<string, string[]> = {
+  "Food & Drink":   ["food", "drink", "drinks"],
+  "Nightlife":      ["nightlife", "entertainment"],
+  "Arts & Culture": ["cultural", "museum"],
+  "Outdoors":       ["outdoor activity", "recreation activity", "specialty activity"],
+  "Wellness":       ["wellness"],
+  "Live Music":     ["entertainment", "nightlife"],
+};
+
+const CURATED_CATEGORIES: ExperienceCategory[] = [
+  { id: 0, name: "All" },
+  { id: 1, name: "Food & Drink" },
+  { id: 2, name: "Nightlife" },
+  { id: 3, name: "Date Night" },
+  { id: 4, name: "Arts & Culture" },
+  { id: 5, name: "Outdoors" },
+  { id: 6, name: "Wellness" },
+  { id: 7, name: "Live Music" },
+];
+
 export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const [activeCategory, setActiveCategory] = useState<number>(0);
   const [sections, setSections] = useState<Record<string, Experience[]>>(
     data.experiences
   );
-  const [loading, setLoading] = useState(false);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
 
   // Search state
@@ -37,43 +57,35 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const CURATED_CATEGORIES: ExperienceCategory[] = [
-    { id: 0, name: "All" },
-    { id: -1, name: "Food & Drink" },
-    { id: -2, name: "Nightlife" },
-    { id: -3, name: "Date Night" },
-    { id: -4, name: "Arts & Culture" },
-    { id: -5, name: "Outdoors" },
-    { id: -6, name: "Wellness" },
-    { id: -7, name: "Live Music" },
-  ];
+  const allExperiences = Object.values(data.experiences).flat();
 
-  // Map curated names to real API category IDs
-  const apiCategories = data.experience_categories;
-  const categories: ExperienceCategory[] = CURATED_CATEGORIES.map((cat) => {
-    if (cat.id === 0) return cat;
-    const match = apiCategories.find(
-      (c) => c.name.toLowerCase() === cat.name.toLowerCase()
-    );
-    return match ? { ...cat, id: match.id } : cat;
-  });
+  function filterByCategory(categoryId: number): Record<string, Experience[]> {
+    if (categoryId === 0) return data.experiences;
+    const catName = CURATED_CATEGORIES.find((c) => c.id === categoryId)?.name;
+    if (!catName) return data.experiences;
 
-  async function handleCategoryChange(categoryId: number) {
-    setActiveCategory(categoryId);
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (categoryId !== 0) params.set("category", String(categoryId));
-      const res = await fetch(`${API_BASE}/discovery?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch");
-      const newData: DiscoveryResponse = await res.json();
-      setSections(newData.experiences);
-    } catch {
-      // Revert on error
-      setSections(data.experiences);
-    } finally {
-      setLoading(false);
+    if (catName === "Date Night") {
+      const filtered = allExperiences.filter((exp) => {
+        const acts = (exp.activities ?? []).map((a) => a.toLowerCase());
+        const hasFood = acts.some((a) => ["food", "drink", "drinks"].includes(a));
+        const hasNightlife = acts.some((a) => ["nightlife", "entertainment"].includes(a));
+        return hasFood && hasNightlife;
+      });
+      return { "Date Night": filtered };
     }
+
+    const keywords = CATEGORY_ACTIVITY_MAP[catName];
+    if (!keywords) return data.experiences;
+
+    const filtered = allExperiences.filter((exp) =>
+      (exp.activities ?? []).some((a) => keywords.includes(a.toLowerCase()))
+    );
+    return { [catName]: filtered };
+  }
+
+  function handleCategoryChange(categoryId: number) {
+    setActiveCategory(categoryId);
+    setSections(filterByCategory(categoryId));
   }
 
   function openSearch() {
@@ -230,7 +242,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           {/* Category Navigation */}
           <nav className="px-4 py-3">
             <div className="flex gap-6 overflow-x-auto hide-scrollbar">
-              {categories.map((cat) => (
+              {CURATED_CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => handleCategoryChange(cat.id)}
@@ -248,7 +260,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           </nav>
 
           {/* Content Sections */}
-          <main className={`pb-8 ${loading ? "opacity-50" : ""}`}>
+          <main className="pb-8">
             {nonEmptySections.length === 0 && (
               <p className="text-center text-gray-500 py-12">
                 No experiences found for this category.
