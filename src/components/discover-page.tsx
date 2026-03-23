@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Search, Bell, ArrowLeft, X } from "lucide-react";
+import Image from "next/image";
 import type {
   DiscoveryResponse,
   Experience,
@@ -150,7 +151,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           </div>
         ) : (
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100">
-            <h1 className="text-lg font-medium text-black">Discover</h1>
+            <Image src="/limelii-logo.svg" alt="Limelii" width={80} height={28} priority />
             <div className="flex items-center gap-4">
               <button onClick={openSearch} aria-label="Search">
                 <Search className="w-6 h-6 text-gray-900" strokeWidth={1.8} />
