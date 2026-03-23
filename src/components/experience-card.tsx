@@ -137,7 +137,7 @@ export function ExperienceCard({
       )}
 
       {/* Bottom info overlay */}
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-5 pt-16">
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 pt-10">
         <div className="flex items-center gap-2 mb-2">
           {placeCount > 0 && (
             <span className="text-white/80 text-xs">
@@ -150,11 +150,11 @@ export function ExperienceCard({
             </span>
           )}
         </div>
-        <h3 className="text-white text-lg font-semibold leading-tight">
+        <h3 className="text-white text-sm font-semibold leading-tight line-clamp-2">
           {experience.title}
         </h3>
         {location && (
-          <p className="text-white/70 text-sm flex items-center gap-1 mt-0.5">
+          <p className="text-white/70 text-xs flex items-center gap-1 mt-0.5 truncate">
             <svg
               width="12"
               height="12"
