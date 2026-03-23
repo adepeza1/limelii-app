@@ -43,14 +43,14 @@ const VIBES = ["Food & Drink", "Nightlife", "Wellness", "Adventure", "Arts & Cul
 const BUDGETS = ["Free", "$", "$$", "$$$"];
 const SETTINGS = ["Indoor", "Outdoor"];
 
-// Maps our UI labels to activity keywords in the data
-const VIBE_KEYWORDS: Record<string, string[]> = {
-  "Food & Drink": ["food", "drink", "drinks", "dining", "cuisine", "restaurant"],
-  "Nightlife":    ["nightlife", "drink", "drinks", "bar", "club", "entertainment"],
-  "Wellness":     ["wellness", "spa", "fitness", "yoga", "health"],
-  "Adventure":    ["outdoor activity", "recreation activity", "adventure", "experience"],
-  "Arts & Culture": ["art gallery", "cultural", "museum", "arts", "culture", "gallery"],
-  "Date Night":   ["nightlife", "food", "drink", "entertainment", "dining", "romance"],
+// Exact activity names as returned by the API, lowercased
+const VIBE_ACTIVITY_MAP: Record<string, string[]> = {
+  "Food & Drink":   ["food", "drink", "drinks"],
+  "Nightlife":      ["nightlife", "entertainment"],
+  "Wellness":       ["wellness"],
+  "Adventure":      ["outdoor activity", "recreation activity", "specialty activity"],
+  "Arts & Culture": ["cultural", "museum"],
+  // "Date Night" is handled specially below (requires food/drink AND nightlife/entertainment)
 };
 
 function parseMaxBudget(b: string): number {
@@ -62,19 +62,28 @@ function parseMaxBudget(b: string): number {
 
 function vibeMatches(activities: string[], vibe: string): boolean {
   if (!vibe) return true;
-  const keywords = VIBE_KEYWORDS[vibe] ?? [vibe.toLowerCase()];
-  return activities.some((a) =>
-    keywords.some((k) => a.toLowerCase().includes(k) || k.includes(a.toLowerCase()))
-  );
+  const acts = activities.map((a) => a.toLowerCase());
+  if (vibe === "Date Night") {
+    const hasFood = acts.some((a) => ["food", "drink", "drinks"].includes(a));
+    const hasNightlife = acts.some((a) => ["nightlife", "entertainment"].includes(a));
+    return hasFood && hasNightlife;
+  }
+  const keywords = VIBE_ACTIVITY_MAP[vibe] ?? [vibe.toLowerCase()];
+  return acts.some((a) => keywords.includes(a));
 }
 
-function budgetMatches(budgets: string[], budget: string): boolean {
+function budgetMatches(expBudgets: string[], budget: string): boolean {
   if (!budget) return true;
-  if (!budgets?.length) return true;
-  if (budget === "Free") return budgets.some((b) => b === "NA" || parseMaxBudget(b) <= 10);
-  if (budget === "$")    return budgets.some((b) => parseMaxBudget(b) <= 30);
-  if (budget === "$$")   return budgets.some((b) => { const m = parseMaxBudget(b); return m > 20 && m <= 75; });
-  if (budget === "$$$")  return budgets.some((b) => parseMaxBudget(b) > 50);
+  if (!expBudgets?.length) return true;
+  // Use the maximum paid cost (ignoring "NA" free entries) as the representative cost
+  const paidEntries = expBudgets.filter((b) => b !== "NA");
+  const maxCost = paidEntries.length > 0
+    ? Math.max(...paidEntries.map(parseMaxBudget))
+    : 0;
+  if (budget === "Free") return paidEntries.length === 0 || maxCost <= 10;
+  if (budget === "$")    return maxCost <= 30;
+  if (budget === "$$")   return maxCost > 20 && maxCost <= 75;
+  if (budget === "$$$")  return maxCost > 50;
   return true;
 }
 
