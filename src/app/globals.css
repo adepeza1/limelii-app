@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "@fontsource/mona-sans/400.css";
+@import "@fontsource/mona-sans/500.css";
+@import "@fontsource/mona-sans/600.css";
+@import "@fontsource/mona-sans/700.css";
 
 @theme inline {
   --color-gray-100: #F2F4F7;
