@@ -20,9 +20,11 @@ function getPlaceLocation(place: Place): string {
 export function ExperienceCard({
   experience,
   onClick,
+  className = "",
 }: {
   experience: Experience;
   onClick?: () => void;
+  className?: string;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [visible, setVisible] = useState(false);
@@ -77,7 +79,7 @@ export function ExperienceCard({
   return (
     <div
       ref={cardRef}
-      className="shrink-0 w-[280px] sm:w-[330px] md:w-full aspect-[33/38] rounded-[20px] overflow-hidden relative bg-gray-200 cursor-pointer"
+      className={`shrink-0 w-[280px] sm:w-[330px] md:w-full aspect-[33/38] rounded-[20px] overflow-hidden relative bg-gray-200 cursor-pointer ${className}`}
       onClick={onClick}
     >
       {/* Main image – only rendered when near viewport */}

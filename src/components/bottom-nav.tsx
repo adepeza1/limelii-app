@@ -10,7 +10,7 @@ import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 
 import type { LucideIcon } from "lucide-react";
 
-const ACCENT = "#c2550a";
+const ACCENT = "#FF9A56";
 const INACTIVE = "#9ca3af";
 
 type ImageTab = {
