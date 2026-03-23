@@ -37,10 +37,26 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const categories: ExperienceCategory[] = [
+  const CURATED_CATEGORIES: ExperienceCategory[] = [
     { id: 0, name: "All" },
-    ...data.experience_categories,
+    { id: -1, name: "Food & Drink" },
+    { id: -2, name: "Nightlife" },
+    { id: -3, name: "Date Night" },
+    { id: -4, name: "Arts & Culture" },
+    { id: -5, name: "Outdoors" },
+    { id: -6, name: "Wellness" },
+    { id: -7, name: "Live Music" },
   ];
+
+  // Map curated names to real API category IDs
+  const apiCategories = data.experience_categories;
+  const categories: ExperienceCategory[] = CURATED_CATEGORIES.map((cat) => {
+    if (cat.id === 0) return cat;
+    const match = apiCategories.find(
+      (c) => c.name.toLowerCase() === cat.name.toLowerCase()
+    );
+    return match ? { ...cat, id: match.id } : cat;
+  });
 
   async function handleCategoryChange(categoryId: number) {
     setActiveCategory(categoryId);
@@ -204,6 +220,13 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
         </main>
       ) : (
         <>
+          {/* Page Description */}
+          <div className="px-4 pt-4 pb-1">
+            <p className="text-sm text-gray-500">
+              Explore the best things to do in NYC — curated by vibe, neighborhood, and occasion.
+            </p>
+          </div>
+
           {/* Category Navigation */}
           <nav className="px-4 py-3">
             <div className="flex gap-6 overflow-x-auto hide-scrollbar">
