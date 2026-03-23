@@ -85,33 +85,35 @@ function settingMatches(settings: string[], setting: string): boolean {
   return settings.some((s) => s === lower || s === "both");
 }
 
-function locationMatches(exp: Experience, borough: string, neighborhood: string): boolean {
+function locationMatches(exp: Experience, borough: string, selectedNeighborhoods: string[]): boolean {
   if (borough === "All NYC" || borough === "__current__") return true;
   const places = exp.places_id ?? [];
-  if (neighborhood) {
-    const needle = neighborhood.toLowerCase();
-    const expNeighborhoods = (exp.neighborhoods ?? []).map((n) => n.toLowerCase());
-    const placeNeighborhoods = places.map((p) => (p.neighborhood ?? "").toLowerCase());
-    return [...expNeighborhoods, ...placeNeighborhoods].some(
-      (n) => n.includes(needle) || needle.includes(n)
-    );
+  if (selectedNeighborhoods.length > 0) {
+    return selectedNeighborhoods.some((neighborhood) => {
+      const needle = neighborhood.toLowerCase();
+      const expNeighborhoods = (exp.neighborhoods ?? []).map((n) => n.toLowerCase());
+      const placeNeighborhoods = places.map((p) => (p.neighborhood ?? "").toLowerCase());
+      return [...expNeighborhoods, ...placeNeighborhoods].some(
+        (n) => n.includes(needle) || needle.includes(n)
+      );
+    });
   }
   return places.some((p) => p.borough === borough);
 }
 
 function filterExperiences(
   all: Experience[],
-  { borough, neighborhood, vibe, budget, setting }: {
-    borough: string; neighborhood: string; vibe: string; budget: string; setting: string;
+  { borough, selectedNeighborhoods, vibes, budgets, setting }: {
+    borough: string; selectedNeighborhoods: string[]; vibes: string[]; budgets: string[]; setting: string;
   }
 ) {
-  return all.filter(
-    (exp) =>
-      locationMatches(exp, borough, neighborhood) &&
-      vibeMatches(exp.activities ?? [], vibe) &&
-      budgetMatches(exp.budget ?? [], budget) &&
-      settingMatches(exp.indoor_outdoor ?? [], setting)
-  );
+  return all.filter((exp) => {
+    if (!locationMatches(exp, borough, selectedNeighborhoods)) return false;
+    if (vibes.length > 0 && !vibes.some((v) => vibeMatches(exp.activities ?? [], v))) return false;
+    if (budgets.length > 0 && !budgets.some((b) => budgetMatches(exp.budget ?? [], b))) return false;
+    if (!settingMatches(exp.indoor_outdoor ?? [], setting)) return false;
+    return true;
+  });
 }
 
 function SkeletonCard() {
@@ -120,9 +122,9 @@ function SkeletonCard() {
 
 export default function PlanPage() {
   const [location, setLocation] = useState("All NYC");
-  const [neighborhood, setNeighborhood] = useState("");
-  const [vibe, setVibe] = useState("");
-  const [budget, setBudget] = useState("");
+  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<string[]>([]);
+  const [vibes, setVibes] = useState<string[]>([]);
+  const [budgets, setBudgets] = useState<string[]>([]);
   const [setting, setSetting] = useState("");
   const [neighborhoods, setNeighborhoods] = useState<NeighborhoodMap>({});
 
@@ -149,10 +151,13 @@ export default function PlanPage() {
 
   const neighborhoodOptions = neighborhoods[location] ?? [];
 
+  function toggleItem(list: string[], setList: (v: string[]) => void, item: string) {
+    setList(list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
+  }
+
   function handleCurrentLocation() {
-    // Select the pill immediately — resolve coords silently in background
     setLocation("__current__");
-    setNeighborhood("");
+    setSelectedNeighborhoods([]);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -167,11 +172,10 @@ export default function PlanPage() {
   function handleSelectLocation(loc: string) {
     if (location === loc) {
       setLocation("All NYC");
-      setNeighborhood("");
     } else {
       setLocation(loc);
-      setNeighborhood("");
     }
+    setSelectedNeighborhoods([]);
   }
 
   async function handleSearch() {
@@ -181,44 +185,30 @@ export default function PlanPage() {
     setSelectedExperience(null);
 
     try {
-      // Fetch all experiences — API location/budget/setting filters are unreliable;
-      // we apply all filtering client-side for accuracy.
-      const body: Record<string, string> = {};
-      if (location === "__current__" && currentCoordsRef.current) {
-        body.lat = String(currentCoordsRef.current.lat);
-        body.lng = String(currentCoordsRef.current.lng);
-      }
-
-      const res = await fetch(`${API_BASE}/search`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const res = await fetch(`${API_BASE}/discovery`);
       if (!res.ok) throw new Error("Search failed");
-      const all: Experience[] = await res.json();
+      const data = await res.json();
+      const all: Experience[] = Object.values(
+        (data as { experiences: Record<string, Experience[]> }).experiences
+      ).flat();
 
-      const filters = { borough: location, neighborhood, vibe, budget, setting };
-
-      // Try exact match with all filters
+      const filters = { borough: location, selectedNeighborhoods, vibes, budgets, setting };
       let matched = filterExperiences(all, filters);
 
-      if (matched.length === 0 && (neighborhood || vibe || budget || setting)) {
-        // Relax neighborhood first, then other filters one by one
+      if (matched.length === 0 && (selectedNeighborhoods.length || vibes.length || budgets.length || setting)) {
         const relaxations: Array<{ label: string; overrides: Partial<typeof filters> }> = [
-          { label: `${location} (any neighborhood)`, overrides: { neighborhood: "" } },
-          { label: `your vibe in ${neighborhood || location}`, overrides: { vibe: "" } },
-          { label: `${neighborhood || location} (any budget)`, overrides: { budget: "" } },
-          { label: `${neighborhood || location} (indoor & outdoor)`, overrides: { setting: "" } },
-          { label: "all of NYC", overrides: { borough: "All NYC", neighborhood: "", vibe: "", budget: "", setting: "" } },
+          { label: `${location} (any neighborhood)`, overrides: { selectedNeighborhoods: [] } },
+          { label: `your vibe in ${location}`, overrides: { vibes: [] } },
+          { label: `${location} (any budget)`, overrides: { budgets: [] } },
+          { label: `${location} (indoor & outdoor)`, overrides: { setting: "" } },
+          { label: "all of NYC", overrides: { borough: "All NYC", selectedNeighborhoods: [], vibes: [], budgets: [], setting: "" } },
         ];
 
         for (const { label, overrides } of relaxations) {
           const relaxed = filterExperiences(all, { ...filters, ...overrides });
           if (relaxed.length > 0) {
             matched = relaxed;
-            setFallbackMessage(
-              `No exact matches found — showing experiences in ${label} instead.`
-            );
+            setFallbackMessage(`No exact matches — showing experiences in ${label} instead.`);
             break;
           }
         }
@@ -306,10 +296,10 @@ export default function PlanPage() {
                   <button
                     type="button"
                     key={n}
-                    onClick={() => setNeighborhood(neighborhood === n ? "" : n)}
+                    onClick={() => toggleItem(selectedNeighborhoods, setSelectedNeighborhoods, n)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                      neighborhood === n
-                        ? "bg-[#FB6983] text-white"
+                      selectedNeighborhoods.includes(n)
+                        ? "bg-[#c2550a] text-white"
                         : "bg-[#f2f4f7] text-[#1d2939]"
                     }`}
                   >
@@ -331,10 +321,10 @@ export default function PlanPage() {
               <button
                 type="button"
                 key={v}
-                onClick={() => setVibe(vibe === v ? "" : v)}
+                onClick={() => toggleItem(vibes, setVibes, v)}
                 className={`rounded-2xl py-5 px-3 text-sm font-medium text-center transition-colors ${
-                  vibe === v
-                    ? "bg-[#FB6983] text-white"
+                  vibes.includes(v)
+                    ? "bg-[#c2550a] text-white"
                     : "bg-[#f2f4f7] text-[#1d2939]"
                 }`}
               >
@@ -354,10 +344,10 @@ export default function PlanPage() {
               <button
                 type="button"
                 key={b}
-                onClick={() => setBudget(budget === b ? "" : b)}
+                onClick={() => toggleItem(budgets, setBudgets, b)}
                 className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
-                  budget === b
-                    ? "bg-[#FB6983] text-white"
+                  budgets.includes(b)
+                    ? "bg-[#c2550a] text-white"
                     : "bg-[#f2f4f7] text-[#1d2939]"
                 }`}
               >
@@ -410,8 +400,8 @@ export default function PlanPage() {
       <div ref={resultsRef} />
 
       {loading && (
-        <div className="px-5 flex flex-col gap-4 pb-8">
-          {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+        <div className="px-5 grid grid-cols-2 gap-3 pb-8">
+          {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
         </div>
       )}
 
@@ -430,7 +420,7 @@ export default function PlanPage() {
       )}
 
       {!loading && results && results.length > 0 && (
-        <div className="px-5 flex flex-col gap-4 pb-8">
+        <div className="px-5 grid grid-cols-2 gap-3 pb-8">
           {results.map((exp) => (
             <ExperienceCard
               key={exp.id}
