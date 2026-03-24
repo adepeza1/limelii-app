@@ -196,6 +196,7 @@ export default function PlanPage() {
       setLocation(loc);
     }
     setSelectedNeighborhoods([]);
+    setOutsideNYC(false);
   }
 
   async function handleSearch() {
@@ -307,7 +308,16 @@ export default function PlanPage() {
 
           {/* Outside NYC message */}
           {outsideNYC && (
-            <div className="mt-3 rounded-2xl border border-[#eaecf0] px-4 py-4 flex flex-col gap-2">
+            <div className="mt-3 rounded-2xl border border-[#eaecf0] px-4 py-4 flex flex-col gap-2 relative">
+              <button
+                onClick={() => setOutsideNYC(false)}
+                className="absolute top-3 right-3 text-[#667085]"
+                aria-label="Dismiss"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
               <p className="text-sm font-medium text-[#101828]">We&apos;re not in your area yet</p>
               <p className="text-xs text-[#667085] leading-relaxed">
                 We&apos;re currently in NYC and expanding soon. Get notified when we launch near you.
