@@ -97,7 +97,7 @@ export function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex flex-col items-center gap-1 min-w-[56px] ${isCenter ? "-mt-4 scale-110" : ""}`}
+              className={`flex flex-col items-center gap-1 min-w-[56px] ${isCenter ? "scale-110" : ""}`}
             >
               {tab.href === "/" ? (
                 <DiscoverIcon color={color} />
