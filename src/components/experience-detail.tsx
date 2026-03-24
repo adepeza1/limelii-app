@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { ChevronLeft, MoreVertical, Plus, Star, Maximize2 } from "lucide-react";
+import { ChevronLeft, MoreVertical, Maximize2 } from "lucide-react";
 
 const SAVED_KEY = "limelii_saved";
 
@@ -63,30 +63,11 @@ function hasValue(val: string | null | undefined): val is string {
   return !!val && val.trim() !== "" && val.trim().toUpperCase() !== "NA";
 }
 
-function StarRating({ rating }: { rating: number }) {
-  const fullStars = Math.floor(rating);
-  const hasHalf = rating - fullStars >= 0.5;
-  return (
-    <div className="flex items-center gap-[2px]">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star
-          key={i}
-          className="w-4 h-4"
-          fill={i < fullStars || (i === fullStars && hasHalf) ? "#facc15" : "none"}
-          stroke={i < fullStars || (i === fullStars && hasHalf) ? "#facc15" : "#9ca3af"}
-          strokeWidth={1.5}
-        />
-      ))}
-    </div>
-  );
-}
 
 function PlaceImageCard({
   place,
-  rating,
 }: {
   place: Place;
-  rating: number;
 }) {
   const images = (place.display_images || []).slice(0, 4).map((img) => img.url);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -134,23 +115,6 @@ function PlaceImageCard({
               />
             </button>
           ))}
-        </div>
-      )}
-      {/* Bottom overlay with rating */}
-      {expandedIndex === null && (
-        <div className="absolute inset-x-0 bottom-0 p-4">
-          <div className="backdrop-blur-[10px] bg-black/20 rounded-2xl px-4 py-3 flex items-center gap-4">
-            <div className="flex flex-col gap-[2px]">
-              <span className="text-white text-xs font-medium">234 people rated</span>
-              <div className="flex items-center gap-1.5">
-                <StarRating rating={rating} />
-                <span className="text-white text-sm font-medium">{rating.toFixed(1)}</span>
-              </div>
-            </div>
-            <button className="bg-[#416f7b] rounded-lg p-[2px] ml-auto">
-              <Plus className="w-6 h-6 text-white" strokeWidth={2} />
-            </button>
-          </div>
         </div>
       )}
     </div>
@@ -246,7 +210,7 @@ export function ExperienceDetail({
             const address = getFullAddress(place);
             return (
               <div key={place.id} className="snap-start shrink-0 w-full flex flex-col px-[22px]">
-                <PlaceImageCard place={place} rating={experience.rating} />
+                <PlaceImageCard place={place} />
                 <div className="mt-2 px-1">
                   <h3 className="text-base font-medium text-black">{place.name}</h3>
                   {place.neighborhood && (
