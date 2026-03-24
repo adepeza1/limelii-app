@@ -239,13 +239,13 @@ export function ExperienceDetail({
         {/* Swipeable location carousel: images + location description */}
         <div
           ref={scrollRef}
-          className="flex gap-2 overflow-x-auto hide-scrollbar pl-[22px] pr-4 snap-x snap-mandatory"
+          className="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory"
         >
           {placesWithImages.map((place) => {
             const details = place._location_details;
             const address = getFullAddress(place);
             return (
-              <div key={place.id} className="snap-start shrink-0 w-[85vw] max-w-[330px] flex flex-col">
+              <div key={place.id} className="snap-start shrink-0 w-full flex flex-col px-[22px]">
                 <PlaceImageCard place={place} rating={experience.rating} />
                 <div className="mt-2 px-1">
                   <h3 className="text-base font-medium text-black">{place.name}</h3>
