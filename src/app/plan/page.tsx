@@ -180,7 +180,6 @@ export default function PlanPage() {
             currentCoordsRef.current = { lat, lng };
           } else {
             setOutsideNYC(true);
-            setLocation("All NYC");
           }
         },
         () => { /* silently ignore — will search all NYC */ },
