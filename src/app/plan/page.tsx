@@ -158,6 +158,17 @@ export default function PlanPage() {
   const [searched, setSearched] = useState(false);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [outsideNYC, setOutsideNYC] = useState(false);
+  const savedScrollY = useRef(0);
+
+  function openExperience(exp: Experience) {
+    savedScrollY.current = window.scrollY;
+    setSelectedExperience(exp);
+  }
+
+  function closeExperience() {
+    setSelectedExperience(null);
+    requestAnimationFrame(() => window.scrollTo(0, savedScrollY.current));
+  }
 
   const neighborhoodOptions = neighborhoods[location] ?? [];
 
@@ -246,7 +257,7 @@ export default function PlanPage() {
     return (
       <ExperienceDetail
         experience={selectedExperience}
-        onBack={() => setSelectedExperience(null)}
+        onBack={closeExperience}
       />
     );
   }
@@ -467,7 +478,7 @@ export default function PlanPage() {
             <ExperienceCard
               key={exp.id}
               experience={exp}
-              onClick={() => setSelectedExperience(exp)}
+              onClick={() => openExperience(exp)}
               className="w-full"
             />
           ))}

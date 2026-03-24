@@ -48,6 +48,17 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
     data.experiences
   );
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const savedScrollY = useRef(0);
+
+  function openExperience(exp: Experience) {
+    savedScrollY.current = window.scrollY;
+    setSelectedExperience(exp);
+  }
+
+  function closeExperience() {
+    setSelectedExperience(null);
+    requestAnimationFrame(() => window.scrollTo(0, savedScrollY.current));
+  }
 
   // Search state
   const [searchOpen, setSearchOpen] = useState(false);
@@ -142,7 +153,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
     return (
       <ExperienceDetail
         experience={selectedExperience}
-        onBack={() => setSelectedExperience(null)}
+        onBack={closeExperience}
       />
     );
   }
@@ -218,7 +229,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
                 <ExperienceCard
                   key={exp.id}
                   experience={exp}
-                  onClick={() => setSelectedExperience(exp)}
+                  onClick={() => openExperience(exp)}
                 />
               ))}
             </div>
@@ -273,7 +284,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
                 </h2>
                 <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:pl-4 md:overflow-x-visible">
                   {experiences.map((exp) => (
-                    <ExperienceCard key={exp.id} experience={exp} onClick={() => setSelectedExperience(exp)} />
+                    <ExperienceCard key={exp.id} experience={exp} onClick={() => openExperience(exp)} />
                   ))}
                 </div>
               </section>

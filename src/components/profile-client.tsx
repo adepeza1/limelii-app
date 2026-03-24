@@ -132,6 +132,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
   const [savedCount, setSavedCount] = useState(0);
   const [savedExperiences, setSavedExperiences] = useState<Experience[]>([]);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const savedScrollY = useRef(0);
   const [preferences, setPreferences] = useState<UserPreferences>({
     bio: "",
     neighborhood: "All NYC",
@@ -176,6 +177,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
     setSelectedExperience(null);
     setSavedExperiences(getSavedExperiences());
     setSavedCount(getSavedCount());
+    requestAnimationFrame(() => window.scrollTo(0, savedScrollY.current));
   }
 
   const initials = getInitials(givenName, familyName);
@@ -407,7 +409,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
                     <ExperienceCard
                       key={exp.id}
                       experience={exp}
-                      onClick={() => setSelectedExperience(exp)}
+                      onClick={() => { savedScrollY.current = window.scrollY; setSelectedExperience(exp); }}
                     />
                   ))}
                 </div>
