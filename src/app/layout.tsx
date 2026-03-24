@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Inter, Poppins } from "next/font/google";
 import { KindeProvider } from "@kinde-oss/kinde-auth-nextjs";
@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   description: "Discover experiences, events, and hidden gems near you",
 };
 
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,7 +34,7 @@ export default function RootLayout({
   return (
     <KindeProvider>
       <html lang="en">
-        <body className={`${inter.variable} ${poppins.variable} antialiased pb-20`}>
+        <body className={`${inter.variable} ${poppins.variable} antialiased`} style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 80px)" }}>
           <Script
             src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
             strategy="beforeInteractive"
