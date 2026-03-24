@@ -48,6 +48,23 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
     data.experiences
   );
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const [outsideNYC, setOutsideNYC] = useState(false);
+
+  // Check if user is within NYC bounds
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        const inNYC =
+          lat >= 40.4774 && lat <= 40.9176 &&
+          lng >= -74.2591 && lng <= -73.7004;
+        if (!inNYC) setOutsideNYC(true);
+      },
+      () => { /* permission denied or unavailable — show content */ },
+      { timeout: 10000 }
+    );
+  }, []);
 
   // Search state
   const [searchOpen, setSearchOpen] = useState(false);
@@ -144,6 +161,24 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
         experience={selectedExperience}
         onBack={() => setSelectedExperience(null)}
       />
+    );
+  }
+
+  if (outsideNYC) {
+    return (
+      <div className="bg-white min-h-screen max-w-5xl mx-auto flex flex-col items-center justify-center px-8 text-center">
+        <div className="mb-6 text-5xl">🌍</div>
+        <h2 className="text-xl font-semibold text-black mb-2">We&apos;re not in your area yet</h2>
+        <p className="text-sm text-gray-500 mb-8 leading-relaxed">
+          We&apos;re currently available in New York City and expanding soon. Get notified when we launch near you.
+        </p>
+        <a
+          href="mailto:hello@limelii.com?subject=Notify me when Limelii launches near me"
+          className="w-full max-w-xs bg-black text-white text-sm font-medium rounded-2xl py-3.5 text-center block"
+        >
+          Notify me when you&apos;re nearby
+        </a>
+      </div>
     );
   }
 
