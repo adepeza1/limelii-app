@@ -57,7 +57,7 @@ function useLeafletMap(
         className: "",
         html: `
           <div style="transform:translate(-50%,-100%);">
-            <svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="22" height="28" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M18 0C8.059 0 0 8.059 0 18c0 11.25 18 26 18 26S36 29.25 36 18C36 8.059 27.941 0 18 0z" fill="#FB6983"/>
               <circle cx="18" cy="18" r="7" fill="white"/>
             </svg>
