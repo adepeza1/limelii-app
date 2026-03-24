@@ -132,6 +132,12 @@ export function ExperienceDetail({
   const [mapExpanded, setMapExpanded] = useState(false);
   const [saved, setSaved] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const swipeTouchStart = useRef<{ x: number; y: number } | null>(null);
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Sync saved state from localStorage on mount
   useEffect(() => {
@@ -160,7 +166,21 @@ export function ExperienceDetail({
 
 
   return (
-    <div className="bg-white min-h-screen max-w-5xl mx-auto relative">
+    <div
+      className="bg-white min-h-screen max-w-5xl mx-auto relative"
+      onTouchStart={(e) => {
+        const t = e.touches[0];
+        if (t.clientX < 40) swipeTouchStart.current = { x: t.clientX, y: t.clientY };
+      }}
+      onTouchEnd={(e) => {
+        if (!swipeTouchStart.current) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - swipeTouchStart.current.x;
+        const dy = Math.abs(t.clientY - swipeTouchStart.current.y);
+        swipeTouchStart.current = null;
+        if (dx > 60 && dy < 80) onBack();
+      }}
+    >
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white">
         <div className="h-[44px]" />
