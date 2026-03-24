@@ -93,14 +93,14 @@ function PlaceImageCard({
   if (images.length === 0) return null;
 
   return (
-    <div className="shrink-0 w-[85vw] max-w-[330px] aspect-[33/38] rounded-2xl overflow-hidden relative bg-gray-200">
+    <div className="w-full aspect-[33/38] rounded-2xl overflow-hidden relative bg-gray-200">
       {images.length === 1 ? (
         <Image
           src={images[0]}
           alt={place.name}
           fill
           className="object-cover"
-          sizes="(max-width: 640px) 85vw, 330px"
+          sizes="(max-width: 640px) calc(100vw - 44px), 330px"
         />
       ) : expandedIndex !== null ? (
         <button
@@ -113,7 +113,7 @@ function PlaceImageCard({
             alt={`${place.name} ${expandedIndex + 1}`}
             fill
             className="object-cover"
-            sizes="(max-width: 640px) 85vw, 330px"
+            sizes="(max-width: 640px) calc(100vw - 44px), 330px"
           />
         </button>
       ) : (
@@ -130,7 +130,7 @@ function PlaceImageCard({
                 alt={`${place.name} ${i + 1}`}
                 fill
                 className="object-cover"
-                sizes="(max-width: 640px) 42vw, 165px"
+                sizes="(max-width: 640px) calc(50vw - 22px), 165px"
               />
             </button>
           ))}
