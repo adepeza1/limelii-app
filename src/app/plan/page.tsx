@@ -157,6 +157,7 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const [outsideNYC, setOutsideNYC] = useState(false);
 
   const neighborhoodOptions = neighborhoods[location] ?? [];
 
@@ -167,10 +168,20 @@ export default function PlanPage() {
   function handleCurrentLocation() {
     setLocation("__current__");
     setSelectedNeighborhoods([]);
+    setOutsideNYC(false);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          currentCoordsRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          const { latitude: lat, longitude: lng } = pos.coords;
+          const inNYC =
+            lat >= 40.4774 && lat <= 40.9176 &&
+            lng >= -74.2591 && lng <= -73.7004;
+          if (inNYC) {
+            currentCoordsRef.current = { lat, lng };
+          } else {
+            setOutsideNYC(true);
+            setLocation("All NYC");
+          }
         },
         () => { /* silently ignore — will search all NYC */ },
         { timeout: 10000 }
@@ -293,6 +304,22 @@ export default function PlanPage() {
               </button>
             ))}
           </div>
+
+          {/* Outside NYC message */}
+          {outsideNYC && (
+            <div className="mt-3 rounded-2xl border border-[#eaecf0] px-4 py-4 flex flex-col gap-2">
+              <p className="text-sm font-medium text-[#101828]">We&apos;re not in your area yet</p>
+              <p className="text-xs text-[#667085] leading-relaxed">
+                We&apos;re currently in NYC and expanding soon. Get notified when we launch near you.
+              </p>
+              <a
+                href="mailto:hello@limelii.com?subject=Notify me when Limelii launches near me"
+                className="mt-1 self-start bg-black text-white text-xs font-medium rounded-full px-4 py-2"
+              >
+                Notify me
+              </a>
+            </div>
+          )}
 
           {/* Neighborhood sub-picker */}
           {neighborhoodOptions.length > 0 && (
