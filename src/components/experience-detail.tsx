@@ -216,7 +216,7 @@ export function ExperienceDetail({
                   {place.neighborhood && (
                     <span className="text-xs text-gray-500">{place.neighborhood}</span>
                   )}
-                  {details?.Description && (
+                  {details?.Description && details.Description !== "NA" && (
                     <p className="text-[13px] text-black leading-5 mt-1">
                       {details.Description}
                     </p>
