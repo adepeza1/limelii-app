@@ -57,9 +57,8 @@ function useLeafletMap(
         className: "",
         html: `
           <div style="transform:translate(-50%,-100%);">
-            <svg width="22" height="28" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 0C8.059 0 0 8.059 0 18c0 11.25 18 26 18 26S36 29.25 36 18C36 8.059 27.941 0 18 0z" fill="#FB6983"/>
-              <circle cx="18" cy="18" r="7" fill="white"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M21.3989 33.5691L21.3954 33.5727C20.9323 34.0451 20.4661 34.5205 20 35C19.5338 34.5205 19.0677 34.0451 18.6045 33.5727L18.6011 33.5692C13.2695 28.1312 8.33331 23.0965 8.33331 17C8.33331 10.3726 13.5567 5 20 5C26.4433 5 31.6666 10.3726 31.6666 17C31.6666 23.0965 26.7305 28.1312 21.3989 33.5691ZM20 21.6667C22.7614 21.6667 25 19.4281 25 16.6667C25 13.9052 22.7614 11.6667 20 11.6667C17.2386 11.6667 15 13.9052 15 16.6667C15 19.4281 17.2386 21.6667 20 21.6667Z" fill="#FF677E" stroke="white" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
         `,
