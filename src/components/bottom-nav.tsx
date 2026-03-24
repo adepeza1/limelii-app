@@ -69,7 +69,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100">
-      <div className="max-w-5xl mx-auto flex items-start justify-around px-4 pt-2" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 4px)" }}>
+      <div className="max-w-5xl mx-auto flex items-start justify-around px-4 pt-1" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0px)" }}>
         {tabs.map((tab) => {
           const isActive =
             tab.href === "/"
