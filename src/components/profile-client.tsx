@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import {
   Settings,
@@ -141,6 +141,8 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
   const [editingBio, setEditingBio] = useState(false);
   const [bioInput, setBioInput] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+  const [dragY, setDragY] = useState(0);
+  const dragStartY = useRef(0);
 
   useEffect(() => {
     setSavedCount(getSavedCount());
@@ -195,42 +197,55 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
         <div
           className="fixed inset-0 z-50 bg-black/40 flex items-end"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowSettings(false);
+            if (e.target === e.currentTarget) { setShowSettings(false); setDragY(0); }
           }}
         >
-          <div className="w-full bg-white rounded-t-3xl p-6 pb-10 shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-semibold text-gray-900">Settings</h2>
-              <button
-                onClick={() => setShowSettings(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+          <div
+            className="w-full bg-white rounded-t-3xl shadow-2xl"
+            style={{ transform: `translateY(${Math.max(0, dragY)}px)`, transition: dragY === 0 ? "transform 0.3s ease" : "none" }}
+            onTouchStart={(e) => { dragStartY.current = e.touches[0].clientY; }}
+            onTouchMove={(e) => { const delta = e.touches[0].clientY - dragStartY.current; if (delta > 0) setDragY(delta); }}
+            onTouchEnd={() => { if (dragY > 80) { setShowSettings(false); } setDragY(0); }}
+          >
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-9 h-1 rounded-full bg-gray-200" />
             </div>
 
-            <div className="space-y-1">
-              {[
-                { icon: UserCircle, label: "Account Settings" },
-                { icon: Bell, label: "Notifications" },
-                { icon: Lock, label: "Privacy" },
-              ].map(({ icon: Icon, label }) => (
+            <div className="px-6 pt-3 pb-[max(2rem,env(safe-area-inset-bottom,0px)+5rem)]">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-base font-semibold text-gray-900">Settings</h2>
                 <button
-                  key={label}
-                  className="w-full flex items-center justify-between py-3.5 px-4 rounded-xl hover:bg-gray-50 transition-colors"
+                  onClick={() => { setShowSettings(false); setDragY(0); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-4.5 h-4.5 text-gray-400" strokeWidth={1.7} />
-                    <span className="text-sm font-medium text-gray-800">{label}</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-300" />
+                  <X className="w-4 h-4" />
                 </button>
-              ))}
+              </div>
 
-              <div className="pt-3 mt-2 border-t border-gray-100">
-                <LogoutLink className="w-full flex items-center px-4 py-3.5 rounded-xl hover:bg-gray-50 transition-colors text-left">
-                  <span className="text-sm font-medium text-[#FB6983]">Log Out</span>
-                </LogoutLink>
+              <div className="space-y-1">
+                {[
+                  { icon: UserCircle, label: "Account Settings" },
+                  { icon: Bell, label: "Notifications" },
+                  { icon: Lock, label: "Privacy" },
+                ].map(({ icon: Icon, label }) => (
+                  <button
+                    key={label}
+                    className="w-full flex items-center justify-between py-3.5 px-4 rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="w-4.5 h-4.5 text-gray-400" strokeWidth={1.7} />
+                      <span className="text-sm font-medium text-gray-800">{label}</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                  </button>
+                ))}
+
+                <div className="pt-3 mt-2 border-t border-gray-100">
+                  <LogoutLink className="w-full flex items-center px-4 py-3.5 rounded-xl hover:bg-gray-50 transition-colors text-left">
+                    <span className="text-sm font-medium text-[#FB6983]">Log Out</span>
+                  </LogoutLink>
+                </div>
               </div>
             </div>
           </div>
