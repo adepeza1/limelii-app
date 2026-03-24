@@ -180,6 +180,7 @@ export default function PlanPage() {
             currentCoordsRef.current = { lat, lng };
           } else {
             setOutsideNYC(true);
+            setLocation("All NYC");
           }
         },
         () => { /* silently ignore — will search all NYC */ },
@@ -189,11 +190,7 @@ export default function PlanPage() {
   }
 
   function handleSelectLocation(loc: string) {
-    if (location === loc) {
-      setLocation("All NYC");
-    } else {
-      setLocation(loc);
-    }
+    setLocation(location === loc ? "All NYC" : loc);
     setSelectedNeighborhoods([]);
     setOutsideNYC(false);
   }
@@ -307,7 +304,7 @@ export default function PlanPage() {
 
           {/* Outside NYC message */}
           {outsideNYC && (
-            <div className="mt-3 rounded-2xl border border-[#eaecf0] px-4 py-4 flex flex-col gap-2 relative">
+            <div className="mt-3 rounded-2xl border border-[#FF9A56] px-4 py-4 flex flex-col gap-2 relative">
               <button
                 onClick={() => setOutsideNYC(false)}
                 className="absolute top-3 right-3 text-[#667085]"
