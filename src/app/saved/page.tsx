@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import { CollectionsTab } from "@/components/collections-tab";
 import type { Experience, DiscoveryResponse } from "@/app/page";
+import type { Collection, SavedCollection } from "@/lib/collections";
+import { listCollections, createCollection } from "@/lib/collections";
 import { API_BASE } from "@/lib/xano";
 
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -28,22 +30,50 @@ export default function SavedPage() {
   const [selected, setSelected] = useState<Experience | null>(null);
   const [mounted, setMounted] = useState(false);
 
+  // Collections state lifted here so it survives tab switching
+  const [myCollections, setMyCollections] = useState<Collection[]>([]);
+  const [savedCollections, setSavedCollections] = useState<SavedCollection[]>([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(false);
+  const [collectionsLoaded, setCollectionsLoaded] = useState(false);
+
   useEffect(() => {
     setExperiences(getSavedExperiences());
     setMounted(true);
   }, []);
 
-  // Fetch all experiences for collection ID lookup (lazy, only when switching to Collections tab)
+  // Fetch all experiences for collection ID lookup (lazy)
   useEffect(() => {
-    if (activeTab !== "collections" || allExperiences.length > 0) return;
+    if (allExperiences.length > 0) return;
     fetch(`${API_BASE}/discovery`)
       .then((r) => r.json())
       .then((data: DiscoveryResponse) => {
         const flat = Object.values(data.experiences ?? {}).flat();
         setAllExperiences(flat);
       })
-      .catch(() => {/* ignore */});
-  }, [activeTab, allExperiences.length]);
+      .catch(() => {});
+  }, [allExperiences.length]);
+
+  // Fetch collections once — keep alive across tab switches
+  const loadCollections = useCallback(() => {
+    if (collectionsLoading) return;
+    setCollectionsLoading(true);
+    listCollections()
+      .then((data) => {
+        console.log("[Collections] API response:", JSON.stringify(data));
+        setMyCollections(data.my_collections ?? []);
+        setSavedCollections(data.saved_collections ?? []);
+        setCollectionsLoaded(true);
+      })
+      .catch((err) => {
+        console.error("[Collections] API error:", err);
+        setCollectionsLoaded(true);
+      })
+      .finally(() => setCollectionsLoading(false));
+  }, [collectionsLoading]);
+
+  useEffect(() => {
+    if (!collectionsLoaded) loadCollections();
+  }, [collectionsLoaded, loadCollections]);
 
   function handleBack() {
     setSelected(null);
@@ -113,7 +143,14 @@ export default function SavedPage() {
       )}
 
       {activeTab === "collections" && (
-        <CollectionsTab allExperiences={allExperiences} />
+        <CollectionsTab
+          allExperiences={allExperiences}
+          myCollections={myCollections}
+          savedCollections={savedCollections}
+          loading={collectionsLoading && !collectionsLoaded}
+          onMyCollectionsChange={setMyCollections}
+          onSavedCollectionsChange={setSavedCollections}
+        />
       )}
     </div>
   );

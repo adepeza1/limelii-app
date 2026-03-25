@@ -33,11 +33,18 @@ export function AddToCollectionSheet({
   useEffect(() => {
     listCollections()
       .then((data) => {
-        setCollections(data.my_collections);
-        // Pre-select collections that already contain this experience
+        const cols = data.my_collections ?? [];
+        setCollections(cols);
+        // Pre-select collections that already contain this experience.
+        // experience_ids may come back from Xano as a JSON string — parse if needed.
         const pre = new Set<number>();
-        data.my_collections.forEach((c) => {
-          if (c.experience_ids?.includes(experienceId)) pre.add(c.id);
+        cols.forEach((c) => {
+          let ids: number[] = [];
+          if (Array.isArray(c.experience_ids)) ids = c.experience_ids;
+          else if (typeof c.experience_ids === "string") {
+            try { ids = JSON.parse(c.experience_ids); } catch { ids = []; }
+          }
+          if (ids.includes(experienceId)) pre.add(c.id);
         });
         setSelected(pre);
       })
