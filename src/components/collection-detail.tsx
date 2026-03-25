@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, Share2, MoreVertical } from "lucide-react";
+import { ChevronLeft, Share2, MoreVertical, Compass, ClipboardList, Sparkles } from "lucide-react";
+import Link from "next/link";
 import type { Collection } from "@/lib/collections";
 import { deleteCollection, updateCollection, saveCollection } from "@/lib/collections";
 import type { Experience } from "@/app/page";
@@ -157,9 +158,43 @@ export function CollectionDetail({
 
       {/* Experience list */}
       {experiences.length === 0 ? (
-        <div className="px-5 py-16 text-center">
+        <div className="px-5 py-12 flex flex-col items-center gap-4 text-center">
           <p className="text-[#101828] font-semibold text-base">No experiences yet</p>
-          <p className="text-[#667085] text-sm mt-1">Save experiences to this collection from the Discover tab.</p>
+          <p className="text-[#667085] text-sm max-w-[260px]">
+            Find something you love and tap the heart to add it to this collection.
+          </p>
+          <div className="flex flex-col gap-2 w-full max-w-[260px] mt-2">
+            <Link
+              href="/"
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-[#EAECF0] text-left"
+            >
+              <Compass className="w-5 h-5 text-[#FB6983] shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-[#101828]">Discover</p>
+                <p className="text-xs text-[#667085]">Browse curated experiences</p>
+              </div>
+            </Link>
+            <Link
+              href="/plan"
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-[#EAECF0] text-left"
+            >
+              <ClipboardList className="w-5 h-5 text-[#FB6983] shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-[#101828]">Plan</p>
+                <p className="text-xs text-[#667085]">Filter by vibe, budget & more</p>
+              </div>
+            </Link>
+            <Link
+              href="/create"
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-[#EAECF0] text-left"
+            >
+              <Sparkles className="w-5 h-5 text-[#FB6983] shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-[#101828]">Create</p>
+                <p className="text-xs text-[#667085]">Build an AI itinerary</p>
+              </div>
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="px-5 flex flex-col gap-4 pb-28">

@@ -1,57 +1,60 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { Plus } from "lucide-react";
+import Link from "next/link";
 import type { Collection, SavedCollection } from "@/lib/collections";
-import { listCollections, createCollection } from "@/lib/collections";
+import { createCollection } from "@/lib/collections";
 import { CollectionCard, SavedCollectionCard } from "./collection-card";
 import { CreateCollectionModal } from "./create-collection-modal";
 import { CollectionDetail } from "./collection-detail";
 import type { Experience } from "@/app/page";
 
 interface CollectionsTabProps {
-  // All discovery experiences — used to look up full Experience objects by ID
   allExperiences: Experience[];
+  myCollections: Collection[];
+  savedCollections: SavedCollection[];
+  loading: boolean;
+  onMyCollectionsChange: (cols: Collection[]) => void;
+  onSavedCollectionsChange: (cols: SavedCollection[]) => void;
 }
 
-export function CollectionsTab({ allExperiences }: CollectionsTabProps) {
-  const [myCollections, setMyCollections] = useState<Collection[]>([]);
-  const [savedCollections, setSavedCollections] = useState<SavedCollection[]>([]);
-  const [loading, setLoading] = useState(true);
+export function CollectionsTab({
+  allExperiences,
+  myCollections,
+  savedCollections,
+  loading,
+  onMyCollectionsChange,
+  onSavedCollectionsChange,
+}: CollectionsTabProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<{ collection: Collection; isOwner: boolean } | null>(null);
 
-  const load = useCallback(() => {
-    setLoading(true);
-    listCollections()
-      .then((data) => {
-        setMyCollections(data.my_collections ?? []);
-        setSavedCollections(data.saved_collections ?? []);
-      })
-      .catch(() => {/* not logged in or API not set up yet */})
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
   function getExperiencesForCollection(collection: Collection): Experience[] {
-    const ids = new Set(collection.experience_ids ?? []);
-    return allExperiences.filter((e) => ids.has(e.id));
+    // experience_ids may come back from Xano as a JSON string — parse if needed
+    let ids: number[] = [];
+    if (Array.isArray(collection.experience_ids)) {
+      ids = collection.experience_ids;
+    } else if (typeof collection.experience_ids === "string") {
+      try { ids = JSON.parse(collection.experience_ids); } catch { ids = []; }
+    }
+    const idSet = new Set(ids);
+    return allExperiences.filter((e) => idSet.has(e.id));
   }
 
   async function handleCreate(data: { name: string; description: string; is_public: boolean }) {
     const newCol = await createCollection(data);
-    setMyCollections((prev) => [newCol, ...prev]);
+    onMyCollectionsChange([newCol, ...myCollections]);
   }
 
   function handleCollectionUpdated(updated: Collection) {
-    setMyCollections((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+    onMyCollectionsChange(myCollections.map((c) => (c.id === updated.id ? updated : c)));
     setSelected((s) => s ? { ...s, collection: updated } : null);
   }
 
   function handleCollectionDeleted() {
     if (selected) {
-      setMyCollections((prev) => prev.filter((c) => c.id !== selected.collection.id));
+      onMyCollectionsChange(myCollections.filter((c) => c.id !== selected.collection.id));
     }
     setSelected(null);
   }
@@ -70,13 +73,14 @@ export function CollectionsTab({ allExperiences }: CollectionsTabProps) {
   }
 
   const isEmpty = myCollections.length === 0 && savedCollections.length === 0;
+  const total = myCollections.length + savedCollections.length;
 
   return (
     <div className="px-5 pb-28">
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs text-[#667085] uppercase tracking-wide font-medium">
-          {loading ? "Loading…" : `${myCollections.length + savedCollections.length} collection${myCollections.length + savedCollections.length !== 1 ? "s" : ""}`}
+          {loading ? "Loading…" : `${total} collection${total !== 1 ? "s" : ""}`}
         </span>
         <button
           onClick={() => setShowCreate(true)}
