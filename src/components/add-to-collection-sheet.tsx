@@ -89,7 +89,7 @@ export function AddToCollectionSheet({
         onClick={handleOverlayClick}
         className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center"
       >
-        <div className="w-full max-w-lg bg-white rounded-t-3xl px-5 pt-5 pb-8 safe-bottom">
+        <div className="w-full max-w-lg bg-white rounded-t-3xl px-5 pt-5 pb-[max(2rem,env(safe-area-inset-bottom,0px))] max-h-[90vh] overflow-y-auto">
           {/* Handle */}
           <div className="w-10 h-1 rounded-full bg-[#D0D5DD] mx-auto mb-5" />
 
