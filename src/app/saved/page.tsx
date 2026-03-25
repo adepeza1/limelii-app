@@ -59,8 +59,7 @@ export default function SavedPage() {
     setCollectionsLoading(true);
     listCollections()
       .then((data) => {
-        console.log("[Collections] API response:", JSON.stringify(data));
-        setMyCollections(data.my_collections ?? []);
+setMyCollections(data.my_collections ?? []);
         setSavedCollections(data.saved_collections ?? []);
         setCollectionsLoaded(true);
       })

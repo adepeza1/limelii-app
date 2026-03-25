@@ -28,7 +28,12 @@ interface CollectionCardProps {
 }
 
 export function CollectionCard({ collection, fromHandle, onClick }: CollectionCardProps) {
-  const count = collection.experience_ids?.length ?? 0;
+  let ids: number[] = [];
+  if (Array.isArray(collection.experience_ids)) ids = collection.experience_ids;
+  else if (typeof collection.experience_ids === "string") {
+    try { ids = JSON.parse(collection.experience_ids); } catch { ids = []; }
+  }
+  const count = ids.length;
 
   return (
     <button
@@ -43,13 +48,6 @@ export function CollectionCard({ collection, fromHandle, onClick }: CollectionCa
         <div className="absolute inset-x-2 top-1.5 h-full rounded-2xl bg-[#FFE4EA] border border-[#FFBFCC]" />
         {/* Front card */}
         <div className="relative h-full rounded-2xl bg-white border border-[#EAECF0] shadow-sm px-4 flex items-center gap-3">
-          {/* Icon */}
-          <div className="w-10 h-10 rounded-xl bg-[#FFF0F3] flex items-center justify-center shrink-0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FB6983" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-            </svg>
-          </div>
-
           {/* Text */}
           <div className="flex-1 min-w-0">
             <p className="text-[#101828] text-sm font-semibold truncate">{collection.name}</p>
