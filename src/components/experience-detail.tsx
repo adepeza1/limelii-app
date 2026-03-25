@@ -35,6 +35,7 @@ function toggleSaved(experience: Experience): boolean {
 }
 import dynamic from "next/dynamic";
 import type { Experience, Place } from "@/app/page";
+import { AddToCollectionSheet } from "./add-to-collection-sheet";
 
 const ExperienceMap = dynamic(
   () => import("./experience-map").then((m) => m.ExperienceMap),
@@ -131,6 +132,7 @@ export function ExperienceDetail({
   const [activeSlide, setActiveSlide] = useState(0);
   const [mapExpanded, setMapExpanded] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showCollectionSheet, setShowCollectionSheet] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const swipeTouchStart = useRef<{ x: number; y: number } | null>(null);
 
@@ -201,7 +203,13 @@ export function ExperienceDetail({
       <div className="px-4 pt-2 pb-4 flex items-start gap-3">
         <p className="flex-1 text-[13px] text-black leading-5">{experience.description}</p>
         <button
-          onClick={() => setSaved(toggleSaved(experience))}
+          onClick={() => {
+            if (saved) {
+              setSaved(toggleSaved(experience));
+            } else {
+              setShowCollectionSheet(true);
+            }
+          }}
           aria-label={saved ? "Unsave" : "Save"}
           className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-gray-100"
         >
@@ -337,6 +345,13 @@ export function ExperienceDetail({
         />
       )}
 
+      {showCollectionSheet && (
+        <AddToCollectionSheet
+          experienceId={experience.id}
+          onFlatSave={() => setSaved(toggleSaved(experience))}
+          onClose={() => setShowCollectionSheet(false)}
+        />
+      )}
     </div>
   );
 }
