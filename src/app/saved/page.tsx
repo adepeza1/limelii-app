@@ -59,11 +59,15 @@ export default function SavedPage() {
     setCollectionsLoading(true);
     listCollections()
       .then((data) => {
+        console.log("[Collections] API response:", JSON.stringify(data));
         setMyCollections(data.my_collections ?? []);
         setSavedCollections(data.saved_collections ?? []);
         setCollectionsLoaded(true);
       })
-      .catch(() => { setCollectionsLoaded(true); })
+      .catch((err) => {
+        console.error("[Collections] API error:", err);
+        setCollectionsLoaded(true);
+      })
       .finally(() => setCollectionsLoading(false));
   }, [collectionsLoading]);
 
