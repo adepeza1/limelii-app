@@ -17,6 +17,7 @@ import { ProfileExperiences } from "@/components/profile-experiences";
 import type { Experience } from "@/app/page";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
+import { listCollections } from "@/lib/collections";
 
 // ─── localStorage keys ────────────────────────────────────────────────────────
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -130,6 +131,7 @@ function loadPreferences(): UserPreferences {
 export function ProfileClient({ givenName, familyName, email }: ProfileClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>("created");
   const [savedCount, setSavedCount] = useState(0);
+  const [collectionsCount, setCollectionsCount] = useState<number | null>(null);
   const [savedExperiences, setSavedExperiences] = useState<Experience[]>([]);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const savedScrollY = useRef(0);
@@ -151,6 +153,9 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
     const prefs = loadPreferences();
     setPreferences(prefs);
     setBioInput(prefs.bio);
+    listCollections()
+      .then((data) => setCollectionsCount((data.my_collections?.length ?? 0) + (data.saved_collections?.length ?? 0)))
+      .catch(() => setCollectionsCount(0));
   }, []);
 
   function persistPreferences(updated: UserPreferences) {
@@ -342,7 +347,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
           </div>
 
           {/* ── Stats bar ───────────────────────────────────────────────────── */}
-          <div className="mt-5 grid grid-cols-3 divide-x divide-gray-100 bg-gray-50 rounded-2xl overflow-hidden">
+          <div className="mt-5 grid grid-cols-4 divide-x divide-gray-100 bg-gray-50 rounded-2xl overflow-hidden">
             <div className="py-3.5 flex flex-col items-center gap-0.5">
               <span className="text-[22px] font-bold text-gray-900 leading-none">—</span>
               <span className="text-[11px] text-gray-400 mt-1">Created</span>
@@ -352,6 +357,12 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
                 {savedCount}
               </span>
               <span className="text-[11px] text-gray-400 mt-1">Saved</span>
+            </div>
+            <div className="py-3.5 flex flex-col items-center gap-0.5">
+              <span className="text-[22px] font-bold text-gray-900 leading-none">
+                {collectionsCount ?? "—"}
+              </span>
+              <span className="text-[11px] text-gray-400 mt-1">Collections</span>
             </div>
             <div className="py-3.5 flex flex-col items-center gap-0.5">
               <span className="text-[22px] font-bold text-gray-900 leading-none">—</span>

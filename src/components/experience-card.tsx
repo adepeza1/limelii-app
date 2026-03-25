@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import type { Experience, Place } from "@/app/page";
+import { AddToCollectionSheet } from "./add-to-collection-sheet";
 
 function getPlaceImage(place: Place): string | null {
   if (place.display_images && place.display_images.length > 0) {
@@ -29,6 +30,7 @@ export function ExperienceCard({
   const [activeIndex, setActiveIndex] = useState(0);
   const [visible, setVisible] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showCollectionSheet, setShowCollectionSheet] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const SAVED_KEY = "limelii_saved_items";
@@ -40,18 +42,29 @@ export function ExperienceCard({
     } catch { /* ignore */ }
   }, [experience.id]);
 
-  function toggleSave(e: React.MouseEvent) {
-    e.stopPropagation();
+  function flatSave() {
     try {
       const items = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "{}");
-      if (saved) {
-        delete items[experience.id];
-      } else {
-        items[experience.id] = experience;
-      }
+      items[experience.id] = experience;
       localStorage.setItem(SAVED_KEY, JSON.stringify(items));
     } catch { /* ignore */ }
-    setSaved((s) => !s);
+    setSaved(true);
+  }
+
+  function toggleSave(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (saved) {
+      // Unsave directly
+      try {
+        const items = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "{}");
+        delete items[experience.id];
+        localStorage.setItem(SAVED_KEY, JSON.stringify(items));
+      } catch { /* ignore */ }
+      setSaved(false);
+    } else {
+      // Open sheet to choose flat save or collection
+      setShowCollectionSheet(true);
+    }
   }
 
   useEffect(() => {
@@ -171,6 +184,14 @@ export function ExperienceCard({
           </p>
         )}
       </div>
+
+      {showCollectionSheet && (
+        <AddToCollectionSheet
+          experienceId={experience.id}
+          onFlatSave={flatSave}
+          onClose={() => setShowCollectionSheet(false)}
+        />
+      )}
     </div>
   );
 }
