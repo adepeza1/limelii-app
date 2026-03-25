@@ -11,7 +11,7 @@ import type {
 import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
 
-const API_BASE = "https://xyhl-mgrz-aokj.n7c.xano.io/api:58lfyMpE";
+import { API_BASE } from "@/lib/xano";
 
 /** Convert snake_case keys to readable titles */
 function formatSectionTitle(key: string): string {

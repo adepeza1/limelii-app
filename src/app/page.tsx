@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { DiscoverPage } from "@/components/discover-page";
 
-const API_BASE = "https://xyhl-mgrz-aokj.n7c.xano.io/api:58lfyMpE";
+import { API_BASE } from "@/lib/xano";
 
 export interface Place {
   id: number;

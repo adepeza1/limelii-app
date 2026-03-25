@@ -1,8 +1,7 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-const API_BASE = "https://xyhl-mgrz-aokj.n7c.xano.io/api:58lfyMpE";
+import { apiFetch } from "@/lib/api";
 
 export async function GET() {
   const { isAuthenticated } = getKindeServerSession();
@@ -12,21 +11,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const cookieStore = await cookies();
-  const xanoToken = cookieStore.get("xano_token")?.value;
-
-  if (!xanoToken) {
-    return NextResponse.json(
-      { error: "No Xano token — please log in again" },
-      { status: 401 }
-    );
-  }
-
-  const res = await fetch(`${API_BASE}/user_experiences`, {
-    headers: {
-      Authorization: `Bearer ${xanoToken}`,
-    },
-  });
+  const res = await apiFetch("/user_experiences");
 
   if (!res.ok) {
     return NextResponse.json(

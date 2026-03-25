@@ -6,7 +6,7 @@ import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import type { Experience } from "@/app/page";
 
-const API_BASE = "https://xyhl-mgrz-aokj.n7c.xano.io/api:58lfyMpE";
+import { API_BASE } from "@/lib/xano";
 
 const BOROUGHS = ["All NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
 

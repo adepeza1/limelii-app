@@ -4,6 +4,10 @@ import { Inter, Poppins } from "next/font/google";
 import { KindeProvider } from "@kinde-oss/kinde-auth-nextjs";
 import { BottomNav } from "@/components/bottom-nav";
 import { SplashScreen } from "@/components/splash-screen";
+import "@fontsource/mona-sans/400.css";
+import "@fontsource/mona-sans/500.css";
+import "@fontsource/mona-sans/600.css";
+import "@fontsource/mona-sans/700.css";
 import "./globals.css";
 
 const inter = Inter({
