@@ -65,7 +65,7 @@ export default function CreatePage() {
       radius: "round",
       density: "normal",
       typography: {
-        baseSize: 16,
+        baseSize: 14,
         fontFamily: "Open Sans, sans-serif",
       },
     },
