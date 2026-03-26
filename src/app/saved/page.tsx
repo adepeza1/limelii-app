@@ -103,7 +103,11 @@ setMyCollections(data.my_collections ?? []);
           {(["saved", "collections"] as SavedTab[]).map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => {
+                // Force refetch whenever user explicitly opens the collections tab
+                if (tab === "collections") setCollectionsLoaded(false);
+                setActiveTab(tab);
+              }}
               className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors capitalize ${
                 activeTab === tab
                   ? "bg-white text-[#101828] shadow-sm"
