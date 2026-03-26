@@ -21,27 +21,6 @@ function formatSectionTitle(key: string): string {
     .join(" ");
 }
 
-// Maps curated category names to activity tag values returned by the API
-const CATEGORY_ACTIVITY_MAP: Record<string, string[]> = {
-  "Food & Drink":   ["food", "drink", "drinks"],
-  "Nightlife":      ["nightlife", "entertainment"],
-  "Arts & Culture": ["cultural", "museum"],
-  "Outdoors":       ["outdoor activity", "recreation activity", "specialty activity"],
-  "Wellness":       ["wellness"],
-  "Live Music":     ["entertainment", "nightlife"],
-};
-
-const CURATED_CATEGORIES: ExperienceCategory[] = [
-  { id: 0, name: "All" },
-  { id: 1, name: "Food & Drink" },
-  { id: 2, name: "Nightlife" },
-  { id: 3, name: "Date Night" },
-  { id: 4, name: "Arts & Culture" },
-  { id: 5, name: "Outdoors" },
-  { id: 6, name: "Wellness" },
-  { id: 7, name: "Live Music" },
-];
-
 export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const [activeCategory, setActiveCategory] = useState<number>(0);
   const [sections, setSections] = useState<Record<string, Experience[]>>(
@@ -70,28 +49,21 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
 
   const allExperiences = Object.values(data.experiences).flat();
 
+  const categories: ExperienceCategory[] = [
+    { id: 0, name: "All" },
+    ...data.experience_categories,
+  ];
+
   function filterByCategory(categoryId: number): Record<string, Experience[]> {
     if (categoryId === 0) return data.experiences;
-    const catName = CURATED_CATEGORIES.find((c) => c.id === categoryId)?.name;
-    if (!catName) return data.experiences;
 
-    if (catName === "Date Night") {
-      const filtered = allExperiences.filter((exp) => {
-        const acts = (exp.activities ?? []).map((a) => a.toLowerCase());
-        const hasFood = acts.some((a) => ["food", "drink", "drinks"].includes(a));
-        const hasNightlife = acts.some((a) => ["nightlife", "entertainment"].includes(a));
-        return hasFood && hasNightlife;
-      });
-      return { "Date Night": filtered };
+    // Filter each section to only experiences matching this category_id
+    const result: Record<string, Experience[]> = {};
+    for (const [key, exps] of Object.entries(data.experiences)) {
+      const matching = exps.filter((exp) => exp.category_id === categoryId);
+      if (matching.length > 0) result[key] = matching;
     }
-
-    const keywords = CATEGORY_ACTIVITY_MAP[catName];
-    if (!keywords) return data.experiences;
-
-    const filtered = allExperiences.filter((exp) =>
-      (exp.activities ?? []).some((a) => keywords.includes(a.toLowerCase()))
-    );
-    return { [catName]: filtered };
+    return result;
   }
 
   function handleCategoryChange(categoryId: number) {
@@ -250,7 +222,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           {/* Category Navigation */}
           <nav className="px-4 py-3">
             <div className="flex gap-6 overflow-x-auto hide-scrollbar">
-              {CURATED_CATEGORIES.map((cat) => (
+              {categories.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => handleCategoryChange(cat.id)}
