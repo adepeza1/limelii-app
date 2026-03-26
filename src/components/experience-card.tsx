@@ -94,7 +94,7 @@ export function ExperienceCard({
   return (
     <div
       ref={cardRef}
-      className={`shrink-0 w-[280px] sm:w-[330px] md:w-full aspect-[33/38] rounded-[20px] overflow-hidden relative bg-gray-200 cursor-pointer ${className}`}
+      className={`shrink-0 aspect-[33/38] rounded-[20px] overflow-hidden relative bg-gray-200 cursor-pointer ${compact ? "w-full" : "w-[280px] sm:w-[330px] md:w-full"} ${className}`}
       onClick={showCollectionSheet ? undefined : onClick}
     >
       {/* Main image – only rendered when near viewport */}

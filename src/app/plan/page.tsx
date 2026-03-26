@@ -513,7 +513,7 @@ export default function PlanPage() {
               key={exp.id}
               experience={exp}
               onClick={() => openExperience(exp)}
-              className="w-full"
+              compact
             />
           ))}
         </div>

@@ -175,7 +175,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
                 value={searchQuery}
                 onChange={(e) => handleSearchInput(e.target.value)}
                 placeholder="Search experiences..."
-                className="w-full bg-gray-100 rounded-lg px-4 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#416f7b]/30"
+                className="w-full bg-gray-100 rounded-lg px-4 py-2 text-base text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#416f7b]/30"
               />
               {searchQuery && (
                 <button
