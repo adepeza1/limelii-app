@@ -35,8 +35,8 @@ export function CreateCollectionModal({ existing, onSave, onClose }: CreateColle
     try {
       await onSave({ name: name.trim(), description: description.trim(), is_public: isPublic });
       onClose();
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }

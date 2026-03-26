@@ -43,7 +43,18 @@ export async function createCollection(data: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to create collection");
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    try {
+      const xano = JSON.parse(body.xano_error ?? "{}");
+      if (xano.message?.toLowerCase().includes("duplicate")) {
+        throw new Error("A collection with this name already exists.");
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.includes("already exists")) throw e;
+    }
+    throw new Error("Failed to create collection");
+  }
   return res.json();
 }
 
