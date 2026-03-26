@@ -98,11 +98,16 @@ export async function addExperienceToCollection(
 
 export async function removeExperienceFromCollection(
   collectionId: number,
-  experienceId: number
+  experienceId: number,
+  currentExperienceIds?: number[] | string
 ): Promise<Collection> {
   const res = await fetch(
     `/api/collections/${collectionId}/experiences/${experienceId}`,
-    { method: "DELETE" }
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ current_experience_ids: currentExperienceIds ?? [] }),
+    }
   );
   if (!res.ok) throw new Error("Failed to remove experience from collection");
   return res.json();
