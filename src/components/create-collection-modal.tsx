@@ -52,7 +52,7 @@ export function CreateCollectionModal({ existing, onSave, onClose }: CreateColle
     <div
       ref={overlayRef}
       onClick={handleOverlayClick}
-      className="fixed inset-0 z-[200] bg-black/40 flex items-end justify-center"
+      className="fixed inset-0 z-[300] bg-black/40 flex items-end justify-center"
     >
       <div className="w-full max-w-lg bg-white rounded-t-3xl px-5 pt-5 pb-[max(2rem,env(safe-area-inset-bottom,0px))] max-h-[90vh] overflow-y-auto">
         {/* Handle */}

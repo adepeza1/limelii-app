@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
   });
 
   if (!res.ok) {
-    return NextResponse.json({ error: "Failed to create collection" }, { status: res.status });
+    const errBody = await res.text();
+    return NextResponse.json({ error: "Failed to create collection", xano_status: res.status, xano_error: errBody }, { status: res.status });
   }
 
   return NextResponse.json(await res.json());
