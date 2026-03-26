@@ -39,7 +39,6 @@ function extractNeighborhoods(experiences: Experience[]): NeighborhoodMap {
   return result;
 }
 
-const VIBES = ["Food & Drink", "Nightlife", "Wellness", "Adventure", "Arts & Culture", "Date Night"];
 const BUDGETS = ["Free", "$", "$$", "$$$"];
 const SETTINGS = ["Indoor", "Outdoor"];
 
@@ -55,16 +54,6 @@ const VENUE_CATEGORIES: { label: string; types: string[] }[] = [
   { label: "Outdoors",       types: ["Public Park", "Botanical Garden", "Beach", "Skate Park"] },
 ];
 
-// Exact activity names as returned by the API, lowercased
-const VIBE_ACTIVITY_MAP: Record<string, string[]> = {
-  "Food & Drink":   ["food", "drink", "drinks"],
-  "Nightlife":      ["nightlife", "entertainment"],
-  "Wellness":       ["wellness"],
-  "Adventure":      ["outdoor activity", "recreation activity", "specialty activity"],
-  "Arts & Culture": ["cultural", "museum"],
-  // "Date Night" is handled specially below (requires food/drink AND nightlife/entertainment)
-};
-
 function parseMaxBudget(b: string): number {
   if (b === "NA" || !b) return 0;
   const nums = b.match(/\d+/g);
@@ -72,17 +61,6 @@ function parseMaxBudget(b: string): number {
   return Math.max(...nums.map(Number));
 }
 
-function vibeMatches(activities: string[], vibe: string): boolean {
-  if (!vibe) return true;
-  const acts = activities.map((a) => a.toLowerCase());
-  if (vibe === "Date Night") {
-    const hasFood = acts.some((a) => ["food", "drink", "drinks"].includes(a));
-    const hasNightlife = acts.some((a) => ["nightlife", "entertainment"].includes(a));
-    return hasFood && hasNightlife;
-  }
-  const keywords = VIBE_ACTIVITY_MAP[vibe] ?? [vibe.toLowerCase()];
-  return acts.some((a) => keywords.includes(a));
-}
 
 function budgetMatches(expBudgets: string[], budget: string): boolean {
   if (!budget) return true;
@@ -136,13 +114,12 @@ function locationMatches(exp: Experience, borough: string, selectedNeighborhoods
 
 function filterExperiences(
   all: Experience[],
-  { borough, selectedNeighborhoods, vibes, budgets, settings, venueTypes }: {
-    borough: string; selectedNeighborhoods: string[]; vibes: string[]; budgets: string[]; settings: string[]; venueTypes: string[];
+  { borough, selectedNeighborhoods, budgets, settings, venueTypes }: {
+    borough: string; selectedNeighborhoods: string[]; budgets: string[]; settings: string[]; venueTypes: string[];
   }
 ) {
   return all.filter((exp) => {
     if (!locationMatches(exp, borough, selectedNeighborhoods)) return false;
-    if (vibes.length > 0 && !vibes.some((v) => vibeMatches(exp.activities ?? [], v))) return false;
     if (budgets.length > 0 && !budgets.some((b) => budgetMatches(exp.budget ?? [], b))) return false;
     if (!settingMatches(exp.indoor_outdoor ?? [], settings)) return false;
     if (!venueTypeMatches(exp, venueTypes)) return false;
@@ -157,7 +134,6 @@ function SkeletonCard() {
 export default function PlanPage() {
   const [location, setLocation] = useState("All NYC");
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<string[]>([]);
-  const [vibes, setVibes] = useState<string[]>([]);
   const [budgets, setBudgets] = useState<string[]>([]);
   const [settings, setSettings] = useState<string[]>([]);
   const [venueTypes, setVenueTypes] = useState<string[]>([]);
@@ -247,17 +223,16 @@ export default function PlanPage() {
         (data as { experiences: Record<string, Experience[]> }).experiences
       ).flat();
 
-      const filters = { borough: location, selectedNeighborhoods, vibes, budgets, settings, venueTypes };
+      const filters = { borough: location, selectedNeighborhoods, budgets, settings, venueTypes };
       let matched = filterExperiences(all, filters);
 
-      if (matched.length === 0 && (selectedNeighborhoods.length || vibes.length || budgets.length || settings.length || venueTypes.length)) {
+      if (matched.length === 0 && (selectedNeighborhoods.length || budgets.length || settings.length || venueTypes.length)) {
         const relaxations: Array<{ label: string; overrides: Partial<typeof filters> }> = [
           { label: `${location} (any neighborhood)`, overrides: { selectedNeighborhoods: [] } },
-          { label: `your vibe in ${location}`, overrides: { vibes: [] } },
           { label: `${location} (any venue type)`, overrides: { venueTypes: [] } },
           { label: `${location} (any budget)`, overrides: { budgets: [] } },
           { label: `${location} (indoor & outdoor)`, overrides: { settings: [] } },
-          { label: "all of NYC", overrides: { borough: "All NYC", selectedNeighborhoods: [], vibes: [], budgets: [], settings: [], venueTypes: [] } },
+          { label: "all of NYC", overrides: { borough: "All NYC", selectedNeighborhoods: [], budgets: [], settings: [], venueTypes: [] } },
         ];
 
         for (const { label, overrides } of relaxations) {
@@ -392,61 +367,38 @@ export default function PlanPage() {
           )}
         </div>
 
-        {/* Vibe */}
-        <div>
-          <p className="text-[#667085] text-xs font-semibold uppercase tracking-widest mb-3">
-            What kind of vibe?
-          </p>
-          <div className="grid grid-cols-3 gap-2.5">
-            {VIBES.map((v) => (
-              <button
-                type="button"
-                key={v}
-                onClick={() => toggleItem(vibes, setVibes, v)}
-                className={`rounded-2xl py-5 px-3 text-sm font-medium text-center transition-colors ${
-                  vibes.includes(v)
-                    ? "bg-[#FF9A56] text-white"
-                    : "bg-[#f2f4f7] text-[#1d2939]"
-                }`}
-              >
-                {v}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Venue Type */}
         <div>
           <p className="text-[#667085] text-xs font-semibold uppercase tracking-widest mb-3">
             Venue Type
           </p>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col">
             {VENUE_CATEGORIES.map(({ label, types }) => {
               const isOpen = !!expandedCategories[label];
               const selectedCount = types.filter((t) => venueTypes.includes(t)).length;
               return (
-                <div key={label} className="rounded-2xl overflow-hidden border border-[#EAECF0]">
+                <div key={label}>
                   <button
                     type="button"
                     onClick={() => setExpandedCategories((prev) => ({ ...prev, [label]: !prev[label] }))}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-white"
+                    className="w-full flex items-center justify-between py-2.5"
                   >
-                    <span className="text-sm font-medium text-[#101828] flex items-center gap-2">
+                    <span className="text-[#667085] text-xs font-semibold uppercase tracking-widest flex items-center gap-2">
                       {label}
                       {selectedCount > 0 && (
-                        <span className="bg-[#FB6983] text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        <span className="bg-[#FB6983] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center normal-case tracking-normal">
                           {selectedCount}
                         </span>
                       )}
                     </span>
                     {isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-[#667085]" />
+                      <ChevronUp className="w-3.5 h-3.5 text-[#667085]" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-[#667085]" />
+                      <ChevronDown className="w-3.5 h-3.5 text-[#667085]" />
                     )}
                   </button>
                   {isOpen && (
-                    <div className="px-4 pb-3 flex flex-wrap gap-2 bg-[#F9FAFB]">
+                    <div className="flex flex-wrap gap-2 pb-3">
                       {types.map((t) => (
                         <button
                           type="button"
@@ -455,7 +407,7 @@ export default function PlanPage() {
                           className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                             venueTypes.includes(t)
                               ? "bg-[#FB6983] text-white"
-                              : "bg-white text-[#1d2939] border border-[#EAECF0]"
+                              : "bg-[#f2f4f7] text-[#1d2939]"
                           }`}
                         >
                           {t}
