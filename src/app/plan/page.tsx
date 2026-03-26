@@ -383,7 +383,7 @@ export default function PlanPage() {
                     onClick={() => setExpandedCategories((prev) => ({ ...prev, [label]: !prev[label] }))}
                     className="w-full flex items-center justify-between py-2.5"
                   >
-                    <span className="text-[#667085] text-xs font-semibold uppercase tracking-widest flex items-center gap-2">
+                    <span className="text-[#FF9A56] text-xs font-semibold uppercase tracking-widest flex items-center gap-2">
                       {label}
                       {selectedCount > 0 && (
                         <span className="bg-[#FB6983] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center normal-case tracking-normal">
@@ -392,9 +392,9 @@ export default function PlanPage() {
                       )}
                     </span>
                     {isOpen ? (
-                      <ChevronUp className="w-3.5 h-3.5 text-[#667085]" />
+                      <ChevronUp className="w-3.5 h-3.5 text-[#FF9A56]" />
                     ) : (
-                      <ChevronDown className="w-3.5 h-3.5 text-[#667085]" />
+                      <ChevronDown className="w-3.5 h-3.5 text-[#FF9A56]" />
                     )}
                   </button>
                   {isOpen && (
