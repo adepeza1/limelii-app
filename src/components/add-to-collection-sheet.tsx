@@ -69,9 +69,10 @@ export function AddToCollectionSheet({
     setSaving(true);
     try {
       await Promise.all(
-        Array.from(selected).map((colId) =>
-          addExperienceToCollection(colId, experienceId)
-        )
+        Array.from(selected).map((colId) => {
+          const col = collections.find((c) => c.id === colId);
+          return addExperienceToCollection(colId, experienceId, col?.experience_ids);
+        })
       );
       onClose();
     } catch {
