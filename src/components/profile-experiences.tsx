@@ -81,6 +81,7 @@ export function ProfileExperiences({ onCountLoaded }: ProfileExperiencesProps) {
           key={exp.id}
           experience={exp}
           className="w-full"
+          compact
           onClick={() => setSelectedExperience(exp)}
         />
       ))}

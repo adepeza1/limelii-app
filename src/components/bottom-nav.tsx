@@ -97,7 +97,7 @@ export function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex flex-col items-center gap-1 min-w-[56px] ${isCenter ? "scale-110" : ""}`}
+              className="flex flex-col items-center gap-1 min-w-[56px]"
             >
               {tab.href === "/" ? (
                 <DiscoverIcon color={color} />
@@ -107,8 +107,8 @@ export function BottomNav() {
                 <Image
                   src={(tab as ImageTab).iconSrc}
                   alt={tab.label}
-                  width={48}
-                  height={48}
+                  width={24}
+                  height={24}
                   priority
                   className="object-contain"
                 />
