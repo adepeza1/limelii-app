@@ -87,11 +87,13 @@ function budgetMatches(expBudgets: string[], budget: string): boolean {
   return true;
 }
 
-function settingMatches(settings: string[], setting: string): boolean {
-  if (!setting) return true;
+function settingMatches(settings: string[], selectedSettings: string[]): boolean {
+  if (!selectedSettings.length) return true;
   if (!settings?.length) return true;
-  const lower = setting.toLowerCase();
-  return settings.some((s) => s === lower || s === "both");
+  return selectedSettings.some((sel) => {
+    const lower = sel.toLowerCase();
+    return settings.some((s) => s === lower || s === "both");
+  });
 }
 
 function locationMatches(exp: Experience, borough: string, selectedNeighborhoods: string[]): boolean {
@@ -112,15 +114,15 @@ function locationMatches(exp: Experience, borough: string, selectedNeighborhoods
 
 function filterExperiences(
   all: Experience[],
-  { borough, selectedNeighborhoods, vibes, budgets, setting }: {
-    borough: string; selectedNeighborhoods: string[]; vibes: string[]; budgets: string[]; setting: string;
+  { borough, selectedNeighborhoods, vibes, budgets, settings }: {
+    borough: string; selectedNeighborhoods: string[]; vibes: string[]; budgets: string[]; settings: string[];
   }
 ) {
   return all.filter((exp) => {
     if (!locationMatches(exp, borough, selectedNeighborhoods)) return false;
     if (vibes.length > 0 && !vibes.some((v) => vibeMatches(exp.activities ?? [], v))) return false;
     if (budgets.length > 0 && !budgets.some((b) => budgetMatches(exp.budget ?? [], b))) return false;
-    if (!settingMatches(exp.indoor_outdoor ?? [], setting)) return false;
+    if (!settingMatches(exp.indoor_outdoor ?? [], settings)) return false;
     return true;
   });
 }
@@ -134,7 +136,7 @@ export default function PlanPage() {
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<string[]>([]);
   const [vibes, setVibes] = useState<string[]>([]);
   const [budgets, setBudgets] = useState<string[]>([]);
-  const [setting, setSetting] = useState("");
+  const [settings, setSettings] = useState<string[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<NeighborhoodMap>({});
 
   const currentCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
@@ -220,16 +222,16 @@ export default function PlanPage() {
         (data as { experiences: Record<string, Experience[]> }).experiences
       ).flat();
 
-      const filters = { borough: location, selectedNeighborhoods, vibes, budgets, setting };
+      const filters = { borough: location, selectedNeighborhoods, vibes, budgets, settings };
       let matched = filterExperiences(all, filters);
 
-      if (matched.length === 0 && (selectedNeighborhoods.length || vibes.length || budgets.length || setting)) {
+      if (matched.length === 0 && (selectedNeighborhoods.length || vibes.length || budgets.length || settings.length)) {
         const relaxations: Array<{ label: string; overrides: Partial<typeof filters> }> = [
           { label: `${location} (any neighborhood)`, overrides: { selectedNeighborhoods: [] } },
           { label: `your vibe in ${location}`, overrides: { vibes: [] } },
           { label: `${location} (any budget)`, overrides: { budgets: [] } },
-          { label: `${location} (indoor & outdoor)`, overrides: { setting: "" } },
-          { label: "all of NYC", overrides: { borough: "All NYC", selectedNeighborhoods: [], vibes: [], budgets: [], setting: "" } },
+          { label: `${location} (indoor & outdoor)`, overrides: { settings: [] } },
+          { label: "all of NYC", overrides: { borough: "All NYC", selectedNeighborhoods: [], vibes: [], budgets: [], settings: [] } },
         ];
 
         for (const { label, overrides } of relaxations) {
@@ -420,9 +422,9 @@ export default function PlanPage() {
               <button
                 type="button"
                 key={s}
-                onClick={() => setSetting(setting === s ? "" : s)}
+                onClick={() => toggleItem(settings, setSettings, s)}
                 className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
-                  setting === s
+                  settings.includes(s)
                     ? "bg-[#FB6983] text-white"
                     : "bg-[#f2f4f7] text-[#1d2939]"
                 }`}

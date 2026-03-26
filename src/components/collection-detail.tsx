@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, Share2, MoreVertical, Compass, ClipboardList, Sparkles } from "lucide-react";
+import { ChevronLeft, Share2, MoreVertical, Compass, ClipboardList, Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { Collection } from "@/lib/collections";
-import { deleteCollection, updateCollection, saveCollection } from "@/lib/collections";
+import { deleteCollection, updateCollection, saveCollection, removeExperienceFromCollection } from "@/lib/collections";
 import type { Experience } from "@/app/page";
 import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
@@ -34,17 +34,39 @@ export function CollectionDetail({
   const [showMenu, setShowMenu] = useState(false);
   const [savingCollection, setSavingCollection] = useState(false);
   const [collectionSaved, setCollectionSaved] = useState(isSaved);
+  const [localExperiences, setLocalExperiences] = useState<Experience[]>(experiences);
+  const [localCollection, setLocalCollection] = useState<Collection>(collection);
+  const [removingId, setRemovingId] = useState<number | null>(null);
 
   async function handleDelete() {
     if (!confirm("Delete this collection?")) return;
-    await deleteCollection(collection.id);
+    await deleteCollection(localCollection.id);
     onDeleted();
   }
 
+  async function handleRemoveExperience(expId: number) {
+    if (!confirm("Remove this experience from the collection?")) return;
+    setRemovingId(expId);
+    try {
+      const updated = await removeExperienceFromCollection(
+        localCollection.id,
+        expId,
+        localCollection.experience_ids
+      );
+      setLocalExperiences((prev) => prev.filter((e) => e.id !== expId));
+      setLocalCollection(updated);
+      onUpdated(updated);
+    } catch {
+      // ignore — experience stays in list
+    } finally {
+      setRemovingId(null);
+    }
+  }
+
   async function handleShare() {
-    const url = `${window.location.origin}/collections/${collection.id}`;
+    const url = `${window.location.origin}/collections/${localCollection.id}`;
     if (navigator.share) {
-      await navigator.share({ title: collection.name, url });
+      await navigator.share({ title: localCollection.name, url });
     } else {
       await navigator.clipboard.writeText(url);
       alert("Link copied to clipboard!");
@@ -54,7 +76,7 @@ export function CollectionDetail({
   async function handleSaveCollection() {
     setSavingCollection(true);
     try {
-      await saveCollection(collection.id);
+      await saveCollection(localCollection.id);
       setCollectionSaved(true);
     } catch {
       // ignore
@@ -81,10 +103,10 @@ export function CollectionDetail({
           <ChevronLeft className="w-6 h-6 text-black" />
         </button>
         <h1 className="flex-1 text-center text-lg font-medium text-black truncate">
-          {collection.name}
+          {localCollection.name}
         </h1>
         <div className="flex items-center gap-1">
-          {collection.is_public && (
+          {localCollection.is_public && (
             <button
               onClick={handleShare}
               className="p-2"
@@ -125,17 +147,17 @@ export function CollectionDetail({
 
       {/* Meta */}
       <div className="px-5 pb-4">
-        {collection.description && (
-          <p className="text-[#667085] text-sm mb-2">{collection.description}</p>
+        {localCollection.description && (
+          <p className="text-[#667085] text-sm mb-2">{localCollection.description}</p>
         )}
         <div className="flex items-center gap-2">
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-            collection.is_public ? "bg-[#ECFDF3] text-[#027A48]" : "bg-[#F2F4F7] text-[#667085]"
+            localCollection.is_public ? "bg-[#ECFDF3] text-[#027A48]" : "bg-[#F2F4F7] text-[#667085]"
           }`}>
-            {collection.is_public ? "Public" : "Private"}
+            {localCollection.is_public ? "Public" : "Private"}
           </span>
           <span className="text-xs text-[#98A2B3]">
-            {experiences.length} {experiences.length === 1 ? "experience" : "experiences"}
+            {localExperiences.length} {localExperiences.length === 1 ? "experience" : "experiences"}
           </span>
         </div>
 
@@ -157,7 +179,7 @@ export function CollectionDetail({
       </div>
 
       {/* Experience list */}
-      {experiences.length === 0 ? (
+      {localExperiences.length === 0 ? (
         <div className="px-5 py-12 flex flex-col items-center gap-4 text-center">
           <p className="text-[#101828] font-semibold text-base">No experiences yet</p>
           <p className="text-[#667085] text-sm max-w-[260px]">
@@ -198,21 +220,33 @@ export function CollectionDetail({
         </div>
       ) : (
         <div className="px-5 flex flex-col gap-4 pb-28">
-          {experiences.map((exp) => (
-            <ExperienceCard
-              key={exp.id}
-              experience={exp}
-              onClick={() => setSelected(exp)}
-            />
+          {localExperiences.map((exp) => (
+            <div key={exp.id} className="relative">
+              <ExperienceCard
+                experience={exp}
+                onClick={() => setSelected(exp)}
+              />
+              {isOwner && (
+                <button
+                  onClick={() => handleRemoveExperience(exp.id)}
+                  disabled={removingId === exp.id}
+                  aria-label="Remove from collection"
+                  className="absolute top-3 left-3 z-[3] w-9 h-9 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm disabled:opacity-50"
+                >
+                  <Trash2 className="w-4 h-4 text-white" />
+                </button>
+              )}
+            </div>
           ))}
         </div>
       )}
 
       {showEdit && (
         <CreateCollectionModal
-          existing={collection}
+          existing={localCollection}
           onSave={async (data) => {
-            const updated = await updateCollection(collection.id, data);
+            const updated = await updateCollection(localCollection.id, data);
+            setLocalCollection(updated);
             onUpdated(updated);
           }}
           onClose={() => setShowEdit(false)}

@@ -68,7 +68,7 @@ export function BottomNav() {
   }, []);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100" style={{ touchAction: "manipulation" }}>
       <div className="max-w-5xl mx-auto flex items-end justify-around px-4 pt-1" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0px)" }}>
         {tabs.map((tab) => {
           const isActive =
@@ -84,7 +84,8 @@ export function BottomNav() {
               <LoginLink
                 key={tab.href}
                 postLoginRedirectURL="/auth/callback"
-                className="flex flex-col items-center gap-1 min-w-[56px]"
+                className="flex flex-col items-center gap-1 min-w-[56px] cursor-pointer"
+                style={{ touchAction: "manipulation" }}
                 suppressHydrationWarning
               >
                 <User className="w-6 h-6" style={{ color: INACTIVE }} strokeWidth={1.6} />
@@ -97,7 +98,8 @@ export function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              className="flex flex-col items-center gap-1 min-w-[56px]"
+              className="flex flex-col items-center gap-1 min-w-[56px] cursor-pointer"
+              style={{ touchAction: "manipulation" }}
             >
               {tab.href === "/" ? (
                 <DiscoverIcon color={color} />

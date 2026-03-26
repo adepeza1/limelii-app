@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiFetch } from "@/lib/api";
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string; exp_id: string }> }
 ) {
   const { isAuthenticated } = getKindeServerSession();
@@ -12,13 +12,31 @@ export async function DELETE(
   }
 
   const { id, exp_id } = await params;
-  const res = await apiFetch(`/collections/${id}/experiences/${exp_id}`, {
-    method: "DELETE",
+  const expId = parseInt(exp_id, 10);
+
+  // Read current IDs from request body (avoids a GET round-trip)
+  let ids: number[] = [];
+  try {
+    const body = await request.json();
+    const current = body.current_experience_ids;
+    if (Array.isArray(current)) ids = current;
+    else if (typeof current === "string") {
+      try { ids = JSON.parse(current); } catch { ids = []; }
+    }
+  } catch { /* no body — ids stays empty */ }
+
+  // Remove the target experience
+  ids = ids.filter((i) => i !== expId);
+
+  // PATCH the collection with the updated experience_ids string
+  const patchRes = await apiFetch(`/collections/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ experience_ids: JSON.stringify(ids) }),
   });
 
-  if (!res.ok) {
-    return NextResponse.json({ error: "Failed to remove experience" }, { status: res.status });
+  if (!patchRes.ok) {
+    return NextResponse.json({ error: "Failed to remove experience" }, { status: patchRes.status });
   }
 
-  return new NextResponse(null, { status: 204 });
+  return NextResponse.json(await patchRes.json());
 }
