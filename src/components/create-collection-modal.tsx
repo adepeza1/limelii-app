@@ -52,7 +52,7 @@ export function CreateCollectionModal({ existing, onSave, onClose }: CreateColle
     <div
       ref={overlayRef}
       onClick={handleOverlayClick}
-      className="fixed inset-0 z-[300] bg-black/40 flex items-end justify-center"
+      className="fixed inset-0 z-[900] bg-black/40 flex items-end justify-center"
     >
       <div className="w-full max-w-lg bg-white rounded-t-3xl px-5 pt-5 pb-[max(2rem,env(safe-area-inset-bottom,0px))] max-h-[90vh] overflow-y-auto">
         {/* Handle */}
@@ -78,7 +78,7 @@ export function CreateCollectionModal({ existing, onSave, onClose }: CreateColle
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Brooklyn Date Nights"
               maxLength={60}
-              className="w-full border border-[#D0D5DD] rounded-xl px-3.5 py-2.5 text-sm text-[#101828] placeholder:text-[#98A2B3] focus:outline-none focus:ring-2 focus:ring-[#FB6983]/40 focus:border-[#FB6983]"
+              className="w-full border border-[#D0D5DD] rounded-xl px-3.5 py-2.5 text-base text-[#101828] placeholder:text-[#98A2B3] focus:outline-none focus:ring-2 focus:ring-[#FB6983]/40 focus:border-[#FB6983]"
             />
           </div>
 
@@ -93,7 +93,7 @@ export function CreateCollectionModal({ existing, onSave, onClose }: CreateColle
               placeholder="What's this collection about?"
               maxLength={200}
               rows={3}
-              className="w-full border border-[#D0D5DD] rounded-xl px-3.5 py-2.5 text-sm text-[#101828] placeholder:text-[#98A2B3] focus:outline-none focus:ring-2 focus:ring-[#FB6983]/40 focus:border-[#FB6983] resize-none"
+              className="w-full border border-[#D0D5DD] rounded-xl px-3.5 py-2.5 text-base text-[#101828] placeholder:text-[#98A2B3] focus:outline-none focus:ring-2 focus:ring-[#FB6983]/40 focus:border-[#FB6983] resize-none"
             />
           </div>
 

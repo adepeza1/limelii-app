@@ -107,8 +107,8 @@ export function BottomNav() {
                 <Image
                   src={(tab as ImageTab).iconSrc}
                   alt={tab.label}
-                  width={24}
-                  height={24}
+                  width={32}
+                  height={32}
                   priority
                   className="object-contain"
                 />
