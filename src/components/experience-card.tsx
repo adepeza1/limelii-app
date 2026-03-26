@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import type { Experience, Place } from "@/app/page";
 import { AddToCollectionSheet } from "./add-to-collection-sheet";
+import { saveExperience, unsaveExperience } from "@/lib/saved";
 
 function getPlaceImage(place: Place): string | null {
   if (place.display_images && place.display_images.length > 0) {
@@ -45,24 +46,29 @@ export function ExperienceCard({
   }, [experience.id]);
 
   function flatSave() {
+    // Update localStorage for instant UI
     try {
       const items = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "{}");
       items[experience.id] = experience;
       localStorage.setItem(SAVED_KEY, JSON.stringify(items));
     } catch { /* ignore */ }
     setSaved(true);
+    // Persist to server (fire and forget — localStorage is source of truth for UI)
+    saveExperience(experience.id).catch(() => { /* ignore */ });
   }
 
   function toggleSave(e: React.MouseEvent) {
     e.stopPropagation();
     if (saved) {
-      // Unsave directly
+      // Unsave
       try {
         const items = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "{}");
         delete items[experience.id];
         localStorage.setItem(SAVED_KEY, JSON.stringify(items));
       } catch { /* ignore */ }
       setSaved(false);
+      // Remove from server (fire and forget)
+      unsaveExperience(experience.id).catch(() => { /* ignore */ });
     } else {
       // Open sheet to choose flat save or collection
       setShowCollectionSheet(true);

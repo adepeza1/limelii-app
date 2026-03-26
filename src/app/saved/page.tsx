@@ -6,7 +6,8 @@ import { ExperienceDetail } from "@/components/experience-detail";
 import { CollectionsTab } from "@/components/collections-tab";
 import type { Experience, DiscoveryResponse } from "@/app/page";
 import type { Collection, SavedCollection } from "@/lib/collections";
-import { listCollections, createCollection } from "@/lib/collections";
+import { listCollections } from "@/lib/collections";
+import { listSavedExperiences } from "@/lib/saved";
 import { API_BASE } from "@/lib/xano";
 
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -19,6 +20,14 @@ function getSavedExperiences(): Experience[] {
   } catch {
     return [];
   }
+}
+
+function syncToLocalStorage(experiences: Experience[]) {
+  try {
+    const items: Record<number, Experience> = {};
+    for (const exp of experiences) items[exp.id] = exp;
+    localStorage.setItem(SAVED_ITEMS_KEY, JSON.stringify(items));
+  } catch { /* ignore */ }
 }
 
 type SavedTab = "saved" | "collections";
@@ -37,8 +46,28 @@ export default function SavedPage() {
   const [collectionsLoaded, setCollectionsLoaded] = useState(false);
 
   useEffect(() => {
-    setExperiences(getSavedExperiences());
     setMounted(true);
+    // Start with localStorage for instant render
+    setExperiences(getSavedExperiences());
+
+    // Then sync from server — overwrites localStorage with the authoritative list
+    listSavedExperiences()
+      .then((records) => {
+        if (records.length === 0) return;
+        // Fetch discovery data to resolve full experience objects by ID
+        return fetch(`${API_BASE}/discovery`)
+          .then((r) => r.json())
+          .then((data: DiscoveryResponse) => {
+            const all = Object.values(data.experiences ?? {}).flat();
+            const savedIds = new Set(records.map((r) => r.experience_id));
+            const matched = all.filter((e) => savedIds.has(e.id));
+            if (matched.length > 0) {
+              syncToLocalStorage(matched);
+              setExperiences(matched);
+            }
+          });
+      })
+      .catch(() => { /* not logged in or network error — localStorage fallback stays */ });
   }, []);
 
   // Fetch all experiences for collection ID lookup (lazy)
