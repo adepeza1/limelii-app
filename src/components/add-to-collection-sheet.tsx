@@ -202,14 +202,14 @@ export function AddToCollectionSheet({
             </button>
           )}
         </div>
-      </div>
 
-      {showCreate && (
-        <CreateCollectionModal
-          onSave={handleCreateCollection}
-          onClose={() => setShowCreate(false)}
-        />
-      )}
+        {showCreate && (
+          <CreateCollectionModal
+            onSave={handleCreateCollection}
+            onClose={() => setShowCreate(false)}
+          />
+        )}
+      </div>
     </>
   );
 }
