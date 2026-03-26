@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, Bell, ArrowLeft, X } from "lucide-react";
+import { Search, ArrowLeft, X } from "lucide-react";
 import Image from "next/image";
 import type {
   DiscoveryResponse,
@@ -194,9 +194,6 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
             <div className="flex items-center gap-4">
               <button onClick={openSearch} aria-label="Search">
                 <Search className="w-6 h-6 text-gray-900" strokeWidth={1.8} />
-              </button>
-              <button aria-label="Notifications">
-                <Bell className="w-6 h-6 text-gray-900" strokeWidth={1.8} />
               </button>
             </div>
           </div>
