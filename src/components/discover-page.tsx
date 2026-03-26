@@ -51,7 +51,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
 
   const categories: ExperienceCategory[] = [
     { id: 0, name: "All" },
-    ...data.experience_categories,
+    ...[...data.experience_categories].sort((a, b) => a.id - b.id),
   ];
 
   function filterByCategory(categoryId: number): Record<string, Experience[]> {
