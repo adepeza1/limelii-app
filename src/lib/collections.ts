@@ -73,12 +73,13 @@ export async function deleteCollection(id: number): Promise<void> {
 
 export async function addExperienceToCollection(
   collectionId: number,
-  experienceId: number
+  experienceId: number,
+  currentExperienceIds?: number[] | string
 ): Promise<Collection> {
   const res = await fetch(`/api/collections/${collectionId}/experiences`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ experience_id: experienceId }),
+    body: JSON.stringify({ experience_id: experienceId, current_experience_ids: currentExperienceIds ?? [] }),
   });
   if (!res.ok) throw new Error("Failed to add experience to collection");
   return res.json();
