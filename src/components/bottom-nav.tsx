@@ -68,8 +68,8 @@ export function BottomNav() {
   }, []);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100" style={{ touchAction: "manipulation" }}>
-      <div className="max-w-5xl mx-auto flex items-end justify-around px-4 pt-1" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0px)" }}>
+    <nav className="fixed bottom-0 left-0 right-0 z-[750] bg-white border-t border-gray-100" style={{ touchAction: "manipulation" }}>
+      <div className="max-w-5xl mx-auto flex items-end justify-around px-4 pt-1" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 6px)" }}>
         {tabs.map((tab) => {
           const isActive =
             tab.href === "/"
