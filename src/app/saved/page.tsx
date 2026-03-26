@@ -132,11 +132,12 @@ setMyCollections(data.my_collections ?? []);
             </div>
           )}
           {experiences.length > 0 && (
-            <div className="px-5 flex flex-col gap-4 pb-28">
+            <div className="px-5 grid grid-cols-2 gap-3 pb-28">
               {experiences.map((exp) => (
                 <ExperienceCard
                   key={exp.id}
                   experience={exp}
+                  className="w-full"
                   onClick={() => setSelected(exp)}
                 />
               ))}

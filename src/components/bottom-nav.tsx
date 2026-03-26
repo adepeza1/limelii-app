@@ -116,11 +116,9 @@ export function BottomNav() {
                 (() => { const Icon = (tab as IconTab).icon; return <Icon className="w-6 h-6" style={{ color }} strokeWidth={1.6} />; })()
               )}
 
-              {!isCenter && (
-                <span className="text-[11px] font-medium" style={{ color }}>
-                  {tab.label}
-                </span>
-              )}
+              <span className="text-[11px] font-medium" style={{ color }}>
+                {tab.label}
+              </span>
             </Link>
           );
         })}

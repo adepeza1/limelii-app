@@ -5,7 +5,11 @@ import type { Experience } from "@/app/page";
 import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
 
-export function ProfileExperiences() {
+interface ProfileExperiencesProps {
+  onCountLoaded?: (count: number) => void;
+}
+
+export function ProfileExperiences({ onCountLoaded }: ProfileExperiencesProps) {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,9 +25,9 @@ export function ProfileExperiences() {
           return;
         }
         const data = await res.json();
-
-        // The API returns { experiences: Experience[] } (flat array)
-        setExperiences(Array.isArray(data.experiences) ? data.experiences : []);
+        const exps = Array.isArray(data.experiences) ? data.experiences : [];
+        setExperiences(exps);
+        onCountLoaded?.(exps.length);
       } catch {
         setError("Failed to load your experiences");
       } finally {
@@ -71,14 +75,14 @@ export function ProfileExperiences() {
   }
 
   return (
-    <div className="px-4 pb-24 space-y-4 max-w-5xl mx-auto">
+    <div className="px-4 pb-24 grid grid-cols-2 gap-3 max-w-5xl mx-auto">
       {experiences.map((exp) => (
-        <div key={exp.id} className="w-full">
-          <ExperienceCard
-            experience={exp}
-            onClick={() => setSelectedExperience(exp)}
-          />
-        </div>
+        <ExperienceCard
+          key={exp.id}
+          experience={exp}
+          className="w-full"
+          onClick={() => setSelectedExperience(exp)}
+        />
       ))}
     </div>
   );
