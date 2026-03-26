@@ -35,8 +35,7 @@ export async function POST(
 
   if (!patchRes.ok) {
     const errBody = await patchRes.text();
-    console.error("[add-experience] Xano PATCH error:", patchRes.status, errBody);
-    return NextResponse.json({ error: "Failed to add experience" }, { status: patchRes.status });
+    return NextResponse.json({ error: "Failed to add experience", xano_status: patchRes.status, xano_error: errBody }, { status: patchRes.status });
   }
 
   return NextResponse.json(await patchRes.json());
