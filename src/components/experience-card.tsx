@@ -124,25 +124,31 @@ export function ExperienceCard({
         </svg>
       </button>
 
-      {/* Inset place thumbnails – bottom-right box */}
+      {/* Inset place thumbnails – bottom-right box, max 3 shown */}
       {visible && placesWithImages.length > 1 && (
         <div className="absolute right-3 bottom-3 z-[1] bg-black/30 backdrop-blur-sm rounded-2xl p-2 flex flex-col gap-2">
-          {placesWithImages.map((place, i) => {
+          {placesWithImages.slice(0, 3).map((place, i) => {
             const thumbUrl = getPlaceImage(place);
             if (!thumbUrl) return null;
+            const isLast = i === 2 && placesWithImages.length > 3;
             return (
               <button
                 key={place.id}
                 onClick={(e) => { e.stopPropagation(); setActiveIndex(i); }}
-                className={`w-10 h-10 sm:w-[52px] sm:h-[52px] rounded-xl overflow-hidden border-2 shadow-md ${i === activeIndex ? "border-white" : "border-white/60"}`}
+                className={`w-10 h-10 rounded-xl overflow-hidden border-2 shadow-md relative ${i === activeIndex ? "border-white" : "border-white/60"}`}
               >
                 <Image
                   src={thumbUrl}
                   alt={place.name}
-                  width={52}
-                  height={52}
+                  width={40}
+                  height={40}
                   className="object-cover w-full h-full"
                 />
+                {isLast && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
+                    <span className="text-white text-[10px] font-bold">+{placesWithImages.length - 2}</span>
+                  </div>
+                )}
               </button>
             );
           })}
