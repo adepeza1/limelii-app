@@ -243,7 +243,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           {/* Page Description */}
           <div className="px-4 pt-4 pb-1">
             <p className="text-sm text-gray-500">
-              Explore the best things to do in NYC — curated by vibe, neighborhood, and occasion.
+              Explore the best things to do in NYC curated by vibe, neighborhood, and occasion.
             </p>
           </div>
 

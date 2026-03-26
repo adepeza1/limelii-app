@@ -65,7 +65,7 @@ export default function CreatePage() {
       radius: "round",
       density: "normal",
       typography: {
-        baseSize: 14,
+        baseSize: 16,
         fontFamily: "Open Sans, sans-serif",
       },
     },
@@ -138,10 +138,11 @@ export default function CreatePage() {
         <div className="h-[env(safe-area-inset-top,44px)]" />
         <div className="max-w-5xl mx-auto px-4 py-2.5">
           <h1 className="text-lg font-medium text-black">Create</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Describe what you&apos;re in the mood for and we&apos;ll build you a personalized NYC itinerary.</p>
         </div>
       </header>
 
-      <div className="flex-1 min-h-0 w-full max-w-5xl mx-auto px-4 pb-20 sm:pb-24">
+      <div className="flex-1 min-h-0 w-full max-w-5xl mx-auto px-1 pb-20 sm:pb-24">
         <ChatKit control={control} className="h-full w-full" />
       </div>
 
