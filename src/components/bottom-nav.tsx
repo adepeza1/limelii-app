@@ -109,10 +109,11 @@ export function BottomNav() {
                 <Image
                   src={(tab as ImageTab).iconSrc}
                   alt={tab.label}
-                  width={32}
-                  height={32}
+                  width={44}
+                  height={44}
                   priority
                   className="object-contain"
+                  style={{ margin: "-10px -4px" }}
                 />
               ) : (
                 (() => { const Icon = (tab as IconTab).icon; return <Icon className="w-6 h-6" style={{ color }} strokeWidth={1.6} />; })()
