@@ -267,15 +267,17 @@ export default function PlanPage() {
 
   return (
     <div className="bg-white min-h-screen max-w-5xl mx-auto relative">
-      <div className="h-[44px]" />
+      <header className="sticky top-0 z-10 bg-white">
+        <div className="h-[44px]" />
+        <div className="flex items-center px-4 py-2.5 border-b border-gray-100">
+          <h1 className="text-lg font-medium text-black">Plan</h1>
+        </div>
+      </header>
 
-      {/* Header */}
-      <div className="px-5 pt-4 pb-6">
-        <h1 className="text-[#101828] text-[2.25rem] font-bold leading-tight">
-          Plan your<br />experience
-        </h1>
-        <p className="text-[#667085] text-sm mt-2">
-          Set your preferences and we&apos;ll find the match.
+      {/* Description */}
+      <div className="px-4 pt-4 pb-1">
+        <p className="text-sm text-gray-500">
+          Set your preferences and we&apos;ll find the perfect match.
         </p>
       </div>
 
