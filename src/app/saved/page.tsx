@@ -138,6 +138,7 @@ setMyCollections(data.my_collections ?? []);
                   key={exp.id}
                   experience={exp}
                   className="w-full"
+                  compact
                   onClick={() => setSelected(exp)}
                 />
               ))}
