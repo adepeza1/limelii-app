@@ -94,6 +94,7 @@ export function AddToCollectionSheet({
       <div
         ref={overlayRef}
         onClick={handleOverlayClick}
+        onClickCapture={(e) => e.stopPropagation()}
         className="fixed inset-0 z-[200] bg-black/40 flex items-end justify-center"
       >
         <div className="w-full max-w-lg bg-white rounded-t-3xl px-5 pt-5 pb-[max(2rem,env(safe-area-inset-bottom,0px))] max-h-[90vh] overflow-y-auto">
@@ -167,7 +168,14 @@ export function AddToCollectionSheet({
                   </div>
                   <span className="text-sm font-medium text-[#101828] truncate flex-1 text-left">{col.name}</span>
                   <span className="text-xs text-[#667085] shrink-0">
-                    {col.experience_ids?.length ?? 0} exp
+                    {(() => {
+                      let ids: number[] = [];
+                      if (Array.isArray(col.experience_ids)) ids = col.experience_ids;
+                      else if (typeof col.experience_ids === "string") {
+                        try { ids = JSON.parse(col.experience_ids); } catch { ids = []; }
+                      }
+                      return ids.length;
+                    })()} exp
                   </span>
                 </button>
               );
