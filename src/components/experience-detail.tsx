@@ -139,10 +139,21 @@ export function ExperienceDetail({
   const [showCollectionSheet, setShowCollectionSheet] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const swipeTouchStart = useRef<{ x: number; y: number } | null>(null);
+  const onBackRef = useRef(onBack);
+  onBackRef.current = onBack;
 
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  // Push a fake history entry so native swipe-back / browser back closes the
+  // detail instead of navigating to the previous page in browser history.
+  useEffect(() => {
+    window.history.pushState({ experienceDetail: true }, "");
+    const handlePopstate = () => { onBackRef.current(); };
+    window.addEventListener("popstate", handlePopstate);
+    return () => window.removeEventListener("popstate", handlePopstate);
   }, []);
 
   // Sync saved state from localStorage on mount
@@ -184,14 +195,14 @@ export function ExperienceDetail({
         const dx = t.clientX - swipeTouchStart.current.x;
         const dy = Math.abs(t.clientY - swipeTouchStart.current.y);
         swipeTouchStart.current = null;
-        if (dx > 60 && dy < 80) (onSwipeBack ?? onBack)();
+        if (dx > 60 && dy < 80) window.history.back();
       }}
     >
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white">
         <div className="h-[44px]" />
         <div className="flex items-center gap-3 px-4 py-3 h-12">
-          <button onClick={onBack} aria-label="Back" className="flex items-center gap-0.5 text-black">
+          <button onClick={() => window.history.back()} aria-label="Back" className="flex items-center gap-0.5 text-black">
             <ChevronLeft className="w-6 h-6" />
             {backLabel && <span className="text-sm font-medium">{backLabel}</span>}
           </button>
