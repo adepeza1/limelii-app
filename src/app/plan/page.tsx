@@ -331,16 +331,13 @@ export default function PlanPage() {
         </p>
       </div>
 
-      {/* ── Scrollable content zone (transparent, floats over map) ── */}
+      {/* ── Content overlay — bottom half, pointer-events-none container ── */}
       <div
-        className="absolute left-0 right-0 z-20 overflow-y-auto"
-        style={{
-          top: "calc(env(safe-area-inset-top, 44px) + 72px)",
-          bottom: BOTTOM_BAR_H,
-        }}
+        className="absolute left-0 right-0 z-20 flex flex-col justify-end pointer-events-none"
+        style={{ top: "50dvh", bottom: BOTTOM_BAR_H }}
       >
         {/* Quick Vibe */}
-        <div className="px-4 mb-5">
+        <div className="px-4 mb-4 pointer-events-auto">
           <p
             className="text-[11px] font-bold uppercase tracking-widest mb-3"
             style={{ color: "rgba(0,0,0,0.75)", textShadow: "0 1px 3px rgba(255,255,255,0.8)" }}
@@ -382,8 +379,8 @@ export default function PlanPage() {
           </div>
         </div>
 
-        {/* Venue Type Grid */}
-        <div className="px-4 mb-4">
+        {/* What's the Vibe */}
+        <div className="px-4 mb-4 pointer-events-auto">
           <p
             className="text-[11px] font-bold uppercase tracking-widest mb-3"
             style={{ color: "rgba(0,0,0,0.75)", textShadow: "0 1px 3px rgba(255,255,255,0.8)" }}
@@ -425,8 +422,8 @@ export default function PlanPage() {
       <button
         type="button"
         onClick={() => setFiltersOpen(true)}
-        className="fixed z-30 flex items-center gap-1.5 bg-white rounded-full px-4 py-2.5 shadow-lg text-sm font-medium text-gray-800"
-        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 116px)", right: "16px" }}
+        className="fixed z-40 flex items-center gap-1.5 bg-white rounded-full px-4 py-2.5 shadow-lg text-sm font-medium text-gray-800"
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 172px)", right: "16px" }}
       >
         <SlidersHorizontal className="w-4 h-4" strokeWidth={1.8} />
         Filters
