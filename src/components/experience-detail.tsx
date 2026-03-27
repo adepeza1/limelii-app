@@ -147,13 +147,21 @@ export function ExperienceDetail({
     window.scrollTo(0, 0);
   }, []);
 
-  // Push a fake history entry so native swipe-back / browser back closes the
-  // detail instead of navigating to the previous page in browser history.
+  // Push a fake hash entry so native swipe-back / browser back closes the
+  // detail without triggering Next.js route navigation (hash changes don't
+  // cause remounts, so state and the launch screen are unaffected).
   useEffect(() => {
-    window.history.pushState({ experienceDetail: true }, "");
+    const base = window.location.pathname + window.location.search;
+    window.history.pushState({ experienceDetail: true }, "", base + "#experience-detail");
     const handlePopstate = () => { onBackRef.current(); };
     window.addEventListener("popstate", handlePopstate);
-    return () => window.removeEventListener("popstate", handlePopstate);
+    return () => {
+      window.removeEventListener("popstate", handlePopstate);
+      // Clean up the hash if still present (e.g. programmatic close, not via history.back())
+      if (window.location.hash === "#experience-detail") {
+        window.history.replaceState(null, "", base);
+      }
+    };
   }, []);
 
   // Sync saved state from localStorage on mount
