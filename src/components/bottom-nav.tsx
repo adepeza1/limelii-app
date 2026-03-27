@@ -100,6 +100,7 @@ export function BottomNav() {
               href={tab.href}
               className="flex flex-col items-center gap-1 min-w-[56px] cursor-pointer"
               style={{ touchAction: "manipulation" }}
+              onClick={tab.href === "/plan" && pathname.startsWith("/plan") ? () => window.dispatchEvent(new CustomEvent("explore-tab-clicked")) : undefined}
             >
               {tab.href === "/" ? (
                 <DiscoverIcon color={color} />
