@@ -3,11 +3,17 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 
+const SPLASH_KEY = "limelii_splash_shown";
+
 export function SplashScreen({ children }: { children: React.ReactNode }) {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
+    // Only show the splash on the very first visit of the session
+    if (sessionStorage.getItem(SPLASH_KEY)) return;
+    sessionStorage.setItem(SPLASH_KEY, "1");
+    setVisible(true);
     const fadeTimer = setTimeout(() => setFading(true), 1700);
     const hideTimer = setTimeout(() => setVisible(false), 2000);
     return () => {
