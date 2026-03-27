@@ -22,25 +22,26 @@ const SETTINGS = ["Indoor", "Outdoor"];
 
 // Include both specific and generic (Xano) type labels so matching works
 const QUICK_VIBES = [
-  { label: "Date Night",     types: ["Fine Dining", "Cocktail Bar", "Food", "Drink", "Bar", "Restaurant"] },
-  { label: "Rooftop Drinks", types: ["Rooftop Bar", "Rooftop Lounge", "Rooftop Restaurant", "Rooftop", "Drink"] },
-  { label: "Cozy Cafe",      types: ["Traditional Cafe", "Specialty Coffee", "Cafe", "Coffee"] },
-  { label: "Art & Culture",  types: ["Museum", "Art Gallery", "Live Theater", "Cultural", "Arts", "Culture", "Art", "Gallery"] },
-  { label: "Night Out",      types: ["Dance Club", "Live Music Club", "Jazz Club", "Comedy Club", "Nightlife"] },
-  { label: "Fresh Air",      types: ["Public Park", "Botanical Garden", "Beach", "Outdoor", "Outdoors", "Park"] },
+  { label: "Date Night",     types: ["Fine Dining", "Cocktail Bar", "Food", "Drink", "Bar", "Restaurant"], photo: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=200&q=80" },
+  { label: "Rooftop Drinks", types: ["Rooftop Bar", "Rooftop Lounge", "Rooftop Restaurant", "Rooftop", "Drink"],  photo: "https://images.unsplash.com/photo-1533929736458-ca588d08c8be?auto=format&fit=crop&w=200&q=80" },
+  { label: "Cozy Cafe",      types: ["Traditional Cafe", "Specialty Coffee", "Cafe", "Coffee"],                    photo: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=200&q=80" },
+  { label: "Art & Culture",  types: ["Museum", "Art Gallery", "Live Theater", "Cultural", "Arts", "Culture", "Art", "Gallery"], photo: "https://images.unsplash.com/photo-1554907984-15263bfd63bd?auto=format&fit=crop&w=200&q=80" },
+  { label: "Night Out",      types: ["Dance Club", "Live Music Club", "Jazz Club", "Comedy Club", "Nightlife"],    photo: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=200&q=80" },
+  { label: "Fresh Air",      types: ["Public Park", "Botanical Garden", "Beach", "Outdoor", "Outdoors", "Park"],  photo: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=200&q=80" },
 ];
 
-const VENUE_GRID: { label: string; types: string[]; gradient: string; icon: LucideIcon }[] = [
-  { label: "Dining",         types: ["Fine Dining","Casual Dining","Fast Casual","Food Hall","Food Truck","Food","Restaurant"],                          gradient: "from-orange-400 to-amber-500",  icon: UtensilsCrossed },
-  { label: "Coffee & Cafe",  types: ["Traditional Cafe","Specialty Coffee","Work/Study Space","Cafe","Coffee"],                                           gradient: "from-amber-800 to-amber-600",   icon: Coffee },
-  { label: "Bars",           types: ["Cocktail Bar","Wine Bar","Beer Bar/Brewery","Dive Bar","Lounge","Drink","Bar"],                                     gradient: "from-purple-600 to-indigo-500", icon: Wine },
-  { label: "Rooftop",        types: ["Rooftop Bar","Rooftop Lounge","Rooftop Restaurant","Sky Bar","Rooftop"],                                           gradient: "from-sky-400 to-blue-600",      icon: Building2 },
-  { label: "Nightlife",      types: ["Dance Club","Live Music Club","Jazz Club","Comedy Club","Karaoke Bar","Nightlife"],                                 gradient: "from-fuchsia-600 to-pink-600",  icon: Music },
-  { label: "Arts & Culture", types: ["Museum","Art Gallery","Live Theater","Performance Space","Cultural","Arts","Culture","Gallery","Art"],              gradient: "from-rose-500 to-red-500",      icon: Palette },
-  { label: "Activities",     types: ["Escape Room","Cooking Class","Paint & Sip","Board Game Cafe","Activity","Activities","Entertainment","Experience"], gradient: "from-green-500 to-emerald-500", icon: Zap },
-  { label: "Wellness",       types: ["Spa","Yoga Studio","Meditation Center","Fitness Studio","Wellness","Health","Fitness"],                             gradient: "from-teal-400 to-cyan-500",     icon: Leaf },
-  { label: "Outdoors",       types: ["Public Park","Botanical Garden","Beach","Skate Park","Outdoor","Outdoors","Park","Nature"],                         gradient: "from-lime-500 to-green-600",    icon: TreePine },
+const VENUE_GRID: { label: string; types: string[]; gradient: string; icon: LucideIcon; photo: string }[] = [
+  { label: "Dining",         types: ["Fine Dining","Casual Dining","Fast Casual","Food Hall","Food Truck","Food","Restaurant"],                          gradient: "from-orange-400 to-amber-500",  icon: UtensilsCrossed, photo: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80" },
+  { label: "Coffee & Cafe",  types: ["Traditional Cafe","Specialty Coffee","Work/Study Space","Cafe","Coffee"],                                           gradient: "from-amber-800 to-amber-600",   icon: Coffee,          photo: "https://images.unsplash.com/photo-1501339547106-37d1b4e0f0e8?auto=format&fit=crop&w=200&q=80" },
+  { label: "Bars",           types: ["Cocktail Bar","Wine Bar","Beer Bar/Brewery","Dive Bar","Lounge","Drink","Bar"],                                     gradient: "from-purple-600 to-indigo-500", icon: Wine,            photo: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=200&q=80" },
+  { label: "Rooftop",        types: ["Rooftop Bar","Rooftop Lounge","Rooftop Restaurant","Sky Bar","Rooftop"],                                            gradient: "from-sky-400 to-blue-600",      icon: Building2,       photo: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=200&q=80" },
+  { label: "Nightlife",      types: ["Dance Club","Live Music Club","Jazz Club","Comedy Club","Karaoke Bar","Nightlife"],                                  gradient: "from-fuchsia-600 to-pink-600",  icon: Music,           photo: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?auto=format&fit=crop&w=200&q=80" },
+  { label: "Arts & Culture", types: ["Museum","Art Gallery","Live Theater","Performance Space","Cultural","Arts","Culture","Gallery","Art"],               gradient: "from-rose-500 to-red-500",      icon: Palette,         photo: "https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=200&q=80" },
+  { label: "Activities",     types: ["Escape Room","Cooking Class","Paint & Sip","Board Game Cafe","Activity","Activities","Entertainment","Experience"],  gradient: "from-green-500 to-emerald-500", icon: Zap,             photo: "https://images.unsplash.com/photo-1525177089949-b1488a0ea5b6?auto=format&fit=crop&w=200&q=80" },
+  { label: "Wellness",       types: ["Spa","Yoga Studio","Meditation Center","Fitness Studio","Wellness","Health","Fitness"],                              gradient: "from-teal-400 to-cyan-500",     icon: Leaf,            photo: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=200&q=80" },
+  { label: "Outdoors",       types: ["Public Park","Botanical Garden","Beach","Skate Park","Outdoor","Outdoors","Park","Nature"],                          gradient: "from-lime-500 to-green-600",    icon: TreePine,        photo: "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=200&q=80" },
 ];
+
 
 type NeighborhoodMap = Record<string, string[]>;
 
@@ -174,17 +175,6 @@ export default function PlanPage() {
       })
       .catch(() => {});
   }, []);
-
-  const experiencesWithImages = useMemo(
-    () => allExperiences.filter((e) => e.places_id?.some((p) => p.display_images?.length)),
-    [allExperiences]
-  );
-
-  function getPhotoAtIndex(index: number): string | null {
-    if (!experiencesWithImages.length) return null;
-    const exp = experiencesWithImages[index % experiencesWithImages.length];
-    return exp?.places_id?.find((p) => p.display_images?.length)?.display_images?.[0]?.url ?? null;
-  }
 
   // matchedExperiences = all when no filters active, filtered subset otherwise
   const matchedExperiences = useMemo(
@@ -336,8 +326,7 @@ export default function PlanPage() {
             Quick Vibe
           </p>
           <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar">
-            {QUICK_VIBES.map((vibe, i) => {
-              const photoUrl = getPhotoAtIndex(i);
+            {QUICK_VIBES.map((vibe) => {
               const active = vibe.types.every((t) => quickVibeTypes.includes(t));
               return (
                 <button key={vibe.label} type="button" onClick={() => handleQuickVibe(vibe.types)}
@@ -347,9 +336,7 @@ export default function PlanPage() {
                       border: active ? "2.5px solid #FF9A56" : "2px solid rgba(255,255,255,0.5)",
                       boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
                     }}>
-                    {photoUrl
-                      ? <Image src={photoUrl} fill alt={vibe.label} className="object-cover" sizes="68px" />
-                      : <div className="absolute inset-0 bg-gray-800" />}
+                    <Image src={vibe.photo} fill alt={vibe.label} className="object-cover" sizes="68px" />
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                       <span className="text-white text-[10px] font-semibold text-center leading-tight px-2">{vibe.label}</span>
                     </div>
@@ -367,8 +354,7 @@ export default function PlanPage() {
             What&apos;s the Vibe
           </p>
           <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar">
-            {VENUE_GRID.map(({ label, types, gradient, icon: Icon }, i) => {
-              const photoUrl = getPhotoAtIndex(QUICK_VIBES.length + i);
+            {VENUE_GRID.map(({ label, types, gradient, icon: Icon, photo }) => {
               const active = types.some((t) => venueTypes.includes(t));
               return (
                 <button key={label} type="button" onClick={() => handleVenueGrid(types)}
@@ -378,9 +364,7 @@ export default function PlanPage() {
                     outline: active ? "2.5px solid #FF9A56" : "none",
                     outlineOffset: "2px",
                   }}>
-                  {photoUrl
-                    ? <Image src={photoUrl} fill alt={label} className="object-cover" sizes="100px" />
-                    : <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />}
+                  <Image src={photo} fill alt={label} className="object-cover" sizes="100px" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                   <Icon className="absolute top-2 right-2 w-4 h-4 text-white/80" strokeWidth={1.5} />
                   <span className="absolute bottom-2 left-2 text-white text-[11px] font-semibold leading-tight">{label}</span>
