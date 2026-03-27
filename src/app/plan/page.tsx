@@ -160,6 +160,7 @@ export default function PlanPage() {
   // Filters drawer drag-to-dismiss
   const filtersDragStartY = useRef<number | null>(null);
   const [filtersDragY, setFiltersDragY] = useState(0);
+  const resetExploreRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     fetch(`${API_BASE}/discovery`)
@@ -281,13 +282,21 @@ export default function PlanPage() {
     setFallbackMessage(null);
   }
 
+  // Keep ref current so the event listener always calls the latest version
+  resetExploreRef.current = resetExplore;
+
+  // Listen for bottom-nav Explore tab taps to reset page state
+  useEffect(() => {
+    const handler = () => resetExploreRef.current();
+    window.addEventListener("explore-tab-clicked", handler);
+    return () => window.removeEventListener("explore-tab-clicked", handler);
+  }, []);
+
   if (selectedExperience) {
     return (
       <ExperienceDetail
         experience={selectedExperience}
-        backLabel="Explore"
-        onBack={resetExplore}
-        onSwipeBack={() => setSelectedExperience(null)}
+        onBack={() => setSelectedExperience(null)}
       />
     );
   }
