@@ -137,6 +137,7 @@ export function ExperienceDetail({
   const [mapExpanded, setMapExpanded] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showCollectionSheet, setShowCollectionSheet] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const swipeTouchStart = useRef<{ x: number; y: number } | null>(null);
   const onBackRef = useRef(onBack);
@@ -147,21 +148,17 @@ export function ExperienceDetail({
     window.scrollTo(0, 0);
   }, []);
 
-  // Push a fake hash entry so native swipe-back / browser back closes the
-  // detail without triggering Next.js route navigation (hash changes don't
-  // cause remounts, so state and the launch screen are unaffected).
+  // Block the native iOS edge-swipe back gesture with a non-passive listener
+  // so it doesn't trigger Next.js route navigation (which would flash the
+  // splash screen and lose all page state).
   useEffect(() => {
-    const base = window.location.pathname + window.location.search;
-    window.history.pushState({ experienceDetail: true }, "", base + "#experience-detail");
-    const handlePopstate = () => { onBackRef.current(); };
-    window.addEventListener("popstate", handlePopstate);
-    return () => {
-      window.removeEventListener("popstate", handlePopstate);
-      // Clean up the hash if still present (e.g. programmatic close, not via history.back())
-      if (window.location.hash === "#experience-detail") {
-        window.history.replaceState(null, "", base);
-      }
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = (e: TouchEvent) => {
+      if (e.touches[0].clientX < 40) e.preventDefault();
     };
+    el.addEventListener("touchstart", handler, { passive: false });
+    return () => el.removeEventListener("touchstart", handler);
   }, []);
 
   // Sync saved state from localStorage on mount
@@ -192,6 +189,7 @@ export function ExperienceDetail({
 
   return (
     <div
+      ref={containerRef}
       className="bg-white min-h-screen max-w-5xl mx-auto relative"
       onTouchStart={(e) => {
         const t = e.touches[0];
@@ -203,14 +201,14 @@ export function ExperienceDetail({
         const dx = t.clientX - swipeTouchStart.current.x;
         const dy = Math.abs(t.clientY - swipeTouchStart.current.y);
         swipeTouchStart.current = null;
-        if (dx > 60 && dy < 80) window.history.back();
+        if (dx > 60 && dy < 80) onBackRef.current();
       }}
     >
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white">
         <div className="h-[44px]" />
         <div className="flex items-center gap-3 px-4 py-3 h-12">
-          <button onClick={() => window.history.back()} aria-label="Back" className="flex items-center gap-0.5 text-black">
+          <button onClick={onBack} aria-label="Back" className="flex items-center gap-0.5 text-black">
             <ChevronLeft className="w-6 h-6" />
             {backLabel && <span className="text-sm font-medium">{backLabel}</span>}
           </button>
