@@ -388,9 +388,9 @@ export default function PlanPage() {
             className="text-[11px] font-bold uppercase tracking-widest mb-3"
             style={{ color: "rgba(0,0,0,0.75)", textShadow: "0 1px 3px rgba(255,255,255,0.8)" }}
           >
-            What kind of vibe are you looking for?
+            What&apos;s the Vibe
           </p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar">
             {VENUE_GRID.map(({ label, types, gradient, icon: Icon }, i) => {
               const photoUrl = getPhotoAtIndex(QUICK_VIBES.length + i);
               const active = types.some((t) => venueTypes.includes(t));
@@ -399,18 +399,16 @@ export default function PlanPage() {
                   key={label}
                   type="button"
                   onClick={() => handleVenueGrid(types)}
-                  className={`relative aspect-square rounded-2xl overflow-hidden transition-all ${
+                  className={`relative flex-shrink-0 w-[100px] h-[100px] rounded-2xl overflow-hidden transition-all ${
                     active ? "ring-[2.5px] ring-[#FF9A56] ring-offset-1 ring-offset-transparent" : ""
                   }`}
                   style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}
                 >
-                  {/* Photo or gradient fallback */}
                   {photoUrl ? (
-                    <Image src={photoUrl} fill alt={label} className="object-cover" sizes="33vw" />
+                    <Image src={photoUrl} fill alt={label} className="object-cover" sizes="100px" />
                   ) : (
                     <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
                   )}
-                  {/* Dark gradient overlay for text legibility */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                   <Icon className="absolute top-2 right-2 w-4 h-4 text-white/80" strokeWidth={1.5} />
                   <span className="absolute bottom-2 left-2 text-white text-[11px] font-semibold leading-tight">
@@ -423,6 +421,17 @@ export default function PlanPage() {
         </div>
       </div>
 
+      {/* ── Floating Filters button ── */}
+      <button
+        type="button"
+        onClick={() => setFiltersOpen(true)}
+        className="fixed z-30 flex items-center gap-1.5 bg-white rounded-full px-4 py-2.5 shadow-lg text-sm font-medium text-gray-800"
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 116px)", right: "16px" }}
+      >
+        <SlidersHorizontal className="w-4 h-4" strokeWidth={1.8} />
+        Filters
+      </button>
+
       {/* ── Fixed bottom bar ── */}
       <div
         className="fixed left-0 right-0 z-30 bg-white/95 backdrop-blur-sm border-t border-gray-100"
@@ -432,24 +441,14 @@ export default function PlanPage() {
           <p className="text-xs text-gray-400 text-center">
             {allExperiences.length === 0 ? "Loading…" : `Experiences found: ${matchedExperiences.length}`}
           </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handleSearch}
-              disabled={loading || allExperiences.length === 0}
-              className="flex-1 bg-[#FB6983] text-white font-bold text-sm rounded-full py-3.5 disabled:opacity-60 active:opacity-80 transition-opacity"
-            >
-              {loading ? "Finding…" : `Explore ${matchedExperiences.length} experiences`}
-            </button>
-            <button
-              type="button"
-              onClick={() => setFiltersOpen(true)}
-              className="flex items-center gap-1.5 bg-gray-100 rounded-full px-4 py-3.5 text-sm font-medium text-gray-700 shrink-0"
-            >
-              <SlidersHorizontal className="w-4 h-4" strokeWidth={1.8} />
-              Filters
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleSearch}
+            disabled={loading || allExperiences.length === 0}
+            className="w-full bg-[#FB6983] text-white font-bold text-sm rounded-full py-3.5 disabled:opacity-60 active:opacity-80 transition-opacity"
+          >
+            {loading ? "Finding…" : "Explore experiences"}
+          </button>
         </div>
       </div>
 
