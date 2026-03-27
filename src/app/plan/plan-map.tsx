@@ -54,7 +54,7 @@ export function PlanMap({ experiences }: { experiences: Experience[] }) {
       if (!coords) return;
       points.push(coords);
 
-      const safeName = exp.name.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const safeName = exp.title.replace(/</g, "&lt;").replace(/>/g, "&gt;");
       const icon = L.divIcon({
         className: "",
         html: `
