@@ -32,7 +32,7 @@ const QUICK_VIBES = [
 
 const VENUE_GRID: { label: string; types: string[]; gradient: string; icon: LucideIcon; photo: string }[] = [
   { label: "Dining",         types: ["Fine Dining","Casual Dining","Fast Casual","Food Hall","Food Truck","Food","Restaurant"],                          gradient: "from-orange-400 to-amber-500",  icon: UtensilsCrossed, photo: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80" },
-  { label: "Coffee & Cafe",  types: ["Traditional Cafe","Specialty Coffee","Work/Study Space","Cafe","Coffee"],                                           gradient: "from-amber-800 to-amber-600",   icon: Coffee,          photo: "https://images.unsplash.com/photo-1501339547106-37d1b4e0f0e8?auto=format&fit=crop&w=200&q=80" },
+  { label: "Coffee & Cafe",  types: ["Traditional Cafe","Specialty Coffee","Work/Study Space","Cafe","Coffee"],                                           gradient: "from-amber-800 to-amber-600",   icon: Coffee,          photo: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=200&q=80" },
   { label: "Bars",           types: ["Cocktail Bar","Wine Bar","Beer Bar/Brewery","Dive Bar","Lounge","Drink","Bar"],                                     gradient: "from-purple-600 to-indigo-500", icon: Wine,            photo: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=200&q=80" },
   { label: "Rooftop",        types: ["Rooftop Bar","Rooftop Lounge","Rooftop Restaurant","Sky Bar","Rooftop"],                                            gradient: "from-sky-400 to-blue-600",      icon: Building2,       photo: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=200&q=80" },
   { label: "Nightlife",      types: ["Dance Club","Live Music Club","Jazz Club","Comedy Club","Karaoke Bar","Nightlife"],                                  gradient: "from-fuchsia-600 to-pink-600",  icon: Music,           photo: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?auto=format&fit=crop&w=200&q=80" },
@@ -333,8 +333,9 @@ export default function PlanPage() {
                   className="flex-shrink-0">
                   <div className="w-[68px] h-[68px] rounded-full overflow-hidden relative"
                     style={{
-                      border: active ? "2.5px solid #FF9A56" : "2px solid rgba(255,255,255,0.5)",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                      boxShadow: active
+                        ? "0 2px 8px rgba(0,0,0,0.25), inset 0 0 0 3px #FF9A56"
+                        : "0 2px 8px rgba(0,0,0,0.25), inset 0 0 0 2px rgba(255,255,255,0.5)",
                     }}>
                     <Image src={vibe.photo} fill alt={vibe.label} className="object-cover" sizes="68px" />
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -360,9 +361,9 @@ export default function PlanPage() {
                 <button key={label} type="button" onClick={() => handleVenueGrid(types)}
                   className="relative flex-shrink-0 w-[100px] h-[100px] rounded-2xl overflow-hidden transition-all"
                   style={{
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                    outline: active ? "2.5px solid #FF9A56" : "none",
-                    outlineOffset: "2px",
+                    boxShadow: active
+                      ? "0 2px 8px rgba(0,0,0,0.2), inset 0 0 0 3px #FF9A56"
+                      : "0 2px 8px rgba(0,0,0,0.2)",
                   }}>
                   <Image src={photo} fill alt={label} className="object-cover" sizes="100px" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
