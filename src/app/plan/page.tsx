@@ -110,12 +110,14 @@ function locationMatches(exp: Experience, borough: string, selectedNeighborhoods
   return places.some((p) => p.borough === borough);
 }
 
-function filterExperiences(all: Experience[], { borough, selectedNeighborhoods, budgets, settings, venueTypes }: { borough: string; selectedNeighborhoods: string[]; budgets: string[]; settings: string[]; venueTypes: string[] }) {
+function filterExperiences(all: Experience[], { borough, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes }: { borough: string; selectedNeighborhoods: string[]; budgets: string[]; settings: string[]; venueTypes: string[]; quickVibeTypes: string[] }) {
+  // Combine quick vibe + venue type into one OR pool
+  const combinedTypes = [...new Set([...quickVibeTypes, ...venueTypes])];
   return all.filter((exp) => {
     if (!locationMatches(exp, borough, selectedNeighborhoods)) return false;
     if (budgets.length > 0 && !budgets.some((b) => budgetMatches(exp.budget ?? [], b))) return false;
     if (!settingMatches(exp.indoor_outdoor ?? [], settings)) return false;
-    if (!venueTypeMatches(exp, venueTypes)) return false;
+    if (!venueTypeMatches(exp, combinedTypes)) return false;
     return true;
   });
 }
@@ -144,6 +146,7 @@ export default function PlanPage() {
   const [budgets, setBudgets] = useState<string[]>([]);
   const [settings, setSettings] = useState<string[]>([]);
   const [venueTypes, setVenueTypes] = useState<string[]>([]);
+  const [quickVibeTypes, setQuickVibeTypes] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [results, setResults] = useState<Experience[] | null>(null);
   const [resultsOpen, setResultsOpen] = useState(false);
@@ -154,6 +157,9 @@ export default function PlanPage() {
   const [previewExperience, setPreviewExperience] = useState<Experience | null>(null);
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
   const currentCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
+  // Filters drawer drag-to-dismiss
+  const filtersDragStartY = useRef<number | null>(null);
+  const [filtersDragY, setFiltersDragY] = useState(0);
 
   useEffect(() => {
     fetch(`${API_BASE}/discovery`)
@@ -181,8 +187,8 @@ export default function PlanPage() {
 
   // matchedExperiences = all when no filters active, filtered subset otherwise
   const matchedExperiences = useMemo(
-    () => filterExperiences(allExperiences, { borough: location, selectedNeighborhoods, budgets, settings, venueTypes }),
-    [allExperiences, location, selectedNeighborhoods, budgets, settings, venueTypes]
+    () => filterExperiences(allExperiences, { borough: location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes }),
+    [allExperiences, location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes]
   );
 
   const neighborhoodOptions = neighborhoods[location] ?? [];
@@ -212,8 +218,8 @@ export default function PlanPage() {
   }
 
   function handleQuickVibe(types: string[]) {
-    const allSelected = types.every((t) => venueTypes.includes(t));
-    setVenueTypes(allSelected ? venueTypes.filter((t) => !types.includes(t)) : [...new Set([...venueTypes, ...types])]);
+    const allSelected = types.every((t) => quickVibeTypes.includes(t));
+    setQuickVibeTypes(allSelected ? quickVibeTypes.filter((t) => !types.includes(t)) : [...new Set([...quickVibeTypes, ...types])]);
   }
 
   function handleVenueGrid(types: string[]) {
@@ -236,15 +242,15 @@ export default function PlanPage() {
       const all: Experience[] = Object.values(
         (data as { experiences: Record<string, Experience[]> }).experiences
       ).flat();
-      const filters = { borough: location, selectedNeighborhoods, budgets, settings, venueTypes };
+      const filters = { borough: location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes };
       let matched = filterExperiences(all, filters);
-      if (matched.length === 0 && (selectedNeighborhoods.length || budgets.length || settings.length || venueTypes.length)) {
+      if (matched.length === 0 && (selectedNeighborhoods.length || budgets.length || settings.length || venueTypes.length || quickVibeTypes.length)) {
         const relaxations = [
           { label: `${location} (any neighborhood)`, overrides: { selectedNeighborhoods: [] } },
-          { label: `${location} (any venue type)`,   overrides: { venueTypes: [] } },
+          { label: `${location} (any vibe)`,          overrides: { venueTypes: [], quickVibeTypes: [] } },
           { label: `${location} (any budget)`,        overrides: { budgets: [] } },
           { label: `${location} (indoor & outdoor)`,  overrides: { settings: [] } },
-          { label: "all of NYC",                       overrides: { borough: "All NYC", selectedNeighborhoods: [], budgets: [], settings: [], venueTypes: [] } },
+          { label: "all of NYC",                       overrides: { borough: "All NYC", selectedNeighborhoods: [], budgets: [], settings: [], venueTypes: [], quickVibeTypes: [] } },
         ];
         for (const { label, overrides } of relaxations) {
           const relaxed = filterExperiences(all, { ...filters, ...overrides });
@@ -302,7 +308,7 @@ export default function PlanPage() {
           <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar">
             {QUICK_VIBES.map((vibe, i) => {
               const photoUrl = getPhotoAtIndex(i);
-              const active = vibe.types.every((t) => venueTypes.includes(t));
+              const active = vibe.types.every((t) => quickVibeTypes.includes(t));
               return (
                 <button key={vibe.label} type="button" onClick={() => handleQuickVibe(vibe.types)}
                   className="flex-shrink-0">
@@ -422,13 +428,31 @@ export default function PlanPage() {
       {/* ── Filters Drawer ── */}
       {filtersOpen && (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setFiltersOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl overflow-y-auto" style={{ maxHeight: "85dvh" }}>
-            <div className="flex items-center justify-between px-4 pt-4 pb-2 sticky top-0 bg-white z-10 border-b border-gray-50">
-              <p className="text-base font-semibold text-gray-900">Filters</p>
-              <button type="button" onClick={() => setFiltersOpen(false)} className="p-1 text-gray-400"><X className="w-5 h-5" /></button>
+          <div className="absolute inset-0 bg-black/40" onClick={() => { setFiltersOpen(false); setFiltersDragY(0); }} />
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl overflow-y-auto transition-transform"
+            style={{ maxHeight: "85dvh", transform: `translateY(${filtersDragY}px)` }}
+            onTouchStart={(e) => { filtersDragStartY.current = e.touches[0].clientY; }}
+            onTouchMove={(e) => {
+              if (filtersDragStartY.current === null) return;
+              const delta = e.touches[0].clientY - filtersDragStartY.current;
+              if (delta > 0) setFiltersDragY(delta);
+            }}
+            onTouchEnd={() => {
+              if (filtersDragY > 80) { setFiltersOpen(false); }
+              setFiltersDragY(0);
+              filtersDragStartY.current = null;
+            }}
+          >
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 bg-gray-200 rounded-full" />
             </div>
-            <div className="px-4 pt-4 flex flex-col gap-6" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 32px)" }}>
+            <div className="flex items-center justify-between px-4 pt-1 pb-2 sticky top-0 bg-white z-10 border-b border-gray-50">
+              <p className="text-base font-semibold text-gray-900">Filters</p>
+              <button type="button" onClick={() => { setFiltersOpen(false); setFiltersDragY(0); }} className="p-1 text-gray-400"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="px-4 pt-4 flex flex-col gap-6" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}>
               {/* Location */}
               <div>
                 <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Location</p>
