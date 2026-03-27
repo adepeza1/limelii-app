@@ -270,7 +270,7 @@ export default function PlanPage() {
       <header className="sticky top-0 z-10 bg-white">
         <div className="h-[44px]" />
         <div className="flex items-center px-4 py-2.5 border-b border-gray-100">
-          <h1 className="text-lg font-medium text-black">Plan</h1>
+          <h1 className="text-lg font-medium text-black">Explore</h1>
         </div>
       </header>
 

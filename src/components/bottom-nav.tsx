@@ -31,8 +31,8 @@ type Tab = ImageTab | IconTab;
 
 const tabs: Tab[] = [
   { label: "Discover", iconSrc: "/images/Search.svg", href: "/" },
-  { label: "Plan", icon: ClipboardList, href: "/plan" },
-  { label: "Create", iconSrc: "/images/limeliFavicon.svg", href: "/create", center: true },
+  { label: "Create", icon: ClipboardList, href: "/create" },
+  { label: "Explore", iconSrc: "/images/limeliFavicon.svg", href: "/plan", center: true },
   { label: "Saved", iconSrc: "/images/heart-alt.svg", href: "/saved" },
   { label: "Profile", icon: User, href: "/profile" },
 ];
