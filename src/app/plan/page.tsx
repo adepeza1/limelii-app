@@ -267,8 +267,29 @@ export default function PlanPage() {
     }
   }
 
+  function resetExplore() {
+    setSelectedExperience(null);
+    setVenueTypes([]);
+    setQuickVibeTypes([]);
+    setBudgets([]);
+    setSettings([]);
+    setLocation("All NYC");
+    setSelectedNeighborhoods([]);
+    setResults(null);
+    setResultsOpen(false);
+    setPreviewExperience(null);
+    setFallbackMessage(null);
+  }
+
   if (selectedExperience) {
-    return <ExperienceDetail experience={selectedExperience} onBack={() => setSelectedExperience(null)} />;
+    return (
+      <ExperienceDetail
+        experience={selectedExperience}
+        backLabel="Explore"
+        onBack={resetExplore}
+        onSwipeBack={() => setSelectedExperience(null)}
+      />
+    );
   }
 
   // Actual bottom bar height: pt-3(12) + text(20) + gap(8) + button(50) + pb-3(12) + paddingBottom(68+safe) = 170+safe
@@ -342,10 +363,12 @@ export default function PlanPage() {
               const active = types.some((t) => venueTypes.includes(t));
               return (
                 <button key={label} type="button" onClick={() => handleVenueGrid(types)}
-                  className={`relative flex-shrink-0 w-[100px] h-[100px] rounded-2xl overflow-hidden transition-all ${
-                    active ? "ring-[2.5px] ring-[#FF9A56] ring-offset-1" : ""
-                  }`}
-                  style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
+                  className="relative flex-shrink-0 w-[100px] h-[100px] rounded-2xl overflow-hidden transition-all"
+                  style={{
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                    outline: active ? "2.5px solid #FF9A56" : "none",
+                    outlineOffset: "2px",
+                  }}>
                   {photoUrl
                     ? <Image src={photoUrl} fill alt={label} className="object-cover" sizes="100px" />
                     : <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />}

@@ -125,9 +125,13 @@ function PlaceImageCard({
 export function ExperienceDetail({
   experience,
   onBack,
+  onSwipeBack,
+  backLabel,
 }: {
   experience: Experience;
   onBack: () => void;
+  onSwipeBack?: () => void;
+  backLabel?: string;
 }) {
   const [activeSlide, setActiveSlide] = useState(0);
   const [mapExpanded, setMapExpanded] = useState(false);
@@ -180,15 +184,16 @@ export function ExperienceDetail({
         const dx = t.clientX - swipeTouchStart.current.x;
         const dy = Math.abs(t.clientY - swipeTouchStart.current.y);
         swipeTouchStart.current = null;
-        if (dx > 60 && dy < 80) onBack();
+        if (dx > 60 && dy < 80) (onSwipeBack ?? onBack)();
       }}
     >
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white">
         <div className="h-[44px]" />
         <div className="flex items-center gap-3 px-4 py-3 h-12">
-          <button onClick={onBack} aria-label="Back">
-            <ChevronLeft className="w-6 h-6 text-black" />
+          <button onClick={onBack} aria-label="Back" className="flex items-center gap-0.5 text-black">
+            <ChevronLeft className="w-6 h-6" />
+            {backLabel && <span className="text-sm font-medium">{backLabel}</span>}
           </button>
           <h1 className="flex-1 text-center text-lg font-medium text-black truncate">
             {experience.title}
