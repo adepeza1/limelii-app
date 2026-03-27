@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import {
   MapPin,
   SlidersHorizontal,
@@ -39,15 +40,15 @@ const QUICK_VIBES = [
 ];
 
 const VENUE_GRID: { label: string; types: string[]; gradient: string; icon: LucideIcon }[] = [
-  { label: "Dining",         types: ["Fine Dining", "Casual Dining", "Fast Casual", "Food Hall", "Food Truck"],   gradient: "from-orange-400 to-amber-500",   icon: UtensilsCrossed },
-  { label: "Coffee & Cafe",  types: ["Traditional Cafe", "Specialty Coffee", "Work/Study Space"],                  gradient: "from-amber-800 to-amber-600",    icon: Coffee },
-  { label: "Bars",           types: ["Cocktail Bar", "Wine Bar", "Beer Bar/Brewery", "Dive Bar", "Lounge"],        gradient: "from-purple-600 to-indigo-500",  icon: Wine },
-  { label: "Rooftop",        types: ["Rooftop Bar", "Rooftop Lounge", "Rooftop Restaurant", "Sky Bar"],           gradient: "from-sky-400 to-blue-600",       icon: Building2 },
-  { label: "Nightlife",      types: ["Dance Club", "Live Music Club", "Jazz Club", "Comedy Club", "Karaoke Bar"], gradient: "from-fuchsia-600 to-pink-600",   icon: Music },
-  { label: "Arts & Culture", types: ["Museum", "Art Gallery", "Live Theater", "Performance Space"],                gradient: "from-rose-500 to-red-500",       icon: Palette },
-  { label: "Activities",     types: ["Escape Room", "Cooking Class", "Paint & Sip", "Board Game Cafe"],           gradient: "from-green-500 to-emerald-500",  icon: Zap },
-  { label: "Wellness",       types: ["Spa", "Yoga Studio", "Meditation Center", "Fitness Studio"],                 gradient: "from-teal-400 to-cyan-500",      icon: Leaf },
-  { label: "Outdoors",       types: ["Public Park", "Botanical Garden", "Beach", "Skate Park"],                   gradient: "from-lime-500 to-green-600",     icon: TreePine },
+  { label: "Dining",         types: ["Fine Dining", "Casual Dining", "Fast Casual", "Food Hall", "Food Truck"],   gradient: "from-orange-400 to-amber-500",  icon: UtensilsCrossed },
+  { label: "Coffee & Cafe",  types: ["Traditional Cafe", "Specialty Coffee", "Work/Study Space"],                  gradient: "from-amber-800 to-amber-600",   icon: Coffee },
+  { label: "Bars",           types: ["Cocktail Bar", "Wine Bar", "Beer Bar/Brewery", "Dive Bar", "Lounge"],        gradient: "from-purple-600 to-indigo-500", icon: Wine },
+  { label: "Rooftop",        types: ["Rooftop Bar", "Rooftop Lounge", "Rooftop Restaurant", "Sky Bar"],           gradient: "from-sky-400 to-blue-600",      icon: Building2 },
+  { label: "Nightlife",      types: ["Dance Club", "Live Music Club", "Jazz Club", "Comedy Club", "Karaoke Bar"], gradient: "from-fuchsia-600 to-pink-600",  icon: Music },
+  { label: "Arts & Culture", types: ["Museum", "Art Gallery", "Live Theater", "Performance Space"],                gradient: "from-rose-500 to-red-500",      icon: Palette },
+  { label: "Activities",     types: ["Escape Room", "Cooking Class", "Paint & Sip", "Board Game Cafe"],           gradient: "from-green-500 to-emerald-500", icon: Zap },
+  { label: "Wellness",       types: ["Spa", "Yoga Studio", "Meditation Center", "Fitness Studio"],                 gradient: "from-teal-400 to-cyan-500",     icon: Leaf },
+  { label: "Outdoors",       types: ["Public Park", "Botanical Garden", "Beach", "Skate Park"],                   gradient: "from-lime-500 to-green-600",    icon: TreePine },
 ];
 
 type NeighborhoodMap = Record<string, string[]>;
@@ -149,7 +150,7 @@ function toggleItem(list: string[], setList: (v: string[]) => void, item: string
 
 const PlanBackgroundMap = dynamic(
   () => import("./plan-map").then((m) => m.PlanMap),
-  { ssr: false, loading: () => <div className="w-full h-full bg-gray-200" /> }
+  { ssr: false, loading: () => <div className="w-full h-full bg-gray-100" /> }
 );
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -184,15 +185,31 @@ export default function PlanPage() {
       .catch(() => {});
   }, []);
 
-  const matchedExperiences = useMemo(() => {
-    return filterExperiences(allExperiences, {
-      borough: location,
-      selectedNeighborhoods,
-      budgets,
-      settings,
-      venueTypes,
-    });
-  }, [allExperiences, location, selectedNeighborhoods, budgets, settings, venueTypes]);
+  // Build photo arrays from loaded experiences
+  const experiencesWithImages = useMemo(
+    () => allExperiences.filter((e) => e.places_id?.some((p) => p.display_images?.length)),
+    [allExperiences]
+  );
+
+  function getPhotoAtIndex(index: number): string | null {
+    if (!experiencesWithImages.length) return null;
+    const exp = experiencesWithImages[index % experiencesWithImages.length];
+    const place = exp?.places_id?.find((p) => p.display_images?.length);
+    return place?.display_images?.[0]?.url ?? null;
+  }
+
+  const matchedExperiences = useMemo(
+    () => filterExperiences(allExperiences, { borough: location, selectedNeighborhoods, budgets, settings, venueTypes }),
+    [allExperiences, location, selectedNeighborhoods, budgets, settings, venueTypes]
+  );
+
+  // Only show pins when at least one filter is active
+  const filtersActive =
+    venueTypes.length > 0 ||
+    budgets.length > 0 ||
+    settings.length > 0 ||
+    location !== "All NYC" ||
+    selectedNeighborhoods.length > 0;
 
   const neighborhoodOptions = neighborhoods[location] ?? [];
 
@@ -290,111 +307,147 @@ export default function PlanPage() {
     );
   }
 
+  // Bottom bar height: ~100px content + safe-area + nav (~68px)
+  const BOTTOM_BAR_H = "calc(env(safe-area-inset-bottom, 0px) + 116px)";
+
   return (
     <div className="fixed inset-0 overflow-hidden">
 
-      {/* ── Map background ── */}
+      {/* ── Map (full screen background) ── */}
       <div className="absolute inset-0 z-0">
-        <PlanBackgroundMap experiences={matchedExperiences} />
+        <PlanBackgroundMap experiences={filtersActive ? matchedExperiences : []} />
       </div>
 
-      {/* ── Top title overlay ── */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex flex-col items-center pointer-events-none"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 12px)" }}>
-        <h1 className="text-2xl font-bold text-gray-900" style={{ textShadow: "0 1px 4px rgba(255,255,255,0.8)" }}>Explore</h1>
-        <p className="text-sm text-gray-600 mt-0.5" style={{ textShadow: "0 1px 3px rgba(255,255,255,0.8)" }}>Find the perfect match</p>
-      </div>
-
-      {/* ── Floating Filters button ── */}
-      <button
-        type="button"
-        onClick={() => setFiltersOpen(true)}
-        className="fixed z-30 flex items-center gap-1.5 bg-white rounded-full px-4 py-2 shadow-lg text-sm font-medium text-gray-800"
-        style={{ bottom: "calc(62dvh + 12px)", right: "16px" }}
-      >
-        <SlidersHorizontal className="w-4 h-4" strokeWidth={1.8} />
-        Filters
-      </button>
-
-      {/* ── Bottom sheet ── */}
+      {/* ── Title (top, floating) ── */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-20 bg-white rounded-t-3xl shadow-[0_-4px_24px_rgba(0,0,0,0.10)]"
-        style={{ height: "62dvh" }}
+        className="absolute left-0 right-0 z-10 flex flex-col items-center pointer-events-none"
+        style={{ top: "calc(env(safe-area-inset-top, 44px) + 10px)" }}
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-2 shrink-0">
-          <div className="w-10 h-1 bg-gray-200 rounded-full" />
+        <h1 className="text-2xl font-bold text-gray-900" style={{ textShadow: "0 1px 6px rgba(255,255,255,0.9)" }}>
+          Explore
+        </h1>
+        <p className="text-sm text-gray-600 mt-0.5" style={{ textShadow: "0 1px 4px rgba(255,255,255,0.9)" }}>
+          Find the perfect match
+        </p>
+      </div>
+
+      {/* ── Scrollable content zone (transparent, floats over map) ── */}
+      <div
+        className="absolute left-0 right-0 z-20 overflow-y-auto"
+        style={{
+          top: "calc(env(safe-area-inset-top, 44px) + 72px)",
+          bottom: BOTTOM_BAR_H,
+        }}
+      >
+        {/* Quick Vibe */}
+        <div className="px-4 mb-5">
+          <p
+            className="text-[11px] font-bold uppercase tracking-widest mb-3"
+            style={{ color: "rgba(0,0,0,0.75)", textShadow: "0 1px 3px rgba(255,255,255,0.8)" }}
+          >
+            Quick Vibe
+          </p>
+          <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar">
+            {QUICK_VIBES.map((vibe, i) => {
+              const photoUrl = getPhotoAtIndex(i);
+              const active = vibe.types.every((t) => venueTypes.includes(t));
+              return (
+                <button
+                  key={vibe.label}
+                  type="button"
+                  onClick={() => handleQuickVibe(vibe.types)}
+                  className="flex-shrink-0 flex flex-col items-center gap-1.5"
+                >
+                  <div
+                    className="w-[68px] h-[68px] rounded-full overflow-hidden relative"
+                    style={{
+                      border: active ? "2.5px solid #FF9A56" : "2px solid rgba(255,255,255,0.5)",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                    }}
+                  >
+                    {photoUrl ? (
+                      <Image src={photoUrl} fill alt={vibe.label} className="object-cover" sizes="68px" />
+                    ) : (
+                      <div className="absolute inset-0 bg-gray-800" />
+                    )}
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <span className="text-white text-[10px] font-semibold text-center leading-tight px-2">
+                        {vibe.label}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Scrollable content */}
-        <div
-          className="overflow-y-auto"
-          style={{ height: "calc(62dvh - 28px)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)" }}
-        >
-          {/* Quick Vibe */}
-          <div className="px-4 pb-4">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Quick Vibe</p>
-            <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar">
-              {QUICK_VIBES.map((vibe) => {
-                const active = vibe.types.every((t) => venueTypes.includes(t));
-                return (
-                  <button
-                    key={vibe.label}
-                    type="button"
-                    onClick={() => handleQuickVibe(vibe.types)}
-                    className="flex-shrink-0 flex flex-col items-center gap-1.5"
-                  >
-                    <div
-                      className="w-[68px] h-[68px] rounded-full flex items-center justify-center transition-all"
-                      style={{ background: active ? "#FF9A56" : "#1f2937" }}
-                    >
-                      <span className="text-white text-[10px] font-semibold text-center leading-tight px-2">{vibe.label}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+        {/* Venue Type Grid */}
+        <div className="px-4 mb-4">
+          <p
+            className="text-[11px] font-bold uppercase tracking-widest mb-3"
+            style={{ color: "rgba(0,0,0,0.75)", textShadow: "0 1px 3px rgba(255,255,255,0.8)" }}
+          >
+            What kind of vibe are you looking for?
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {VENUE_GRID.map(({ label, types, gradient, icon: Icon }, i) => {
+              const photoUrl = getPhotoAtIndex(QUICK_VIBES.length + i);
+              const active = types.some((t) => venueTypes.includes(t));
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => handleVenueGrid(types)}
+                  className={`relative aspect-square rounded-2xl overflow-hidden transition-all ${
+                    active ? "ring-[2.5px] ring-[#FF9A56] ring-offset-1 ring-offset-transparent" : ""
+                  }`}
+                  style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}
+                >
+                  {/* Photo or gradient fallback */}
+                  {photoUrl ? (
+                    <Image src={photoUrl} fill alt={label} className="object-cover" sizes="33vw" />
+                  ) : (
+                    <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
+                  )}
+                  {/* Dark gradient overlay for text legibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                  <Icon className="absolute top-2 right-2 w-4 h-4 text-white/80" strokeWidth={1.5} />
+                  <span className="absolute bottom-2 left-2 text-white text-[11px] font-semibold leading-tight">
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
+        </div>
+      </div>
 
-          {/* Venue Type Grid */}
-          <div className="px-4 pb-4">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">
-              What kind of vibe are you looking for?
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {VENUE_GRID.map(({ label, types, gradient, icon: Icon }) => {
-                const active = types.some((t) => venueTypes.includes(t));
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => handleVenueGrid(types)}
-                    className={`relative aspect-square rounded-2xl bg-gradient-to-br ${gradient} flex flex-col items-start justify-end p-2.5 overflow-hidden transition-all ${
-                      active ? "ring-2 ring-white ring-offset-1 ring-offset-white/50" : ""
-                    }`}
-                  >
-                    <Icon className="absolute top-2.5 right-2.5 w-4 h-4 text-white/70" strokeWidth={1.5} />
-                    <span className="text-white text-[11px] font-semibold leading-tight">{label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Count + CTA */}
-          <div className="px-4 pb-2 flex flex-col items-center gap-2">
-            <p className="text-sm text-gray-400">
-              {allExperiences.length === 0
-                ? "Loading experiences…"
-                : `Experiences found: ${matchedExperiences.length}`}
-            </p>
+      {/* ── Fixed bottom bar ── */}
+      <div
+        className="fixed left-0 right-0 z-30 bg-white/95 backdrop-blur-sm border-t border-gray-100"
+        style={{ bottom: 0, paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 68px)" }}
+      >
+        <div className="px-4 pt-3 pb-3 flex flex-col gap-2">
+          <p className="text-xs text-gray-400 text-center">
+            {allExperiences.length === 0 ? "Loading…" : `Experiences found: ${matchedExperiences.length}`}
+          </p>
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={handleSearch}
               disabled={loading || allExperiences.length === 0}
-              className="w-full bg-[#FB6983] text-white font-bold text-base rounded-full py-4 disabled:opacity-60 active:opacity-80 transition-opacity"
+              className="flex-1 bg-[#FB6983] text-white font-bold text-sm rounded-full py-3.5 disabled:opacity-60 active:opacity-80 transition-opacity"
             >
               {loading ? "Finding…" : `Explore ${matchedExperiences.length} experiences`}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              className="flex items-center gap-1.5 bg-gray-100 rounded-full px-4 py-3.5 text-sm font-medium text-gray-700 shrink-0"
+            >
+              <SlidersHorizontal className="w-4 h-4" strokeWidth={1.8} />
+              Filters
             </button>
           </div>
         </div>
@@ -404,8 +457,10 @@ export default function PlanPage() {
       {filtersOpen && (
         <div className="fixed inset-0 z-40">
           <div className="absolute inset-0 bg-black/40" onClick={() => setFiltersOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl overflow-y-auto"
-            style={{ maxHeight: "85dvh" }}>
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl overflow-y-auto"
+            style={{ maxHeight: "85dvh" }}
+          >
             <div className="flex items-center justify-between px-4 pt-4 pb-2 sticky top-0 bg-white z-10 border-b border-gray-50">
               <p className="text-base font-semibold text-gray-900">Filters</p>
               <button type="button" onClick={() => setFiltersOpen(false)} className="p-1 text-gray-400">
@@ -415,7 +470,7 @@ export default function PlanPage() {
 
             <div
               className="px-4 pt-4 flex flex-col gap-6"
-              style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}
+              style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)" }}
             >
               {/* Location */}
               <div>
@@ -535,7 +590,6 @@ export default function PlanPage() {
       {/* ── Results Panel ── */}
       {resultsOpen && (
         <div className="fixed inset-0 z-50 bg-white flex flex-col">
-          {/* Header */}
           <div
             className="flex items-center gap-3 px-4 pb-3 border-b border-gray-100 shrink-0"
             style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 12px)" }}
@@ -554,7 +608,6 @@ export default function PlanPage() {
             </div>
           )}
 
-          {/* Masonry grid */}
           <div
             className="flex-1 overflow-y-auto px-4 pt-4"
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)" }}
