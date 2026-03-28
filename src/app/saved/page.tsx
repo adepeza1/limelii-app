@@ -161,7 +161,7 @@ setMyCollections(data.my_collections ?? []);
             </div>
           )}
           {experiences.length > 0 && (
-            <div className="px-5 grid grid-cols-2 gap-3 pb-28">
+            <div className="px-3 grid grid-cols-3 gap-1.5 pb-28">
               {experiences.map((exp) => (
                 <ExperienceCard
                   key={exp.id}

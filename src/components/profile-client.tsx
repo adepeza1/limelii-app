@@ -165,6 +165,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFS);
   const [editingBio, setEditingBio] = useState(false);
   const [bioInput, setBioInput] = useState("");
+  const [editingPrefs, setEditingPrefs] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [dragY, setDragY] = useState(0);
   const dragStartY = useRef(0);
@@ -448,104 +449,151 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
 
           {/* Preferences */}
           {activeTab === "preferences" && (
-            <div className="px-5 pt-6 space-y-7">
-              {/* Group type */}
-              <div>
-                <p className="text-[13px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                  I usually go as
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {GROUP_TYPES.map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => persistPreferences({ ...preferences, groupType: type })}
-                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
-                        preferences.groupType === type
-                          ? "bg-[#416f7b] border-[#416f7b] text-white"
-                          : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
+            <div className="px-5 pt-6 pb-8">
+              {/* Header row */}
+              <div className="flex items-center justify-between mb-6">
+                <p className="text-base font-semibold text-[#101828]">Your preferences</p>
+                <button
+                  onClick={() => setEditingPrefs((v) => !v)}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                    editingPrefs
+                      ? "bg-[#FF9A56] border-[#FF9A56] text-white"
+                      : "border-[#FF9A56] text-[#FF9A56] bg-white"
+                  }`}
+                >
+                  {editingPrefs ? "Done" : "Edit"}
+                </button>
               </div>
 
-              {/* Location */}
-              <div>
-                <p className="text-[13px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                  My location
-                </p>
-                {/* Borough row */}
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {BOROUGHS.map((b) => (
-                    <button
-                      key={b}
-                      onClick={() => persistPreferences({ ...preferences, borough: b, neighborhood: "" })}
-                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
-                        preferences.borough === b
-                          ? "bg-[#416f7b] border-[#416f7b] text-white"
-                          : "bg-white border-gray-200 text-gray-700"
-                      }`}
-                    >
-                      {b}
-                    </button>
-                  ))}
-                </div>
-                {/* Neighborhood list when a specific borough is selected */}
-                {preferences.borough !== "All NYC" && (
-                  <div>
+              <div className="space-y-7">
+                {/* Group type */}
+                <div>
                   <p className="text-[13px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                    Neighborhood
+                    I usually go as
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {(NYC_NEIGHBORHOODS[preferences.borough] ?? []).map((hood) => (
-                      <button
-                        key={hood}
-                        onClick={() => persistPreferences({
-                          ...preferences,
-                          neighborhood: preferences.neighborhood === hood ? "" : hood,
-                        })}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                          preferences.neighborhood === hood
-                            ? "bg-[#416f7b] border-[#416f7b] text-white"
-                            : "bg-gray-50 border-gray-200 text-gray-600"
-                        }`}
-                      >
-                        {hood}
-                      </button>
-                    ))}
+                    {GROUP_TYPES.map((type) => {
+                      const active = preferences.groupType === type;
+                      return editingPrefs ? (
+                        <button
+                          key={type}
+                          onClick={() => persistPreferences({ ...preferences, groupType: type })}
+                          className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+                            active ? "bg-[#FF9A56] border-[#FF9A56] text-white" : "bg-white border-gray-200 text-gray-700"
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ) : active ? (
+                        <span key={type} className="px-4 py-2 rounded-full text-sm font-medium bg-[#FF9A56]/10 border border-[#FF9A56]/30 text-[#FF9A56]">
+                          {type}
+                        </span>
+                      ) : null;
+                    })}
+                    {!editingPrefs && !preferences.groupType && (
+                      <span className="text-sm text-gray-400">Not set</span>
+                    )}
                   </div>
-                  </div>
-                )}
-              </div>
+                </div>
 
-              {/* Interests */}
-              <div>
-                <p className="text-[13px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                  I&apos;m into
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {INTERESTS.map((interest) => (
-                    <button
-                      key={interest}
-                      onClick={() => toggleInterest(interest)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
-                        preferences.interests.includes(interest)
-                          ? "bg-[#FB6983] border-[#FB6983] text-white"
-                          : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
-                      }`}
-                    >
-                      {interest}
-                    </button>
-                  ))}
+                {/* Location */}
+                <div>
+                  <p className="text-[13px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                    My location
+                  </p>
+                  {editingPrefs ? (
+                    <>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {BOROUGHS.map((b) => (
+                          <button
+                            key={b}
+                            onClick={() => persistPreferences({ ...preferences, borough: b, neighborhood: "" })}
+                            className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+                              preferences.borough === b
+                                ? "bg-[#FF9A56] border-[#FF9A56] text-white"
+                                : "bg-white border-gray-200 text-gray-700"
+                            }`}
+                          >
+                            {b}
+                          </button>
+                        ))}
+                      </div>
+                      {preferences.borough !== "All NYC" && (
+                        <div>
+                          <p className="text-[13px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Neighborhood</p>
+                          <div className="flex flex-wrap gap-2">
+                            {(NYC_NEIGHBORHOODS[preferences.borough] ?? []).map((hood) => (
+                              <button
+                                key={hood}
+                                onClick={() => persistPreferences({
+                                  ...preferences,
+                                  neighborhood: preferences.neighborhood === hood ? "" : hood,
+                                })}
+                                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                                  preferences.neighborhood === hood
+                                    ? "bg-[#FF9A56] border-[#FF9A56] text-white"
+                                    : "bg-gray-50 border-gray-200 text-gray-600"
+                                }`}
+                              >
+                                {hood}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {preferences.borough && preferences.borough !== "All NYC" ? (
+                        <>
+                          <span className="px-4 py-2 rounded-full text-sm font-medium bg-[#FF9A56]/10 border border-[#FF9A56]/30 text-[#FF9A56]">
+                            {preferences.borough}
+                          </span>
+                          {preferences.neighborhood && (
+                            <span className="px-4 py-2 rounded-full text-sm font-medium bg-[#FF9A56]/10 border border-[#FF9A56]/30 text-[#FF9A56]">
+                              {preferences.neighborhood}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="px-4 py-2 rounded-full text-sm font-medium bg-[#FF9A56]/10 border border-[#FF9A56]/30 text-[#FF9A56]">
+                          All NYC
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Interests */}
+                <div>
+                  <p className="text-[13px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                    I&apos;m into
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(editingPrefs ? INTERESTS : preferences.interests).map((interest) => {
+                      const active = preferences.interests.includes(interest);
+                      return editingPrefs ? (
+                        <button
+                          key={interest}
+                          onClick={() => toggleInterest(interest)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+                            active ? "bg-[#FF9A56] border-[#FF9A56] text-white" : "bg-white border-gray-200 text-gray-700"
+                          }`}
+                        >
+                          {interest}
+                        </button>
+                      ) : (
+                        <span key={interest} className="px-4 py-2 rounded-full text-sm font-medium bg-[#FF9A56]/10 border border-[#FF9A56]/30 text-[#FF9A56]">
+                          {interest}
+                        </span>
+                      );
+                    })}
+                    {!editingPrefs && preferences.interests.length === 0 && (
+                      <span className="text-sm text-gray-400">No interests set</span>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {/* Hint */}
-              <p className="text-xs text-gray-400 pb-2">
-                These preferences will personalize your experience recommendations.
-              </p>
             </div>
           )}
         </div>
