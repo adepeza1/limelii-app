@@ -1,14 +1,14 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, API_BASE } from "@/lib/api";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  // Public collections don't require auth — try without it first via Xano's own auth check
-  const res = await apiFetch(`/collections/${id}`);
+  // Fetch without auth so Xano returns public collections to anyone, not just the owner
+  const res = await fetch(`${API_BASE}/collections/${id}`);
 
   if (!res.ok) {
     return NextResponse.json({ error: "Collection not found" }, { status: res.status });
