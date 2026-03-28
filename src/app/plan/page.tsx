@@ -556,12 +556,20 @@ export default function PlanPage() {
           <div className="flex-1 overflow-y-auto px-4 pt-4"
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)" }}>
             {results && results.length > 0 ? (
-              <div className="columns-2 gap-3">
-                {results.map((exp) => (
-                  <div key={exp.id} className="break-inside-avoid mb-3">
-                    <ExperienceCard experience={exp} onClick={() => setSelectedExperience(exp)} compact />
-                  </div>
-                ))}
+              <div className="grid grid-cols-2 gap-3 items-start">
+                {results.map((exp, i) => {
+                  // Alternate tall/short per cell: even rows → left tall, right short; odd rows → left short, right tall
+                  const isTall = Math.floor(i / 2) % 2 === i % 2;
+                  return (
+                    <ExperienceCard
+                      key={exp.id}
+                      experience={exp}
+                      onClick={() => setSelectedExperience(exp)}
+                      compact
+                      className={`!aspect-auto ${isTall ? "h-[240px]" : "h-[168px]"}`}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <div className="py-16 text-center">
