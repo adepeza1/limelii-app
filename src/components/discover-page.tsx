@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { Search, ArrowLeft, X } from "lucide-react";
 import Image from "next/image";
 import type {
@@ -105,11 +106,15 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
 
   // ── Suggested for you ───────────────────────────────────────────────────────
   const [suggestions, setSuggestions] = useState<Experience[]>([]);
+  const [prefsChecked, setPrefsChecked] = useState(false);
 
   useEffect(() => {
     try {
       const prefs: StoredPrefs = JSON.parse(localStorage.getItem(PREFS_KEY) ?? "null") ?? {};
-      if (!prefs.interests?.length && (!prefs.borough || prefs.borough === "All NYC")) return;
+      if (!prefs.interests?.length && (!prefs.borough || prefs.borough === "All NYC")) {
+        setPrefsChecked(true);
+        return;
+      }
       const scored = allExperiences
         .map(exp => ({ exp, score: scoreExperience(exp, prefs) }))
         .filter(({ score }) => score > 0)
@@ -120,6 +125,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
     } catch {
       // localStorage unavailable
     }
+    setPrefsChecked(true);
   }, [allExperiences]);
 
   const categories: ExperienceCategory[] = [
@@ -315,16 +321,28 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           {/* Content Sections */}
           <main className="pb-8">
             {/* Suggested for you */}
-            {suggestions.length > 0 && activeCategory === 0 && !searchOpen && (
+            {activeCategory === 0 && !searchOpen && prefsChecked && (
               <section className="mb-8">
-                <h2 className="text-base font-medium text-black px-4 mb-4">
-                  ✦ Suggested for you
-                </h2>
-                <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4">
-                  {suggestions.map((exp) => (
-                    <ExperienceCard key={exp.id} experience={exp} onClick={() => openExperience(exp)} />
-                  ))}
-                </div>
+                <h2 className="text-base font-medium text-black px-4 mb-4">✦ Suggested for you</h2>
+                {suggestions.length > 0 ? (
+                  <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4">
+                    {suggestions.map((exp) => (
+                      <ExperienceCard key={exp.id} experience={exp} onClick={() => openExperience(exp)} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mx-4 px-4 py-5 rounded-2xl bg-[#FFF8F4] border border-[#FF9A56]/20 flex items-center justify-between gap-3">
+                    <p className="text-sm text-gray-500 leading-snug">
+                      Set your interests to get personalized experiences
+                    </p>
+                    <Link
+                      href="/profile?tab=preferences"
+                      className="shrink-0 text-xs font-semibold text-white bg-[#FF9A56] px-3 py-2 rounded-full"
+                    >
+                      Set up
+                    </Link>
+                  </div>
+                )}
               </section>
             )}
 
