@@ -23,7 +23,13 @@ export function AddToCollectionSheet({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [saving, setSaving] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  function showToast(message: string, type: "success" | "error" = "success") {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 2500);
+  }
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -74,10 +80,10 @@ export function AddToCollectionSheet({
           return addExperienceToCollection(colId, experienceId, col?.experience_ids);
         })
       );
-      onClose();
+      showToast(`Added to ${selected.size} collection${selected.size > 1 ? "s" : ""}!`);
+      setTimeout(onClose, 1200);
     } catch {
-      // ignore — best effort
-      onClose();
+      showToast("Something went wrong. Please try again.", "error");
     } finally {
       setSaving(false);
     }
@@ -200,6 +206,15 @@ export function AddToCollectionSheet({
             >
               {saving ? "Saving…" : `Add to ${selected.size} collection${selected.size > 1 ? "s" : ""}`}
             </button>
+          )}
+
+          {/* Toast */}
+          {toast && (
+            <div className={`mt-3 rounded-2xl px-4 py-3 text-sm font-medium text-center transition-all ${
+              toast.type === "error" ? "bg-red-50 text-red-600" : "bg-[#ECFDF3] text-[#027A48]"
+            }`}>
+              {toast.message}
+            </div>
           )}
         </div>
 

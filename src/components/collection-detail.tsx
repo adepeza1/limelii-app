@@ -37,6 +37,12 @@ export function CollectionDetail({
   const [localExperiences, setLocalExperiences] = useState<Experience[]>(experiences);
   const [localCollection, setLocalCollection] = useState<Collection>(collection);
   const [removingId, setRemovingId] = useState<number | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  function showToast(message: string, type: "success" | "error" = "success") {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 2500);
+  }
 
   async function handleDelete() {
     if (!confirm("Delete this collection?")) return;
@@ -57,7 +63,7 @@ export function CollectionDetail({
       setLocalCollection(updated);
       onUpdated(updated);
     } catch {
-      // ignore — experience stays in list
+      showToast("Couldn't remove experience. Please try again.", "error");
     } finally {
       setRemovingId(null);
     }
@@ -68,8 +74,12 @@ export function CollectionDetail({
     if (navigator.share) {
       await navigator.share({ title: localCollection.name, url });
     } else {
-      await navigator.clipboard.writeText(url);
-      alert("Link copied to clipboard!");
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast("Link copied to clipboard!");
+      } catch {
+        showToast("Couldn't copy link. Please try again.", "error");
+      }
     }
   }
 
@@ -78,8 +88,9 @@ export function CollectionDetail({
     try {
       await saveCollection(localCollection.id);
       setCollectionSaved(true);
+      showToast("Collection saved!");
     } catch {
-      // ignore
+      showToast("Couldn't save collection. Please try again.", "error");
     } finally {
       setSavingCollection(false);
     }
@@ -238,6 +249,15 @@ export function CollectionDetail({
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Toast notification */}
+      {toast && (
+        <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-medium shadow-lg whitespace-nowrap transition-all ${
+          toast.type === "error" ? "bg-red-600 text-white" : "bg-[#101828] text-white"
+        }`}>
+          {toast.message}
         </div>
       )}
 
