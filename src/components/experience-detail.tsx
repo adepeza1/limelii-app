@@ -148,17 +148,24 @@ export function ExperienceDetail({
     window.scrollTo(0, 0);
   }, []);
 
-  // Block the native iOS edge-swipe back gesture with a non-passive listener
-  // so it doesn't trigger Next.js route navigation (which would flash the
-  // splash screen and lose all page state).
+  // Block the native iOS edge-swipe back gesture without blocking taps.
+  // We use a non-passive touchmove listener (not touchstart) so that a simple
+  // tap on the back button still fires the click event normally.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const handler = (e: TouchEvent) => {
-      if (e.touches[0].clientX < 40) e.preventDefault();
+    let startX = 0;
+    const onStart = (e: TouchEvent) => { startX = e.touches[0].clientX; };
+    const onMove = (e: TouchEvent) => {
+      if (startX >= 40) return;
+      if (e.touches[0].clientX - startX > 8) e.preventDefault();
     };
-    el.addEventListener("touchstart", handler, { passive: false });
-    return () => el.removeEventListener("touchstart", handler);
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+    };
   }, []);
 
   // Sync saved state from localStorage on mount

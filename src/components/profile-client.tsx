@@ -27,6 +27,7 @@ const PREFS_KEY = "limelii_preferences";
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface UserPreferences {
   bio: string;
+  borough: string;
   neighborhood: string;
   groupType: string;
   interests: string[];
@@ -58,24 +59,47 @@ const INTERESTS = [
   "Dog-friendly",
 ];
 
-const NEIGHBORHOODS = [
-  "All NYC",
-  "Manhattan",
-  "Brooklyn",
-  "Queens",
-  "Bronx",
-  "Staten Island",
-  "Lower East Side",
-  "Williamsburg",
-  "Astoria",
-  "Harlem",
-  "DUMBO",
-  "Chelsea",
-  "SoHo",
-  "Upper West Side",
-  "Bushwick",
-  "Greenpoint",
-];
+const BOROUGHS = ["All NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
+
+const NYC_NEIGHBORHOODS: Record<string, string[]> = {
+  Manhattan: [
+    "Battery Park City", "Chelsea", "Chinatown", "East Harlem", "East Village",
+    "Financial District", "Flatiron", "Gramercy", "Greenwich Village", "Harlem",
+    "Hell's Kitchen", "Inwood", "Kips Bay", "Little Italy", "Lower East Side",
+    "Meatpacking District", "Midtown", "Morningside Heights", "Murray Hill",
+    "NoHo", "Nolita", "SoHo", "Theater District", "Tribeca",
+    "Upper East Side", "Upper West Side", "Washington Heights", "West Village",
+  ],
+  Brooklyn: [
+    "Bay Ridge", "Bedford-Stuyvesant", "Boerum Hill", "Brighton Beach",
+    "Brooklyn Heights", "Bushwick", "Carroll Gardens", "Clinton Hill",
+    "Cobble Hill", "Crown Heights", "DUMBO", "East Flatbush", "East New York",
+    "Flatbush", "Fort Greene", "Gowanus", "Greenpoint", "Manhattan Beach",
+    "Park Slope", "Prospect Heights", "Red Hook", "Sheepshead Bay",
+    "Sunset Park", "Williamsburg", "Windsor Terrace",
+  ],
+  Queens: [
+    "Astoria", "Bayside", "Corona", "Elmhurst", "Flushing", "Forest Hills",
+    "Fresh Meadows", "Howard Beach", "Jackson Heights", "Jamaica",
+    "Kew Gardens", "Long Island City", "Maspeth", "Ozone Park",
+    "Rego Park", "Richmond Hill", "Ridgewood", "Rockaway Beach",
+    "Sunnyside", "Whitestone", "Woodhaven", "Woodside",
+  ],
+  Bronx: [
+    "Baychester", "Bedford Park", "Belmont", "City Island", "Concourse",
+    "Country Club", "Eastchester", "Fordham", "Hunts Point", "Kingsbridge",
+    "Melrose", "Morris Heights", "Morris Park", "Morrisania", "Mott Haven",
+    "Norwood", "Pelham Bay", "Riverdale", "Soundview", "Throgs Neck",
+    "University Heights", "Wakefield", "Woodlawn",
+  ],
+  "Staten Island": [
+    "Annadale", "Arden Heights", "Bay Terrace", "Dongan Hills", "Eltingville",
+    "Fort Wadsworth", "Great Kills", "Huguenot", "Livingston", "Manor Heights",
+    "Mariners Harbor", "New Brighton", "New Dorp", "New Springville",
+    "Port Richmond", "Rosebank", "Rossville", "South Beach", "St. George",
+    "Stapleton", "Todt Hill", "Tottenville", "West Brighton",
+  ],
+};
 
 const GROUP_TYPES = ["Solo", "Couple", "Friends", "Family", "Work"];
 
@@ -109,21 +133,23 @@ function getSavedExperiences(): Experience[] {
   }
 }
 
+const DEFAULT_PREFS: UserPreferences = { bio: "", borough: "All NYC", neighborhood: "", groupType: "Friends", interests: [] };
+
 function loadPreferences(): UserPreferences {
-  if (typeof window === "undefined") {
-    return { bio: "", neighborhood: "All NYC", groupType: "Friends", interests: [] };
-  }
+  if (typeof window === "undefined") return DEFAULT_PREFS;
   try {
-    return (
-      JSON.parse(localStorage.getItem(PREFS_KEY) ?? "null") ?? {
-        bio: "",
-        neighborhood: "All NYC",
-        groupType: "Friends",
-        interests: [],
-      }
-    );
+    const saved = JSON.parse(localStorage.getItem(PREFS_KEY) ?? "null");
+    if (!saved) return DEFAULT_PREFS;
+    // Migrate old format: if borough missing, derive from neighborhood field
+    if (!saved.borough) {
+      const old = saved.neighborhood ?? "All NYC";
+      const isBorough = BOROUGHS.includes(old);
+      saved.borough = isBorough ? old : "All NYC";
+      saved.neighborhood = isBorough ? "" : old;
+    }
+    return { ...DEFAULT_PREFS, ...saved };
   } catch {
-    return { bio: "", neighborhood: "All NYC", groupType: "Friends", interests: [] };
+    return DEFAULT_PREFS;
   }
 }
 
@@ -136,12 +162,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
   const [savedExperiences, setSavedExperiences] = useState<Experience[]>([]);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const savedScrollY = useRef(0);
-  const [preferences, setPreferences] = useState<UserPreferences>({
-    bio: "",
-    neighborhood: "All NYC",
-    groupType: "Friends",
-    interests: [],
-  });
+  const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFS);
   const [editingBio, setEditingBio] = useState(false);
   const [bioInput, setBioInput] = useState("");
   const [showSettings, setShowSettings] = useState(false);
@@ -450,26 +471,48 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
                 </div>
               </div>
 
-              {/* Neighborhood */}
+              {/* Location */}
               <div>
                 <p className="text-[13px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                  My neighborhood
+                  My location
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {NEIGHBORHOODS.map((hood) => (
+                {/* Borough row */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {BOROUGHS.map((b) => (
                     <button
-                      key={hood}
-                      onClick={() => persistPreferences({ ...preferences, neighborhood: hood })}
+                      key={b}
+                      onClick={() => persistPreferences({ ...preferences, borough: b, neighborhood: "" })}
                       className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
-                        preferences.neighborhood === hood
+                        preferences.borough === b
                           ? "bg-[#416f7b] border-[#416f7b] text-white"
-                          : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
+                          : "bg-white border-gray-200 text-gray-700"
                       }`}
                     >
-                      {hood}
+                      {b}
                     </button>
                   ))}
                 </div>
+                {/* Neighborhood list when a specific borough is selected */}
+                {preferences.borough !== "All NYC" && (
+                  <div className="flex flex-wrap gap-2">
+                    {(NYC_NEIGHBORHOODS[preferences.borough] ?? []).map((hood) => (
+                      <button
+                        key={hood}
+                        onClick={() => persistPreferences({
+                          ...preferences,
+                          neighborhood: preferences.neighborhood === hood ? "" : hood,
+                        })}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                          preferences.neighborhood === hood
+                            ? "bg-[#416f7b] border-[#416f7b] text-white"
+                            : "bg-gray-50 border-gray-200 text-gray-600"
+                        }`}
+                      >
+                        {hood}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Interests */}

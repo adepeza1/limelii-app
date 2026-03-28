@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Search, ArrowLeft, X } from "lucide-react";
 import Image from "next/image";
 import type {
@@ -12,6 +12,60 @@ import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
 
 import { API_BASE } from "@/lib/xano";
+
+// ─── Suggestion logic ─────────────────────────────────────────────────────────
+
+const PREFS_KEY = "limelii_preferences";
+
+interface StoredPrefs {
+  borough?: string;
+  neighborhood?: string;
+  groupType?: string;
+  interests?: string[];
+}
+
+const INTEREST_TYPES: Record<string, string[]> = {
+  "Food & Drink":    ["Food", "Restaurant", "Dining", "Fine Dining", "Casual Dining", "Fast Casual", "Food Hall", "Food Truck", "Cafe", "Coffee", "Traditional Cafe", "Specialty Coffee"],
+  "Nightlife":       ["Nightlife", "Bar", "Cocktail Bar", "Wine Bar", "Beer Bar", "Dive Bar", "Lounge", "Dance Club", "Live Music Club", "Jazz Club", "Comedy Club", "Karaoke Bar"],
+  "Arts & Culture":  ["Museum", "Art Gallery", "Art", "Gallery", "Live Theater", "Performance Space", "Cultural", "Culture", "Arts"],
+  "Outdoors":        ["Park", "Outdoor", "Outdoors", "Garden", "Beach", "Botanical Garden", "Public Park", "Nature", "Skate Park"],
+  "Music":           ["Live Music", "Jazz Club", "Live Music Club", "Music", "Concert"],
+  "Sports":          ["Sports", "Fitness", "Gym", "Activity", "Activities"],
+  "Wellness":        ["Spa", "Yoga", "Yoga Studio", "Meditation", "Wellness", "Health", "Fitness Studio"],
+  "Shopping":        ["Shopping", "Market", "Boutique", "Retail"],
+  "Comedy":          ["Comedy", "Comedy Club"],
+  "Film":            ["Film", "Cinema", "Movie"],
+  "Architecture":    ["Architecture", "Historic", "Landmark"],
+  "History":         ["History", "Historic", "Museum", "Cultural", "Landmark"],
+  "Family-friendly": ["Family", "Activity", "Activities", "Park", "Museum", "Outdoor"],
+  "Dog-friendly":    ["Park", "Outdoor", "Outdoors", "Dog", "Beach"],
+};
+
+function scoreExperience(exp: Experience, prefs: StoredPrefs): number {
+  let score = 0;
+  const expTypes = (exp.places_id ?? []).flatMap(p => p._location_details?.location_type ?? []).map(t => t.toLowerCase());
+  const expActivities = (exp.activities ?? []).map(a => a.toLowerCase());
+
+  for (const interest of prefs.interests ?? []) {
+    const types = (INTEREST_TYPES[interest] ?? []).map(t => t.toLowerCase());
+    if (types.some(t => expTypes.some(et => et.includes(t) || t.includes(et)))) score += 3;
+    else if (types.some(t => expActivities.some(a => a.includes(t) || t.includes(a)))) score += 2;
+    else if (types.some(t => (exp.title + " " + exp.description).toLowerCase().includes(t))) score += 1;
+  }
+
+  const borough = prefs.borough;
+  if (borough && borough !== "All NYC") {
+    if ((exp.places_id ?? []).some(p => p.borough === borough)) score += 2;
+    const hood = prefs.neighborhood;
+    if (hood) {
+      const inHood = (exp.places_id ?? []).some(p => p.neighborhood?.toLowerCase() === hood.toLowerCase())
+        || (exp.neighborhoods ?? []).some(n => n.toLowerCase() === hood.toLowerCase());
+      if (inHood) score += 3;
+    }
+  }
+
+  return score;
+}
 
 /** Convert snake_case keys to readable titles */
 function formatSectionTitle(key: string): string {
@@ -47,7 +101,26 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const allExperiences = Object.values(data.experiences).flat();
+  const allExperiences = useMemo(() => Object.values(data.experiences).flat(), [data.experiences]);
+
+  // ── Suggested for you ───────────────────────────────────────────────────────
+  const [suggestions, setSuggestions] = useState<Experience[]>([]);
+
+  useEffect(() => {
+    try {
+      const prefs: StoredPrefs = JSON.parse(localStorage.getItem(PREFS_KEY) ?? "null") ?? {};
+      if (!prefs.interests?.length && (!prefs.borough || prefs.borough === "All NYC")) return;
+      const scored = allExperiences
+        .map(exp => ({ exp, score: scoreExperience(exp, prefs) }))
+        .filter(({ score }) => score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10)
+        .map(({ exp }) => exp);
+      setSuggestions(scored);
+    } catch {
+      // localStorage unavailable
+    }
+  }, [allExperiences]);
 
   const categories: ExperienceCategory[] = [
     { id: 0, name: "All" },
@@ -241,6 +314,20 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
 
           {/* Content Sections */}
           <main className="pb-8">
+            {/* Suggested for you */}
+            {suggestions.length > 0 && activeCategory === 0 && !searchOpen && (
+              <section className="mb-8">
+                <h2 className="text-base font-medium text-black px-4 mb-4">
+                  ✦ Suggested for you
+                </h2>
+                <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4">
+                  {suggestions.map((exp) => (
+                    <ExperienceCard key={exp.id} experience={exp} onClick={() => openExperience(exp)} />
+                  ))}
+                </div>
+              </section>
+            )}
+
             {nonEmptySections.length === 0 && (
               <p className="text-center text-gray-500 py-12">
                 No experiences found for this category.
