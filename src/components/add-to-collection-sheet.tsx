@@ -79,7 +79,7 @@ export function AddToCollectionSheet({
       setTimeout(onClose, 600);
     } catch {
       setDoneState("error");
-      setTimeout(() => setDoneState("idle"), 1500);
+      setTimeout(() => setDoneState("idle"), 1000);
     } finally {
       setSaving(false);
     }

@@ -61,7 +61,7 @@ export function CollectionDetail({
       onUpdated(updated);
     } catch {
       setRemoveErrorId(expId);
-      setTimeout(() => setRemoveErrorId(null), 1500);
+      setTimeout(() => setRemoveErrorId(null), 1000);
     } finally {
       setRemovingId(null);
     }
@@ -75,10 +75,10 @@ export function CollectionDetail({
       try {
         await navigator.clipboard.writeText(url);
         setShareState("success");
-        setTimeout(() => setShareState("idle"), 1500);
+        setTimeout(() => setShareState("idle"), 1000);
       } catch {
         setShareState("error");
-        setTimeout(() => setShareState("idle"), 1500);
+        setTimeout(() => setShareState("idle"), 1000);
       }
     }
   }
@@ -90,7 +90,7 @@ export function CollectionDetail({
       setCollectionSaved(true);
     } catch {
       setSaveColState("error");
-      setTimeout(() => setSaveColState("idle"), 1500);
+      setTimeout(() => setSaveColState("idle"), 1000);
     } finally {
       setSavingCollection(false);
     }
