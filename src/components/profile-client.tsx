@@ -494,6 +494,10 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
                 </div>
                 {/* Neighborhood list when a specific borough is selected */}
                 {preferences.borough !== "All NYC" && (
+                  <div>
+                  <p className="text-[13px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                    Neighborhood
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {(NYC_NEIGHBORHOODS[preferences.borough] ?? []).map((hood) => (
                       <button
@@ -511,6 +515,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
                         {hood}
                       </button>
                     ))}
+                  </div>
                   </div>
                 )}
               </div>
