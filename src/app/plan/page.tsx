@@ -332,15 +332,14 @@ export default function PlanPage() {
                 <button key={vibe.label} type="button" onClick={() => handleQuickVibe(vibe.types)}
                   className="flex-shrink-0">
                   <div className="w-[68px] h-[68px] rounded-full overflow-hidden relative"
-                    style={{
-                      boxShadow: active
-                        ? "0 2px 8px rgba(0,0,0,0.25), inset 0 0 0 3px #FF9A56"
-                        : "0 2px 8px rgba(0,0,0,0.25), inset 0 0 0 2px rgba(255,255,255,0.5)",
-                    }}>
+                    style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.25)" }}>
                     <Image src={vibe.photo} fill alt={vibe.label} className="object-cover" sizes="68px" />
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                       <span className="text-white text-[10px] font-semibold text-center leading-tight px-2">{vibe.label}</span>
                     </div>
+                    {/* Border overlay on top of all content so it's always visible */}
+                    <div className="absolute inset-0 rounded-full pointer-events-none transition-all"
+                      style={{ boxShadow: active ? "inset 0 0 0 3px #FF9A56" : "inset 0 0 0 2px rgba(255,255,255,0.5)" }} />
                   </div>
                 </button>
               );
@@ -360,15 +359,14 @@ export default function PlanPage() {
               return (
                 <button key={label} type="button" onClick={() => handleVenueGrid(types)}
                   className="relative flex-shrink-0 w-[100px] h-[100px] rounded-2xl overflow-hidden transition-all"
-                  style={{
-                    boxShadow: active
-                      ? "0 2px 8px rgba(0,0,0,0.2), inset 0 0 0 3px #FF9A56"
-                      : "0 2px 8px rgba(0,0,0,0.2)",
-                  }}>
+                  style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
                   <Image src={photo} fill alt={label} className="object-cover" sizes="100px" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                   <Icon className="absolute top-2 right-2 w-4 h-4 text-white/80" strokeWidth={1.5} />
                   <span className="absolute bottom-2 left-2 text-white text-[11px] font-semibold leading-tight">{label}</span>
+                  {/* Border overlay on top of all content so it's always visible */}
+                  <div className="absolute inset-0 rounded-2xl pointer-events-none transition-all"
+                    style={{ boxShadow: active ? "inset 0 0 0 3px #FF9A56" : "none" }} />
                 </button>
               );
             })}
@@ -569,7 +567,7 @@ export default function PlanPage() {
                           experience={exp}
                           onClick={() => setSelectedExperience(exp)}
                           compact
-                          className={`!aspect-auto ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                          className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
                         />
                       );
                     })}
