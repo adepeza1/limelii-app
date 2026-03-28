@@ -555,9 +555,9 @@ export default function PlanPage() {
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)" }}>
             {results && results.length > 0 ? (
               // Two independent flex columns so cards flow without row-aligned gaps
-              <div className="flex gap-2 items-start">
+              <div className="flex gap-1 items-start">
                 {[results.filter((_, i) => i % 2 === 0), results.filter((_, i) => i % 2 === 1)].map((col, colIdx) => (
-                  <div key={colIdx} className="flex-1 flex flex-col gap-2">
+                  <div key={colIdx} className="flex-1 flex flex-col gap-1">
                     {col.map((exp, rowIdx) => {
                       // Left col: tall/short/tall… Right col: short/tall/short…
                       const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
