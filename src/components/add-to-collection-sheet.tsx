@@ -23,13 +23,8 @@ export function AddToCollectionSheet({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [saving, setSaving] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [doneState, setDoneState] = useState<"idle" | "success" | "error">("idle");
   const overlayRef = useRef<HTMLDivElement>(null);
-
-  function showToast(message: string, type: "success" | "error" = "success") {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 2500);
-  }
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -80,10 +75,11 @@ export function AddToCollectionSheet({
           return addExperienceToCollection(colId, experienceId, col?.experience_ids);
         })
       );
-      showToast(`Added to ${selected.size} collection${selected.size > 1 ? "s" : ""}!`);
-      setTimeout(onClose, 1200);
+      setDoneState("success");
+      setTimeout(onClose, 600);
     } catch {
-      showToast("Something went wrong. Please try again.", "error");
+      setDoneState("error");
+      setTimeout(() => setDoneState("idle"), 1000);
     } finally {
       setSaving(false);
     }
@@ -201,20 +197,18 @@ export function AddToCollectionSheet({
           {selected.size > 0 && (
             <button
               onClick={handleDone}
-              disabled={saving}
-              className="w-full bg-[#FB6983] text-white font-semibold rounded-2xl py-3 text-sm disabled:opacity-50"
+              disabled={saving || doneState === "success"}
+              className={`w-full text-white font-semibold rounded-2xl py-3 text-sm transition-colors disabled:opacity-50 ${
+                doneState === "success" ? "bg-[#12B76A]" :
+                doneState === "error"   ? "bg-red-500" :
+                "bg-[#FB6983]"
+              }`}
             >
-              {saving ? "Saving…" : `Add to ${selected.size} collection${selected.size > 1 ? "s" : ""}`}
+              {saving ? "Saving…" :
+               doneState === "success" ? "Added!" :
+               doneState === "error"   ? "Try again" :
+               `Add to ${selected.size} collection${selected.size > 1 ? "s" : ""}`}
             </button>
-          )}
-
-          {/* Toast */}
-          {toast && (
-            <div className={`mt-3 rounded-2xl px-4 py-3 text-sm font-medium text-center transition-all ${
-              toast.type === "error" ? "bg-red-50 text-red-600" : "bg-[#ECFDF3] text-[#027A48]"
-            }`}>
-              {toast.message}
-            </div>
           )}
         </div>
 

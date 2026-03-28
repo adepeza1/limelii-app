@@ -37,12 +37,9 @@ export function CollectionDetail({
   const [localExperiences, setLocalExperiences] = useState<Experience[]>(experiences);
   const [localCollection, setLocalCollection] = useState<Collection>(collection);
   const [removingId, setRemovingId] = useState<number | null>(null);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-
-  function showToast(message: string, type: "success" | "error" = "success") {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 2500);
-  }
+  const [removeErrorId, setRemoveErrorId] = useState<number | null>(null);
+  const [shareState, setShareState] = useState<"idle" | "success" | "error">("idle");
+  const [saveColState, setSaveColState] = useState<"idle" | "error">("idle");
 
   async function handleDelete() {
     if (!confirm("Delete this collection?")) return;
@@ -63,7 +60,8 @@ export function CollectionDetail({
       setLocalCollection(updated);
       onUpdated(updated);
     } catch {
-      showToast("Couldn't remove experience. Please try again.", "error");
+      setRemoveErrorId(expId);
+      setTimeout(() => setRemoveErrorId(null), 1000);
     } finally {
       setRemovingId(null);
     }
@@ -76,9 +74,11 @@ export function CollectionDetail({
     } else {
       try {
         await navigator.clipboard.writeText(url);
-        showToast("Link copied to clipboard!");
+        setShareState("success");
+        setTimeout(() => setShareState("idle"), 1000);
       } catch {
-        showToast("Couldn't copy link. Please try again.", "error");
+        setShareState("error");
+        setTimeout(() => setShareState("idle"), 1000);
       }
     }
   }
@@ -88,9 +88,9 @@ export function CollectionDetail({
     try {
       await saveCollection(localCollection.id);
       setCollectionSaved(true);
-      showToast("Collection saved!");
     } catch {
-      showToast("Couldn't save collection. Please try again.", "error");
+      setSaveColState("error");
+      setTimeout(() => setSaveColState("idle"), 1000);
     } finally {
       setSavingCollection(false);
     }
@@ -123,7 +123,11 @@ export function CollectionDetail({
               className="p-2"
               aria-label="Share collection"
             >
-              <Share2 className="w-5 h-5 text-[#344054]" />
+              <Share2 className={`w-5 h-5 transition-colors ${
+                shareState === "success" ? "text-[#12B76A]" :
+                shareState === "error"   ? "text-red-500" :
+                "text-[#344054]"
+              }`} />
             </button>
           )}
           {isOwner && (
@@ -177,9 +181,11 @@ export function CollectionDetail({
           <button
             onClick={handleSaveCollection}
             disabled={savingCollection}
-            className="mt-4 w-full bg-[#FB6983] text-white font-semibold rounded-2xl py-3 text-sm disabled:opacity-50"
+            className={`mt-4 w-full text-white font-semibold rounded-2xl py-3 text-sm transition-colors disabled:opacity-50 ${
+              saveColState === "error" ? "bg-red-500" : "bg-[#FB6983]"
+            }`}
           >
-            {savingCollection ? "Saving…" : "Save Collection"}
+            {savingCollection ? "Saving…" : saveColState === "error" ? "Try again" : "Save Collection"}
           </button>
         )}
         {!isOwner && collectionSaved && (
@@ -242,22 +248,15 @@ export function CollectionDetail({
                   onClick={() => handleRemoveExperience(exp.id)}
                   disabled={removingId === exp.id}
                   aria-label="Remove from collection"
-                  className="absolute top-3 left-3 z-[3] w-9 h-9 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm disabled:opacity-50"
+                  className={`absolute top-3 left-3 z-[3] w-9 h-9 flex items-center justify-center rounded-full backdrop-blur-sm transition-colors disabled:opacity-50 ${
+                    removeErrorId === exp.id ? "bg-red-500/80" : "bg-black/30"
+                  }`}
                 >
                   <Trash2 className="w-4 h-4 text-white" />
                 </button>
               )}
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Toast notification */}
-      {toast && (
-        <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-medium shadow-lg whitespace-nowrap transition-all ${
-          toast.type === "error" ? "bg-red-600 text-white" : "bg-[#101828] text-white"
-        }`}>
-          {toast.message}
         </div>
       )}
 
