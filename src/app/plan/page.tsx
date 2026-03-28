@@ -556,20 +556,25 @@ export default function PlanPage() {
           <div className="flex-1 overflow-y-auto px-4 pt-4"
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)" }}>
             {results && results.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 items-start">
-                {results.map((exp, i) => {
-                  // Alternate tall/short per cell: even rows → left tall, right short; odd rows → left short, right tall
-                  const isTall = Math.floor(i / 2) % 2 === i % 2;
-                  return (
-                    <ExperienceCard
-                      key={exp.id}
-                      experience={exp}
-                      onClick={() => setSelectedExperience(exp)}
-                      compact
-                      className={`!aspect-auto ${isTall ? "h-[240px]" : "h-[168px]"}`}
-                    />
-                  );
-                })}
+              // Two independent flex columns so cards flow without row-aligned gaps
+              <div className="flex gap-2 items-start">
+                {[results.filter((_, i) => i % 2 === 0), results.filter((_, i) => i % 2 === 1)].map((col, colIdx) => (
+                  <div key={colIdx} className="flex-1 flex flex-col gap-2">
+                    {col.map((exp, rowIdx) => {
+                      // Left col: tall/short/tall… Right col: short/tall/short…
+                      const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
+                      return (
+                        <ExperienceCard
+                          key={exp.id}
+                          experience={exp}
+                          onClick={() => setSelectedExperience(exp)}
+                          compact
+                          className={`!aspect-auto ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="py-16 text-center">
