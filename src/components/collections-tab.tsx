@@ -17,6 +17,8 @@ interface CollectionsTabProps {
   loading: boolean;
   onMyCollectionsChange: (cols: Collection[]) => void;
   onSavedCollectionsChange: (cols: SavedCollection[]) => void;
+  /** "mine" = only user's collections; "browse" = only saved-from-others; omit = both */
+  mode?: "mine" | "browse";
 }
 
 export function CollectionsTab({
@@ -26,6 +28,7 @@ export function CollectionsTab({
   loading,
   onMyCollectionsChange,
   onSavedCollectionsChange,
+  mode,
 }: CollectionsTabProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<{ collection: Collection; isOwner: boolean } | null>(null);
@@ -72,24 +75,31 @@ export function CollectionsTab({
     );
   }
 
-  const isEmpty = myCollections.length === 0 && savedCollections.length === 0;
-  const total = myCollections.length + savedCollections.length;
+  const showMine = !mode || mode === "mine";
+  const showBrowse = !mode || mode === "browse";
+
+  const visibleMine = showMine ? myCollections : [];
+  const visibleBrowse = showBrowse ? savedCollections : [];
+  const isEmpty = visibleMine.length === 0 && visibleBrowse.length === 0;
+  const total = visibleMine.length + visibleBrowse.length;
 
   return (
     <div className="px-5 pb-28">
-      {/* Header row */}
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-xs text-[#667085] uppercase tracking-wide font-medium">
-          {loading ? "Loading…" : `${total} collection${total !== 1 ? "s" : ""}`}
-        </span>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 text-sm font-semibold text-[#FB6983]"
-        >
-          <Plus className="w-4 h-4" />
-          New
-        </button>
-      </div>
+      {/* Header row — only show count + create button in mine mode */}
+      {showMine && (
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-xs text-[#667085] uppercase tracking-wide font-medium">
+            {loading ? "Loading…" : `${total} collection${total !== 1 ? "s" : ""}`}
+          </span>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-1.5 text-sm font-semibold text-[#FB6983]"
+          >
+            <Plus className="w-4 h-4" />
+            New
+          </button>
+        </div>
+      )}
 
       {/* Empty state */}
       {!loading && isEmpty && (
@@ -99,25 +109,36 @@ export function CollectionsTab({
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
             </svg>
           </div>
-          <p className="text-[#101828] font-semibold text-base">No collections yet</p>
-          <p className="text-[#667085] text-sm max-w-[240px]">
-            Create a collection to curate your favourite experiences.
-          </p>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="mt-2 bg-[#FB6983] text-white font-semibold rounded-2xl px-6 py-2.5 text-sm"
-          >
-            New Collection
-          </button>
+          {mode === "browse" ? (
+            <>
+              <p className="text-[#101828] font-semibold text-base">No saved collections</p>
+              <p className="text-[#667085] text-sm max-w-[240px]">
+                Collections you save from others will appear here.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[#101828] font-semibold text-base">No collections yet</p>
+              <p className="text-[#667085] text-sm max-w-[240px]">
+                Create a collection to curate your favourite experiences.
+              </p>
+              <button
+                onClick={() => setShowCreate(true)}
+                className="mt-2 bg-[#FB6983] text-white font-semibold rounded-2xl px-6 py-2.5 text-sm"
+              >
+                New Collection
+              </button>
+            </>
+          )}
         </div>
       )}
 
       {/* My Collections */}
-      {myCollections.length > 0 && (
+      {visibleMine.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-xs text-[#98A2B3] uppercase tracking-wide font-medium mb-3">My Collections</h2>
+          {!mode && <h2 className="text-xs text-[#98A2B3] uppercase tracking-wide font-medium mb-3">My Collections</h2>}
           <div className="flex flex-col gap-3">
-            {myCollections.map((col) => (
+            {visibleMine.map((col) => (
               <CollectionCard
                 key={col.id}
                 collection={col}
@@ -129,11 +150,11 @@ export function CollectionsTab({
       )}
 
       {/* Saved from Others */}
-      {savedCollections.length > 0 && (
+      {visibleBrowse.length > 0 && (
         <section>
-          <h2 className="text-xs text-[#98A2B3] uppercase tracking-wide font-medium mb-3">Saved from Others</h2>
+          {!mode && <h2 className="text-xs text-[#98A2B3] uppercase tracking-wide font-medium mb-3">Saved from Others</h2>}
           <div className="flex flex-col gap-3">
-            {savedCollections.map((sc) => (
+            {visibleBrowse.map((sc) => (
               <SavedCollectionCard
                 key={sc.id}
                 savedCollection={sc}
