@@ -21,18 +21,17 @@ export async function DELETE(
   }
 
   const records: { id: number; experiences_id: number }[] = await listRes.json();
-  const record = records.find((r) => r.experiences_id === expId);
 
-  if (!record) {
-    // Already unsaved — treat as success
+  // Delete all records matching this experience, plus any corrupted records (experiences_id=0)
+  const toDelete = records.filter((r) => r.experiences_id === expId || r.experiences_id === 0);
+
+  if (toDelete.length === 0) {
     return new NextResponse(null, { status: 204 });
   }
 
-  // Delete by the Xano record ID
-  const delRes = await apiFetch(`/saved_experiences/${record.id}`, { method: "DELETE" });
-  if (!delRes.ok) {
-    return NextResponse.json({ error: "Failed to unsave experience" }, { status: delRes.status });
-  }
+  await Promise.all(
+    toDelete.map((r) => apiFetch(`/saved_experiences/${r.id}`, { method: "DELETE" }))
+  );
 
   return new NextResponse(null, { status: 204 });
 }

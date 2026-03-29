@@ -5,13 +5,26 @@ import Image from "next/image";
 import { ChevronLeft, MoreVertical, Maximize2 } from "lucide-react";
 
 const SAVED_KEY = "limelii_saved";
+const SAVED_ITEMS_KEY = "limelii_saved_items";
+const SAVE_VERSION_KEY = "limelii_save_version";
+const SAVE_VERSION = "3";
+
+// Clear all stale save state if version changed — resets hearts on all devices
+function checkSaveVersion() {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem(SAVE_VERSION_KEY) !== SAVE_VERSION) {
+    localStorage.removeItem(SAVED_KEY);
+    localStorage.removeItem(SAVED_ITEMS_KEY);
+    localStorage.removeItem("limelii_saves_migrated");
+    localStorage.setItem(SAVE_VERSION_KEY, SAVE_VERSION);
+  }
+}
 
 function getSaved(): number[] {
   if (typeof window === "undefined") return [];
+  checkSaveVersion();
   try { return JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]"); } catch { return []; }
 }
-
-const SAVED_ITEMS_KEY = "limelii_saved_items";
 
 function getSavedItems(): Record<string, Experience> {
   if (typeof window === "undefined") return {};
