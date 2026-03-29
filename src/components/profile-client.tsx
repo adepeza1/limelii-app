@@ -19,7 +19,7 @@ import type { Experience } from "@/app/page";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import { listCollections } from "@/lib/collections";
-import { listSavedExperiences, saveExperience } from "@/lib/saved";
+import { listSavedExperiences } from "@/lib/saved";
 import { API_BASE } from "@/lib/xano";
 import type { DiscoveryResponse } from "@/app/page";
 
@@ -180,53 +180,30 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
   const dragStartY = useRef(0);
 
   useEffect(() => {
-    // Clear stale localStorage if version bumped (resets hearts on all devices)
-    const SAVE_VERSION_KEY = "limelii_save_version";
-    const SAVE_VERSION = "4";
-    if (localStorage.getItem(SAVE_VERSION_KEY) !== SAVE_VERSION) {
-      localStorage.removeItem(SAVED_KEY);
-      localStorage.removeItem(SAVED_ITEMS_KEY);
-      localStorage.removeItem(MIGRATION_KEY);
-      localStorage.setItem(SAVE_VERSION_KEY, SAVE_VERSION);
-    }
-
-    // Show localStorage values instantly while Xano loads
-    setSavedCount(getSavedCount());
-    setSavedExperiences(getSavedExperiences());
     const prefs = loadPreferences();
     setPreferences(prefs);
     setBioInput(prefs.bio);
     listCollections()
       .then((data) => setCollectionsCount((data.my_collections?.length ?? 0) + (data.saved_collections?.length ?? 0)))
       .catch(() => setCollectionsCount(0));
-    async function migrateAndLoad() {
-      const localIds: number[] = (() => {
-        try { return JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]"); } catch { return []; }
-      })();
-
-      if (localIds.length > 0 && !localStorage.getItem(MIGRATION_KEY)) {
-        try {
-          const existing = await listSavedExperiences();
-          const validIds = new Set(existing.map((r) => r.experiences_id).filter((id) => id !== 0));
-          const toMigrate = localIds.filter((id) => !validIds.has(id));
-          await Promise.all(toMigrate.map((id) => saveExperience(id).catch(() => {})));
-          localStorage.setItem(MIGRATION_KEY, "1");
-        } catch { /* not logged in — skip */ }
-      }
-      // Fetch authoritative saved count + list from Xano
-      try {
-        const records = await listSavedExperiences();
+    // Fetch saved list from Xano and sync to localStorage
+    listSavedExperiences()
+      .then(async (records) => {
         const res = await fetch(`${API_BASE}/discovery`);
         const data: DiscoveryResponse = await res.json();
         const all = Object.values(data.experiences ?? {}).flat();
         const savedIds = new Set(records.map((r) => r.experiences_id));
         const matched = all.filter((e) => savedIds.has(e.id));
-        // Only update state from Xano — always authoritative once we get a response
         setSavedCount(matched.length);
         setSavedExperiences(matched);
-      } catch { /* not logged in — localStorage fallback stays */ }
-    }
-    migrateAndLoad();
+        // Overwrite localStorage with authoritative Xano data so ExperienceDetail hearts are correct
+        localStorage.setItem(SAVED_KEY, JSON.stringify(matched.map((e) => e.id)));
+        const itemsMap: Record<string, Experience> = {};
+        matched.forEach((e) => { itemsMap[String(e.id)] = e; });
+        localStorage.setItem(SAVED_ITEMS_KEY, JSON.stringify(itemsMap));
+        localStorage.removeItem(MIGRATION_KEY);
+      })
+      .catch(() => {});
   }, []);
 
   function persistPreferences(updated: UserPreferences) {
@@ -255,7 +232,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
     // Update from localStorage immediately (toggleSaved already synced it)
     setSavedExperiences(getSavedExperiences());
     setSavedCount(getSavedCount());
-    // Then refetch from Xano in background to reconcile cross-device state
+    // Then reconcile with Xano and overwrite localStorage
     setTimeout(() => {
       listSavedExperiences()
         .then(async (records) => {
@@ -266,6 +243,10 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
           const matched = all.filter((e) => savedIds.has(e.id));
           setSavedCount(matched.length);
           setSavedExperiences(matched);
+          localStorage.setItem(SAVED_KEY, JSON.stringify(matched.map((e) => e.id)));
+          const itemsMap: Record<string, Experience> = {};
+          matched.forEach((e) => { itemsMap[String(e.id)] = e; });
+          localStorage.setItem(SAVED_ITEMS_KEY, JSON.stringify(itemsMap));
         })
         .catch(() => {});
     }, 800);
