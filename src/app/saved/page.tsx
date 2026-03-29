@@ -7,10 +7,17 @@ import { CollectionsTab } from "@/components/collections-tab";
 import type { Experience, DiscoveryResponse } from "@/app/page";
 import type { Collection, SavedCollection } from "@/lib/collections";
 import { listCollections } from "@/lib/collections";
-import { listSavedExperiences } from "@/lib/saved";
+import { listSavedExperiences, saveExperience } from "@/lib/saved";
 import { API_BASE } from "@/lib/xano";
 
 const SAVED_ITEMS_KEY = "limelii_saved_items";
+const SAVED_KEY = "limelii_saved";
+const MIGRATION_KEY = "limelii_saves_migrated";
+
+function getLocalSavedIds(): number[] {
+  if (typeof window === "undefined") return [];
+  try { return JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]"); } catch { return []; }
+}
 
 function getSavedExperiences(): Experience[] {
   if (typeof window === "undefined") return [];
@@ -50,24 +57,38 @@ export default function SavedPage() {
     // Start with localStorage for instant render
     setExperiences(getSavedExperiences());
 
-    // Then sync from server — overwrites localStorage with the authoritative list
-    listSavedExperiences()
-      .then((records) => {
+    async function loadSaved() {
+      // One-time migration: push any localStorage IDs to Xano that aren't there yet
+      if (!localStorage.getItem(MIGRATION_KEY)) {
+        const localIds = getLocalSavedIds();
+        if (localIds.length > 0) {
+          try {
+            const existing = await listSavedExperiences();
+            const existingIds = new Set(existing.map((r) => r.experience_id));
+            const toMigrate = localIds.filter((id) => !existingIds.has(id));
+            await Promise.all(toMigrate.map((id) => saveExperience(id).catch(() => {})));
+          } catch { /* not logged in — skip migration */ }
+        }
+        localStorage.setItem(MIGRATION_KEY, "1");
+      }
+
+      // Sync from server — authoritative list
+      try {
+        const records = await listSavedExperiences();
         if (records.length === 0) return;
-        // Fetch discovery data to resolve full experience objects by ID
-        return fetch(`${API_BASE}/discovery`)
-          .then((r) => r.json())
-          .then((data: DiscoveryResponse) => {
-            const all = Object.values(data.experiences ?? {}).flat();
-            const savedIds = new Set(records.map((r) => r.experience_id));
-            const matched = all.filter((e) => savedIds.has(e.id));
-            if (matched.length > 0) {
-              syncToLocalStorage(matched);
-              setExperiences(matched);
-            }
-          });
-      })
-      .catch(() => { /* not logged in or network error — localStorage fallback stays */ });
+        const res = await fetch(`${API_BASE}/discovery`);
+        const data: DiscoveryResponse = await res.json();
+        const all = Object.values(data.experiences ?? {}).flat();
+        const savedIds = new Set(records.map((r) => r.experience_id));
+        const matched = all.filter((e) => savedIds.has(e.id));
+        if (matched.length > 0) {
+          syncToLocalStorage(matched);
+          setExperiences(matched);
+        }
+      } catch { /* not logged in or network error — localStorage fallback stays */ }
+    }
+
+    loadSaved();
   }, []);
 
   // Fetch all experiences for collection ID lookup (lazy)
