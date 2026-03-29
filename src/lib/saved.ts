@@ -15,7 +15,7 @@ export async function saveExperience(experienceId: number): Promise<void> {
   const res = await fetch("/api/saved-experiences", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ experiences_id: experienceId }),
+    body: JSON.stringify({ experience_id: experienceId }),
   });
   if (!res.ok) throw new Error("Failed to save experience");
 }
