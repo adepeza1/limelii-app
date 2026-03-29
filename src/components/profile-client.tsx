@@ -19,6 +19,9 @@ import type { Experience } from "@/app/page";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import { listCollections } from "@/lib/collections";
+import { listSavedExperiences } from "@/lib/saved";
+import { API_BASE } from "@/lib/xano";
+import type { DiscoveryResponse } from "@/app/page";
 
 // ─── localStorage keys ────────────────────────────────────────────────────────
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -175,6 +178,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
   const dragStartY = useRef(0);
 
   useEffect(() => {
+    // Show localStorage values instantly while Xano loads
     setSavedCount(getSavedCount());
     setSavedExperiences(getSavedExperiences());
     const prefs = loadPreferences();
@@ -183,6 +187,19 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
     listCollections()
       .then((data) => setCollectionsCount((data.my_collections?.length ?? 0) + (data.saved_collections?.length ?? 0)))
       .catch(() => setCollectionsCount(0));
+    // Fetch authoritative saved count + list from Xano
+    listSavedExperiences()
+      .then(async (records) => {
+        setSavedCount(records.length);
+        if (records.length === 0) return;
+        const res = await fetch(`${API_BASE}/discovery`);
+        const data: DiscoveryResponse = await res.json();
+        const all = Object.values(data.experiences ?? {}).flat();
+        const savedIds = new Set(records.map((r) => r.experience_id));
+        const matched = all.filter((e) => savedIds.has(e.id));
+        if (matched.length > 0) setSavedExperiences(matched);
+      })
+      .catch(() => { /* not logged in — localStorage fallback stays */ });
   }, []);
 
   function persistPreferences(updated: UserPreferences) {
