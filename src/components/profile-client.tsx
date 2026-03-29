@@ -208,14 +208,14 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
       // Fetch authoritative saved count + list from Xano
       try {
         const records = await listSavedExperiences();
-        setSavedCount(records.length);
-        if (records.length === 0) return;
+        if (records.length === 0) { setSavedCount(0); setSavedExperiences([]); return; }
         const res = await fetch(`${API_BASE}/discovery`);
         const data: DiscoveryResponse = await res.json();
         const all = Object.values(data.experiences ?? {}).flat();
         const savedIds = new Set(records.map((r) => r.experiences_id));
         const matched = all.filter((e) => savedIds.has(e.id));
-        if (matched.length > 0) setSavedExperiences(matched);
+        setSavedCount(matched.length);
+        setSavedExperiences(matched);
       } catch { /* not logged in — localStorage fallback stays */ }
     }
     migrateAndLoad();
