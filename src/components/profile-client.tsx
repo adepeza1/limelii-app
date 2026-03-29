@@ -189,20 +189,23 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
     listCollections()
       .then((data) => setCollectionsCount((data.my_collections?.length ?? 0) + (data.saved_collections?.length ?? 0)))
       .catch(() => setCollectionsCount(0));
-    // One-time migration: push localStorage saves to Xano
+    // Migration: push localStorage saves to Xano
+    // Re-runs if any existing records have experiences_id=0 (bad data from old bug)
     async function migrateAndLoad() {
-      if (!localStorage.getItem(MIGRATION_KEY)) {
-        const localIds: number[] = (() => {
-          try { return JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]"); } catch { return []; }
-        })();
-        if (localIds.length > 0) {
-          try {
-            const existing = await listSavedExperiences();
-            const existingIds = new Set(existing.map((r) => r.experiences_id));
-            const toMigrate = localIds.filter((id) => !existingIds.has(id));
-            await Promise.all(toMigrate.map((id) => saveExperience(id).catch(() => {})));
-          } catch { /* not logged in — skip */ }
-        }
+      const localIds: number[] = (() => {
+        try { return JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]"); } catch { return []; }
+      })();
+      const alreadyMigrated = !!localStorage.getItem(MIGRATION_KEY);
+      if (!alreadyMigrated && localIds.length > 0) {
+        try {
+          const existing = await listSavedExperiences();
+          const hasBadRecords = existing.some((r) => r.experiences_id === 0);
+          // Delete bad records and re-migrate if we have corrupted data
+          if (hasBadRecords) localStorage.removeItem(MIGRATION_KEY);
+          const existingIds = new Set(existing.filter((r) => r.experiences_id !== 0).map((r) => r.experiences_id));
+          const toMigrate = localIds.filter((id) => !existingIds.has(id));
+          await Promise.all(toMigrate.map((id) => saveExperience(id).catch(() => {})));
+        } catch { /* not logged in — skip */ }
         localStorage.setItem(MIGRATION_KEY, "1");
       }
       // Fetch authoritative saved count + list from Xano
