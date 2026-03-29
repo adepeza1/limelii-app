@@ -6,7 +6,7 @@ import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import {
   Settings,
   MapPin,
-  Bookmark,
+  Heart,
   PenLine,
   X,
   ChevronRight,
@@ -208,12 +208,12 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
       // Fetch authoritative saved count + list from Xano
       try {
         const records = await listSavedExperiences();
-        if (records.length === 0) { setSavedCount(0); setSavedExperiences([]); return; }
         const res = await fetch(`${API_BASE}/discovery`);
         const data: DiscoveryResponse = await res.json();
         const all = Object.values(data.experiences ?? {}).flat();
         const savedIds = new Set(records.map((r) => r.experiences_id));
         const matched = all.filter((e) => savedIds.has(e.id));
+        // Only update state from Xano — always authoritative once we get a response
         setSavedCount(matched.length);
         setSavedExperiences(matched);
       } catch { /* not logged in — localStorage fallback stays */ }
@@ -470,11 +470,11 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
               {savedExperiences.length === 0 ? (
                 <div className="px-5 py-16 flex flex-col items-center gap-3 text-center">
                   <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
-                    <Bookmark className="w-6 h-6 text-gray-400" strokeWidth={1.5} />
+                    <Heart className="w-6 h-6 text-gray-400" strokeWidth={1.5} />
                   </div>
                   <p className="text-gray-900 font-semibold text-base">Nothing saved yet</p>
                   <p className="text-gray-500 text-sm max-w-[220px] leading-relaxed">
-                    Tap &ldquo;Save idea&rdquo; on any experience to find it here.
+                    Tap the heart on any experience to find it here.
                   </p>
                 </div>
               ) : (
