@@ -111,10 +111,9 @@ export function BottomNav() {
                     width: 44,
                     height: 44,
                     backgroundImage: `url('${(tab as ImageTab).iconSrc}')`,
-                    backgroundSize: "920%",
-                    backgroundPosition: "43% 50%",
+                    backgroundSize: "100%",
+                    backgroundPosition: "center",
                     backgroundRepeat: "no-repeat",
-                    backgroundColor: "white",
                   }}
                 />
               ) : (
