@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
   const res = await apiFetch("/saved_experiences", {
     method: "POST",
-    body: JSON.stringify({ experience_id }),
+    body: JSON.stringify({ experiences_id: experience_id }),
   });
 
   if (!res.ok) {

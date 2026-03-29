@@ -198,7 +198,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
         if (localIds.length > 0) {
           try {
             const existing = await listSavedExperiences();
-            const existingIds = new Set(existing.map((r) => r.experience_id));
+            const existingIds = new Set(existing.map((r) => r.experiences_id));
             const toMigrate = localIds.filter((id) => !existingIds.has(id));
             await Promise.all(toMigrate.map((id) => saveExperience(id).catch(() => {})));
           } catch { /* not logged in — skip */ }
@@ -213,7 +213,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
         const res = await fetch(`${API_BASE}/discovery`);
         const data: DiscoveryResponse = await res.json();
         const all = Object.values(data.experiences ?? {}).flat();
-        const savedIds = new Set(records.map((r) => r.experience_id));
+        const savedIds = new Set(records.map((r) => r.experiences_id));
         const matched = all.filter((e) => savedIds.has(e.id));
         if (matched.length > 0) setSavedExperiences(matched);
       } catch { /* not logged in — localStorage fallback stays */ }
