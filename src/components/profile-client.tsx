@@ -180,6 +180,16 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
   const dragStartY = useRef(0);
 
   useEffect(() => {
+    // Clear stale localStorage if version bumped (resets hearts on all devices)
+    const SAVE_VERSION_KEY = "limelii_save_version";
+    const SAVE_VERSION = "4";
+    if (localStorage.getItem(SAVE_VERSION_KEY) !== SAVE_VERSION) {
+      localStorage.removeItem(SAVED_KEY);
+      localStorage.removeItem(SAVED_ITEMS_KEY);
+      localStorage.removeItem(MIGRATION_KEY);
+      localStorage.setItem(SAVE_VERSION_KEY, SAVE_VERSION);
+    }
+
     // Show localStorage values instantly while Xano loads
     setSavedCount(getSavedCount());
     setSavedExperiences(getSavedExperiences());
@@ -189,24 +199,18 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
     listCollections()
       .then((data) => setCollectionsCount((data.my_collections?.length ?? 0) + (data.saved_collections?.length ?? 0)))
       .catch(() => setCollectionsCount(0));
-    // Migration: push localStorage saves to Xano
-    // Re-runs whenever Xano has 0 valid records but localStorage has IDs
     async function migrateAndLoad() {
       const localIds: number[] = (() => {
         try { return JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]"); } catch { return []; }
       })();
 
-      if (localIds.length > 0) {
+      if (localIds.length > 0 && !localStorage.getItem(MIGRATION_KEY)) {
         try {
           const existing = await listSavedExperiences();
           const validIds = new Set(existing.map((r) => r.experiences_id).filter((id) => id !== 0));
-          // Re-migrate if Xano has no valid records despite localStorage having some
-          if (validIds.size === 0) localStorage.removeItem(MIGRATION_KEY);
-          if (!localStorage.getItem(MIGRATION_KEY)) {
-            const toMigrate = localIds.filter((id) => !validIds.has(id));
-            await Promise.all(toMigrate.map((id) => saveExperience(id).catch(() => {})));
-            localStorage.setItem(MIGRATION_KEY, "1");
-          }
+          const toMigrate = localIds.filter((id) => !validIds.has(id));
+          await Promise.all(toMigrate.map((id) => saveExperience(id).catch(() => {})));
+          localStorage.setItem(MIGRATION_KEY, "1");
         } catch { /* not logged in — skip */ }
       }
       // Fetch authoritative saved count + list from Xano
