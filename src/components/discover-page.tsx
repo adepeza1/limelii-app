@@ -305,14 +305,13 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
                 <button
                   key={cat.id}
                   onClick={() => handleCategoryChange(cat.id)}
-                  className={`shrink-0 text-sm font-medium pb-2 relative transition-colors ${
-                    activeCategory === cat.id ? "text-gray-900" : "text-gray-500"
+                  className={`shrink-0 text-sm font-medium pb-2 transition-colors ${
+                    activeCategory === cat.id
+                      ? "text-gray-900 border-b-2 border-gray-900"
+                      : "text-gray-500"
                   }`}
                 >
                   {cat.name}
-                  {activeCategory === cat.id && (
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-gray-900 rounded-full" />
-                  )}
                 </button>
               ))}
             </div>

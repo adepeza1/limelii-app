@@ -106,16 +106,24 @@ export function BottomNav() {
               ) : tab.href === "/saved" ? (
                 <HeartIcon color={color} />
               ) : isCenter ? (
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    backgroundImage: `url('${(tab as ImageTab).iconSrc}')`,
-                    backgroundSize: "100%",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                  }}
-                />
+                /* 24px layout placeholder keeps the row the same height as other tabs.
+                   The actual icon is absolutely centred over it at a larger visual size. */
+                <div style={{ position: "relative", width: 24, height: 24 }}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      width: 38,
+                      height: 38,
+                      backgroundImage: `url('${(tab as ImageTab).iconSrc}')`,
+                      backgroundSize: "100%",
+                      backgroundPosition: "center",
+                      backgroundRepeat: "no-repeat",
+                    }}
+                  />
+                </div>
               ) : (
                 (() => { const Icon = (tab as IconTab).icon; return <Icon className="w-6 h-6" style={{ color }} strokeWidth={1.6} />; })()
               )}
