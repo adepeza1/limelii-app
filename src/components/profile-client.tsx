@@ -190,23 +190,24 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
       .then((data) => setCollectionsCount((data.my_collections?.length ?? 0) + (data.saved_collections?.length ?? 0)))
       .catch(() => setCollectionsCount(0));
     // Migration: push localStorage saves to Xano
-    // Re-runs if any existing records have experiences_id=0 (bad data from old bug)
+    // Re-runs whenever Xano has 0 valid records but localStorage has IDs
     async function migrateAndLoad() {
       const localIds: number[] = (() => {
         try { return JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]"); } catch { return []; }
       })();
-      const alreadyMigrated = !!localStorage.getItem(MIGRATION_KEY);
-      if (!alreadyMigrated && localIds.length > 0) {
+
+      if (localIds.length > 0) {
         try {
           const existing = await listSavedExperiences();
-          const hasBadRecords = existing.some((r) => r.experiences_id === 0);
-          // Delete bad records and re-migrate if we have corrupted data
-          if (hasBadRecords) localStorage.removeItem(MIGRATION_KEY);
-          const existingIds = new Set(existing.filter((r) => r.experiences_id !== 0).map((r) => r.experiences_id));
-          const toMigrate = localIds.filter((id) => !existingIds.has(id));
-          await Promise.all(toMigrate.map((id) => saveExperience(id).catch(() => {})));
+          const validIds = new Set(existing.map((r) => r.experiences_id).filter((id) => id !== 0));
+          // Re-migrate if Xano has no valid records despite localStorage having some
+          if (validIds.size === 0) localStorage.removeItem(MIGRATION_KEY);
+          if (!localStorage.getItem(MIGRATION_KEY)) {
+            const toMigrate = localIds.filter((id) => !validIds.has(id));
+            await Promise.all(toMigrate.map((id) => saveExperience(id).catch(() => {})));
+            localStorage.setItem(MIGRATION_KEY, "1");
+          }
         } catch { /* not logged in — skip */ }
-        localStorage.setItem(MIGRATION_KEY, "1");
       }
       // Fetch authoritative saved count + list from Xano
       try {
