@@ -20,8 +20,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Failed to look up saved experience" }, { status: listRes.status });
   }
 
-  const records: { id: number; experience_id: number }[] = await listRes.json();
-  const record = records.find((r) => r.experience_id === expId);
+  const records: { id: number; experiences_id: number }[] = await listRes.json();
+  const record = records.find((r) => r.experiences_id === expId);
 
   if (!record) {
     // Already unsaved — treat as success

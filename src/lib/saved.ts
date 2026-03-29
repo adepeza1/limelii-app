@@ -2,7 +2,7 @@ export interface SavedExperienceRecord {
   id: number;
   created_at: number;
   users_id: number;
-  experience_id: number;
+  experiences_id: number;
 }
 
 export async function listSavedExperiences(): Promise<SavedExperienceRecord[]> {
@@ -15,7 +15,7 @@ export async function saveExperience(experienceId: number): Promise<void> {
   const res = await fetch("/api/saved-experiences", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ experience_id: experienceId }),
+    body: JSON.stringify({ experiences_id: experienceId }),
   });
   if (!res.ok) throw new Error("Failed to save experience");
 }
