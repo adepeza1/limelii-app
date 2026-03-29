@@ -7,7 +7,7 @@ import { ChevronLeft, MoreVertical, Maximize2 } from "lucide-react";
 const SAVED_KEY = "limelii_saved";
 const SAVED_ITEMS_KEY = "limelii_saved_items";
 const SAVE_VERSION_KEY = "limelii_save_version";
-const SAVE_VERSION = "3";
+const SAVE_VERSION = "4";
 
 // Clear all stale save state if version changed — resets hearts on all devices
 function checkSaveVersion() {
