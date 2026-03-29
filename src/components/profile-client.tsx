@@ -19,7 +19,7 @@ import type { Experience } from "@/app/page";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import { listCollections } from "@/lib/collections";
-import { listSavedExperiences } from "@/lib/saved";
+import { listSavedExperiences, saveExperience } from "@/lib/saved";
 import { API_BASE } from "@/lib/xano";
 import type { DiscoveryResponse } from "@/app/page";
 
@@ -27,6 +27,7 @@ import type { DiscoveryResponse } from "@/app/page";
 const SAVED_ITEMS_KEY = "limelii_saved_items";
 const SAVED_KEY = "limelii_saved";
 const PREFS_KEY = "limelii_preferences";
+const MIGRATION_KEY = "limelii_saves_migrated";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface UserPreferences {
@@ -163,6 +164,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
   const [activeTab, setActiveTab] = useState<Tab>(
     searchParams.get("tab") === "preferences" ? "preferences" : "created"
   );
+  const [creating, setCreating] = useState(searchParams.get("creating") === "true");
   const [savedCount, setSavedCount] = useState(0);
   const [collectionsCount, setCollectionsCount] = useState<number | null>(null);
   const [createdCount, setCreatedCount] = useState<number | null>(null);
@@ -187,9 +189,25 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
     listCollections()
       .then((data) => setCollectionsCount((data.my_collections?.length ?? 0) + (data.saved_collections?.length ?? 0)))
       .catch(() => setCollectionsCount(0));
-    // Fetch authoritative saved count + list from Xano
-    listSavedExperiences()
-      .then(async (records) => {
+    // One-time migration: push localStorage saves to Xano
+    async function migrateAndLoad() {
+      if (!localStorage.getItem(MIGRATION_KEY)) {
+        const localIds: number[] = (() => {
+          try { return JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]"); } catch { return []; }
+        })();
+        if (localIds.length > 0) {
+          try {
+            const existing = await listSavedExperiences();
+            const existingIds = new Set(existing.map((r) => r.experience_id));
+            const toMigrate = localIds.filter((id) => !existingIds.has(id));
+            await Promise.all(toMigrate.map((id) => saveExperience(id).catch(() => {})));
+          } catch { /* not logged in — skip */ }
+        }
+        localStorage.setItem(MIGRATION_KEY, "1");
+      }
+      // Fetch authoritative saved count + list from Xano
+      try {
+        const records = await listSavedExperiences();
         setSavedCount(records.length);
         if (records.length === 0) return;
         const res = await fetch(`${API_BASE}/discovery`);
@@ -198,8 +216,9 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
         const savedIds = new Set(records.map((r) => r.experience_id));
         const matched = all.filter((e) => savedIds.has(e.id));
         if (matched.length > 0) setSavedExperiences(matched);
-      })
-      .catch(() => { /* not logged in — localStorage fallback stays */ });
+      } catch { /* not logged in — localStorage fallback stays */ }
+    }
+    migrateAndLoad();
   }, []);
 
   function persistPreferences(updated: UserPreferences) {
@@ -437,7 +456,11 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
           {/* Created */}
           {activeTab === "created" && (
             <div className="pt-4">
-              <ProfileExperiences onCountLoaded={setCreatedCount} />
+              <ProfileExperiences
+                onCountLoaded={setCreatedCount}
+                creating={creating}
+                onCreatingDone={() => setCreating(false)}
+              />
             </div>
           )}
 
@@ -455,13 +478,22 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
                   </p>
                 </div>
               ) : (
-                <div className="px-5 pt-4 flex flex-col gap-4">
-                  {savedExperiences.map((exp) => (
-                    <ExperienceCard
-                      key={exp.id}
-                      experience={exp}
-                      onClick={() => { savedScrollY.current = window.scrollY; setSelectedExperience(exp); }}
-                    />
+                <div className="px-4 pt-2 flex gap-1 items-start">
+                  {[savedExperiences.filter((_, i) => i % 2 === 0), savedExperiences.filter((_, i) => i % 2 === 1)].map((col, colIdx) => (
+                    <div key={colIdx} className="flex-1 flex flex-col gap-1">
+                      {col.map((exp, rowIdx) => {
+                        const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
+                        return (
+                          <ExperienceCard
+                            key={exp.id}
+                            experience={exp}
+                            compact
+                            className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                            onClick={() => { savedScrollY.current = window.scrollY; setSelectedExperience(exp); }}
+                          />
+                        );
+                      })}
+                    </div>
                   ))}
                 </div>
               )}

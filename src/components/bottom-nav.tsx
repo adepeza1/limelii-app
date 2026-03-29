@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ClipboardList, User } from "lucide-react";
-import Image from "next/image";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 
@@ -32,8 +31,8 @@ type Tab = ImageTab | IconTab;
 const tabs: Tab[] = [
   { label: "Discover", iconSrc: "/images/Search.svg", href: "/" },
   { label: "Create", icon: ClipboardList, href: "/create" },
-  { label: "Explore", iconSrc: "/images/limeliFavicon.svg", href: "/plan", center: true },
-  { label: "Saved", iconSrc: "/images/heart-alt.svg", href: "/saved" },
+  { label: "Explore", iconSrc: "/images/limeliFavicon.png", href: "/plan", center: true },
+  { label: "Collections", iconSrc: "/images/heart-alt.svg", href: "/saved" },
   { label: "Profile", icon: User, href: "/profile" },
 ];
 
@@ -69,7 +68,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-[750] bg-white border-t border-gray-100" style={{ touchAction: "manipulation" }}>
-      <div className="max-w-5xl mx-auto flex items-end justify-around px-4 pt-1" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 6px)" }}>
+      <div className="max-w-5xl mx-auto flex items-end justify-around px-4" style={{ paddingTop: 4, paddingBottom: "calc(env(safe-area-inset-bottom) + 2px)" }}>
         {tabs.map((tab) => {
           const isActive =
             tab.href === "/"
@@ -107,15 +106,24 @@ export function BottomNav() {
               ) : tab.href === "/saved" ? (
                 <HeartIcon color={color} />
               ) : isCenter ? (
-                <Image
-                  src={(tab as ImageTab).iconSrc}
-                  alt={tab.label}
-                  width={44}
-                  height={44}
-                  priority
-                  className="object-contain"
-                  style={{ margin: "-10px -4px" }}
-                />
+                /* 24px layout placeholder keeps the row the same height as other tabs.
+                   The actual icon is absolutely centred over it at a larger visual size. */
+                <div style={{ position: "relative", width: 24, height: 24 }}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      width: 38,
+                      height: 38,
+                      backgroundImage: `url('${(tab as ImageTab).iconSrc}')`,
+                      backgroundSize: "100%",
+                      backgroundPosition: "center",
+                      backgroundRepeat: "no-repeat",
+                    }}
+                  />
+                </div>
               ) : (
                 (() => { const Icon = (tab as IconTab).icon; return <Icon className="w-6 h-6" style={{ color }} strokeWidth={1.6} />; })()
               )}
