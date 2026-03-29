@@ -247,9 +247,22 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
 
   function handleBack() {
     setSelectedExperience(null);
-    setSavedExperiences(getSavedExperiences());
-    setSavedCount(getSavedCount());
     requestAnimationFrame(() => window.scrollTo(0, savedScrollY.current));
+    // Refetch from Xano to reflect any save/unsave that happened in ExperienceDetail
+    listSavedExperiences()
+      .then(async (records) => {
+        const res = await fetch(`${API_BASE}/discovery`);
+        const data: DiscoveryResponse = await res.json();
+        const all = Object.values(data.experiences ?? {}).flat();
+        const savedIds = new Set(records.map((r) => r.experiences_id));
+        const matched = all.filter((e) => savedIds.has(e.id));
+        setSavedCount(matched.length);
+        setSavedExperiences(matched);
+      })
+      .catch(() => {
+        setSavedExperiences(getSavedExperiences());
+        setSavedCount(getSavedCount());
+      });
   }
 
   const initials = getInitials(givenName, familyName);
