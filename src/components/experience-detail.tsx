@@ -22,7 +22,8 @@ function toggleSaved(experience: Experience): boolean {
   const ids = getSaved();
   const items = getSavedItems();
   const idx = ids.indexOf(experience.id);
-  if (idx === -1) {
+  const saving = idx === -1;
+  if (saving) {
     ids.push(experience.id);
     items[experience.id] = experience;
   } else {
@@ -31,11 +32,18 @@ function toggleSaved(experience: Experience): boolean {
   }
   localStorage.setItem(SAVED_KEY, JSON.stringify(ids));
   localStorage.setItem(SAVED_ITEMS_KEY, JSON.stringify(items));
-  return idx === -1;
+  // Sync to server in the background — don't block the UI
+  if (saving) {
+    saveExperience(experience.id).catch(() => {});
+  } else {
+    unsaveExperience(experience.id).catch(() => {});
+  }
+  return saving;
 }
 import dynamic from "next/dynamic";
 import type { Experience, Place } from "@/app/page";
 import { AddToCollectionSheet } from "./add-to-collection-sheet";
+import { saveExperience, unsaveExperience } from "@/lib/saved";
 
 const ExperienceMap = dynamic(
   () => import("./experience-map").then((m) => m.ExperienceMap),
