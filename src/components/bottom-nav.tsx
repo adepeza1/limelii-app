@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ClipboardList, User } from "lucide-react";
-import Image from "next/image";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 
@@ -32,7 +31,7 @@ type Tab = ImageTab | IconTab;
 const tabs: Tab[] = [
   { label: "Discover", iconSrc: "/images/Search.svg", href: "/" },
   { label: "Create", icon: ClipboardList, href: "/create" },
-  { label: "Explore", iconSrc: "/images/limeliFavicon.svg", href: "/plan", center: true },
+  { label: "Explore", iconSrc: "/images/limeliFavicon.png", href: "/plan", center: true },
   { label: "Saved", iconSrc: "/images/heart-alt.svg", href: "/saved" },
   { label: "Profile", icon: User, href: "/profile" },
 ];
@@ -107,14 +106,16 @@ export function BottomNav() {
               ) : tab.href === "/saved" ? (
                 <HeartIcon color={color} />
               ) : isCenter ? (
-                <Image
-                  src={(tab as ImageTab).iconSrc}
-                  alt={tab.label}
-                  width={44}
-                  height={44}
-                  priority
-                  className="object-contain"
-                  style={{ margin: "-10px -4px" }}
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    backgroundImage: `url('${(tab as ImageTab).iconSrc}')`,
+                    backgroundSize: "920%",
+                    backgroundPosition: "43% 50%",
+                    backgroundRepeat: "no-repeat",
+                    backgroundColor: "white",
+                  }}
                 />
               ) : (
                 (() => { const Icon = (tab as IconTab).icon; return <Icon className="w-6 h-6" style={{ color }} strokeWidth={1.6} />; })()
