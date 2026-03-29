@@ -160,6 +160,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
   const [activeTab, setActiveTab] = useState<Tab>(
     searchParams.get("tab") === "preferences" ? "preferences" : "created"
   );
+  const [creating, setCreating] = useState(searchParams.get("creating") === "true");
   const [savedCount, setSavedCount] = useState(0);
   const [collectionsCount, setCollectionsCount] = useState<number | null>(null);
   const [createdCount, setCreatedCount] = useState<number | null>(null);
@@ -420,7 +421,11 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
           {/* Created */}
           {activeTab === "created" && (
             <div className="pt-4">
-              <ProfileExperiences onCountLoaded={setCreatedCount} />
+              <ProfileExperiences
+                onCountLoaded={setCreatedCount}
+                creating={creating}
+                onCreatingDone={() => setCreating(false)}
+              />
             </div>
           )}
 
@@ -438,13 +443,22 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
                   </p>
                 </div>
               ) : (
-                <div className="px-5 pt-4 flex flex-col gap-4">
-                  {savedExperiences.map((exp) => (
-                    <ExperienceCard
-                      key={exp.id}
-                      experience={exp}
-                      onClick={() => { savedScrollY.current = window.scrollY; setSelectedExperience(exp); }}
-                    />
+                <div className="px-4 pt-2 flex gap-1 items-start">
+                  {[savedExperiences.filter((_, i) => i % 2 === 0), savedExperiences.filter((_, i) => i % 2 === 1)].map((col, colIdx) => (
+                    <div key={colIdx} className="flex-1 flex flex-col gap-1">
+                      {col.map((exp, rowIdx) => {
+                        const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
+                        return (
+                          <ExperienceCard
+                            key={exp.id}
+                            experience={exp}
+                            compact
+                            className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                            onClick={() => { savedScrollY.current = window.scrollY; setSelectedExperience(exp); }}
+                          />
+                        );
+                      })}
+                    </div>
                   ))}
                 </div>
               )}

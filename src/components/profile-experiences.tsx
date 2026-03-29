@@ -1,42 +1,72 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Experience } from "@/app/page";
 import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
 
 interface ProfileExperiencesProps {
   onCountLoaded?: (count: number) => void;
+  creating?: boolean;
+  onCreatingDone?: () => void;
 }
 
-export function ProfileExperiences({ onCountLoaded }: ProfileExperiencesProps) {
+function CreatingPlaceholder() {
+  return (
+    <div className="w-full h-[220px] rounded-xl bg-gray-100 flex flex-col items-center justify-center gap-2">
+      <div
+        className="w-7 h-7 rounded-full border-2 border-gray-300"
+        style={{ borderTopColor: "#FF9A56", animation: "spin 0.9s linear infinite" }}
+      />
+      <p className="text-xs text-gray-400 font-medium">Experience being created…</p>
+    </div>
+  );
+}
+
+export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: ProfileExperiencesProps) {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedExperience, setSelectedExperience] =
-    useState<Experience | null>(null);
+  const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const prevCountRef = useRef<number | null>(null);
+
+  async function fetchExperiences() {
+    try {
+      const res = await fetch("/api/user-experiences");
+      if (!res.ok) {
+        setError("Failed to load your experiences");
+        return;
+      }
+      const data = await res.json();
+      const exps: Experience[] = Array.isArray(data.experiences) ? data.experiences : [];
+
+      // If creating and count went up, signal done
+      if (creating && prevCountRef.current !== null && exps.length > prevCountRef.current) {
+        onCreatingDone?.();
+      }
+      prevCountRef.current = exps.length;
+
+      setExperiences(exps);
+      onCountLoaded?.(exps.length);
+    } catch {
+      setError("Failed to load your experiences");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function fetchExperiences() {
-      try {
-        const res = await fetch("/api/user-experiences");
-        if (!res.ok) {
-          setError("Failed to load your experiences");
-          return;
-        }
-        const data = await res.json();
-        const exps = Array.isArray(data.experiences) ? data.experiences : [];
-        setExperiences(exps);
-        onCountLoaded?.(exps.length);
-      } catch {
-        setError("Failed to load your experiences");
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchExperiences();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Poll every 3 s while a creation is in flight
+  useEffect(() => {
+    if (!creating) return;
+    const id = setInterval(fetchExperiences, 3000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [creating]);
 
   if (selectedExperience) {
     return (
@@ -49,24 +79,26 @@ export function ProfileExperiences({ onCountLoaded }: ProfileExperiencesProps) {
 
   if (loading) {
     return (
-      <div className="px-4 space-y-4 pb-24">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="w-full aspect-[33/38] rounded-[20px] bg-gray-100 animate-pulse"
-          />
+      <div className="px-4 flex gap-1 items-start pb-24">
+        {[0, 1].map((col) => (
+          <div key={col} className="flex-1 flex flex-col gap-1">
+            {[0, 1].map((row) => (
+              <div
+                key={row}
+                className={`w-full rounded-xl bg-gray-100 animate-pulse ${(col === 0 ? row % 2 === 0 : row % 2 === 1) ? "h-[220px]" : "h-[188px]"}`}
+              />
+            ))}
+          </div>
         ))}
       </div>
     );
   }
 
   if (error) {
-    return (
-      <p className="text-center text-gray-500 py-12 px-4">{error}</p>
-    );
+    return <p className="text-center text-gray-500 py-12 px-4">{error}</p>;
   }
 
-  if (experiences.length === 0) {
+  if (!creating && experiences.length === 0) {
     return (
       <p className="text-center text-gray-500 py-12 px-4">
         No experiences yet. Create one to get started!
@@ -74,16 +106,29 @@ export function ProfileExperiences({ onCountLoaded }: ProfileExperiencesProps) {
     );
   }
 
+  // Split into two columns, alternating heights
+  const leftCol = experiences.filter((_, i) => i % 2 === 0);
+  const rightCol = experiences.filter((_, i) => i % 2 === 1);
+
   return (
-    <div className="px-4 pb-24 grid grid-cols-2 gap-3 max-w-5xl mx-auto">
-      {experiences.map((exp) => (
-        <ExperienceCard
-          key={exp.id}
-          experience={exp}
-          className="w-full"
-          compact
-          onClick={() => setSelectedExperience(exp)}
-        />
+    <div className="px-4 pb-24 flex gap-1 items-start">
+      {[leftCol, rightCol].map((col, colIdx) => (
+        <div key={colIdx} className="flex-1 flex flex-col gap-1">
+          {/* Placeholder appears at top of left column while creating */}
+          {colIdx === 0 && creating && <CreatingPlaceholder />}
+          {col.map((exp, rowIdx) => {
+            const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
+            return (
+              <ExperienceCard
+                key={exp.id}
+                experience={exp}
+                compact
+                className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                onClick={() => setSelectedExperience(exp)}
+              />
+            );
+          })}
+        </div>
       ))}
     </div>
   );

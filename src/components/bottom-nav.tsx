@@ -32,7 +32,7 @@ const tabs: Tab[] = [
   { label: "Discover", iconSrc: "/images/Search.svg", href: "/" },
   { label: "Create", icon: ClipboardList, href: "/create" },
   { label: "Explore", iconSrc: "/images/limeliFavicon.png", href: "/plan", center: true },
-  { label: "Saved", iconSrc: "/images/heart-alt.svg", href: "/saved" },
+  { label: "Collections", iconSrc: "/images/heart-alt.svg", href: "/saved" },
   { label: "Profile", icon: User, href: "/profile" },
 ];
 
@@ -68,7 +68,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-[750] bg-white border-t border-gray-100" style={{ touchAction: "manipulation" }}>
-      <div className="max-w-5xl mx-auto flex items-end justify-around px-4 pt-1" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 6px)" }}>
+      <div className="max-w-5xl mx-auto flex items-end justify-around px-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 6px)" }}>
         {tabs.map((tab) => {
           const isActive =
             tab.href === "/"
@@ -108,8 +108,8 @@ export function BottomNav() {
               ) : isCenter ? (
                 <div
                   style={{
-                    width: 44,
-                    height: 44,
+                    width: 28,
+                    height: 28,
                     backgroundImage: `url('${(tab as ImageTab).iconSrc}')`,
                     backgroundSize: "100%",
                     backgroundPosition: "center",

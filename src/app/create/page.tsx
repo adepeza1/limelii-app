@@ -33,7 +33,7 @@ export default function CreatePage() {
           return;
         }
 
-        router.push("/profile");
+        router.push("/profile?creating=true");
       } catch {
         setError("Failed to save route. Please try again.");
       }
