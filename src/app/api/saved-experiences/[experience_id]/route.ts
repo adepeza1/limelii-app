@@ -42,9 +42,12 @@ export async function DELETE(
     toDelete.map((r) => apiFetch(`/saved_experiences/${r.id}`, { method: "DELETE" }))
   );
 
-  const anyFailed = results.some((r) => !r.ok);
-  if (anyFailed) {
-    return NextResponse.json({ error: "Failed to delete one or more records" }, { status: 500 });
+  // 404 = already deleted (acceptable), anything else non-2xx is a real failure
+  const failures = results.filter((r) => !r.ok && r.status !== 404);
+  if (failures.length > 0) {
+    const statuses = failures.map((r) => r.status).join(", ");
+    console.error(`[unsave] Xano DELETE failed with statuses: ${statuses}`);
+    return NextResponse.json({ error: `Failed to delete (statuses: ${statuses})` }, { status: 500 });
   }
 
   return new NextResponse(null, { status: 204 });
