@@ -47,7 +47,7 @@ export async function DELETE(
 
   const results = await Promise.all(
     toDelete.map(async (r) => {
-      const res = await apiFetch(`/saved_experiences/${r.id}`, { method: "DELETE" });
+      const res = await apiFetch(`/saved_experiences?saved_experiences_id=${r.id}`, { method: "DELETE" });
       return { rowId: r.id, status: res.status, ok: res.ok };
     })
   );

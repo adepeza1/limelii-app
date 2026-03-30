@@ -19,7 +19,7 @@ export async function GET() {
   const bad = records.filter((r) => r.experiences_id === 0);
   if (bad.length > 0) {
     await Promise.all(
-      bad.map((r) => apiFetch(`/saved_experiences/${r.id}`, { method: "DELETE" }).catch(() => {}))
+      bad.map((r) => apiFetch(`/saved_experiences?saved_experiences_id=${r.id}`, { method: "DELETE" }).catch(() => {}))
     );
   }
 
