@@ -69,12 +69,14 @@ export function AddToCollectionSheet({
   async function handleDone() {
     setSaving(true);
     try {
-      await Promise.all(
+      const updated = await Promise.all(
         Array.from(selected).map((colId) => {
           const col = collections.find((c) => c.id === colId);
           return addExperienceToCollection(colId, experienceId, col?.experience_ids);
         })
       );
+      // Notify CollectionsPage to update card counts without a full refetch
+      window.dispatchEvent(new CustomEvent("limelii:collections-updated", { detail: { updated } }));
       setDoneState("success");
       setTimeout(onClose, 600);
     } catch {

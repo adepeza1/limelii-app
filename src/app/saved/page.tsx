@@ -52,6 +52,22 @@ export default function CollectionsPage() {
     if (!collectionsLoaded) loadCollections();
   }, [collectionsLoaded, loadCollections]);
 
+  // Live-update collection counts when an experience is added via AddToCollectionSheet
+  useEffect(() => {
+    function handleUpdate(e: Event) {
+      const updated: Collection[] = (e as CustomEvent).detail?.updated ?? [];
+      if (updated.length === 0) return;
+      setMyCollections((prev) =>
+        prev.map((c) => {
+          const fresh = updated.find((u) => u.id === c.id);
+          return fresh ?? c;
+        })
+      );
+    }
+    window.addEventListener("limelii:collections-updated", handleUpdate);
+    return () => window.removeEventListener("limelii:collections-updated", handleUpdate);
+  }, []);
+
   return (
     <div className="bg-white min-h-screen max-w-5xl mx-auto">
       <div className="h-[44px]" />
