@@ -494,6 +494,10 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
                             compact
                             className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
                             onClick={() => { savedScrollY.current = window.scrollY; setSelectedExperience(exp); }}
+                            onUnsave={(id) => {
+                              setSavedExperiences((prev) => prev.filter((e) => e.id !== id));
+                              setSavedCount((prev) => prev - 1);
+                            }}
                           />
                         );
                       })}

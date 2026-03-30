@@ -24,11 +24,13 @@ export function ExperienceCard({
   onClick,
   className = "",
   compact = false,
+  onUnsave,
 }: {
   experience: Experience;
   onClick?: () => void;
   className?: string;
   compact?: boolean;
+  onUnsave?: (id: number) => void;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [visible, setVisible] = useState(false);
@@ -67,6 +69,7 @@ export function ExperienceCard({
         localStorage.setItem(SAVED_KEY, JSON.stringify(items));
       } catch { /* ignore */ }
       setSaved(false);
+      onUnsave?.(experience.id);
       // Remove from server (fire and forget)
       unsaveExperience(experience.id).catch(() => { /* ignore */ });
     } else {
