@@ -24,7 +24,7 @@ export async function DELETE(
   // Xano reference fields may return the full object or just the ID
   const getExpId = (r: { experiences_id: number | { id: number } }): number => {
     if (typeof r.experiences_id === "object" && r.experiences_id !== null) {
-      return r.experiences_id.id;
+      return (r.experiences_id as { id: number }).id;
     }
     return r.experiences_id as number;
   };
@@ -34,21 +34,28 @@ export async function DELETE(
     return id === expId || id === 0;
   });
 
+  // Diagnostic: always return what we found so we can debug
   if (toDelete.length === 0) {
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({
+      debug: true,
+      expId,
+      recordCount: records.length,
+      sample: records.slice(0, 3).map((r) => ({ rowId: r.id, expId: getExpId(r), raw: r.experiences_id })),
+      message: "No matching records found",
+    }, { status: 404 });
   }
 
   const results = await Promise.all(
-    toDelete.map((r) => apiFetch(`/saved_experiences/${r.id}`, { method: "DELETE" }))
+    toDelete.map(async (r) => {
+      const res = await apiFetch(`/saved_experiences/${r.id}`, { method: "DELETE" });
+      return { rowId: r.id, status: res.status, ok: res.ok };
+    })
   );
 
-  // 404 = already deleted (acceptable), anything else non-2xx is a real failure
   const failures = results.filter((r) => !r.ok && r.status !== 404);
   if (failures.length > 0) {
-    const statuses = failures.map((r) => r.status).join(", ");
-    console.error(`[unsave] Xano DELETE failed with statuses: ${statuses}`);
-    return NextResponse.json({ error: `Failed to delete (statuses: ${statuses})` }, { status: 500 });
+    return NextResponse.json({ debug: true, results, error: "Some deletes failed" }, { status: 500 });
   }
 
-  return new NextResponse(null, { status: 204 });
+  return NextResponse.json({ debug: true, deleted: results });
 }
