@@ -34,28 +34,19 @@ export async function DELETE(
     return id === expId || id === 0;
   });
 
-  // Diagnostic: always return what we found so we can debug
   if (toDelete.length === 0) {
-    return NextResponse.json({
-      debug: true,
-      expId,
-      recordCount: records.length,
-      sample: records.slice(0, 3).map((r) => ({ rowId: r.id, expId: getExpId(r), raw: r.experiences_id })),
-      message: "No matching records found",
-    }, { status: 404 });
+    return new NextResponse(null, { status: 204 });
   }
 
   const results = await Promise.all(
-    toDelete.map(async (r) => {
-      const res = await apiFetch(`/saved_experiences?saved_experiences_id=${r.id}`, { method: "DELETE" });
-      return { rowId: r.id, status: res.status, ok: res.ok };
-    })
+    toDelete.map((r) => apiFetch(`/saved_experiences?saved_experiences_id=${r.id}`, { method: "DELETE" }))
   );
 
   const failures = results.filter((r) => !r.ok && r.status !== 404);
   if (failures.length > 0) {
-    return NextResponse.json({ debug: true, results, error: "Some deletes failed" }, { status: 500 });
+    const statuses = failures.map((r) => r.status).join(", ");
+    return NextResponse.json({ error: `Failed to delete (statuses: ${statuses})` }, { status: 500 });
   }
 
-  return NextResponse.json({ debug: true, deleted: results });
+  return new NextResponse(null, { status: 204 });
 }
