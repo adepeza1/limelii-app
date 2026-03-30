@@ -18,14 +18,16 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        // Check if user has completed onboarding
+        // Check if user needs onboarding — redirect if no username or fetch fails
+        let needsOnboarding = true;
         const userRes = await fetch("/api/user/me");
         if (userRes.ok) {
           const user = await userRes.json();
-          if (!user.onboarding_complete) {
-            router.replace("/onboarding");
-            return;
-          }
+          needsOnboarding = !user.username;
+        }
+        if (needsOnboarding) {
+          router.replace("/onboarding");
+          return;
         }
 
         router.replace("/");
