@@ -113,6 +113,12 @@ export async function removeExperienceFromCollection(
   return res.json();
 }
 
+export async function listPublicCollections(): Promise<Collection[]> {
+  const res = await fetch("/api/collections/public");
+  if (!res.ok) throw new Error("Failed to load public collections");
+  return res.json();
+}
+
 export async function saveCollection(collectionId: number): Promise<void> {
   const res = await fetch(`/api/collections/${collectionId}/save`, {
     method: "POST",
