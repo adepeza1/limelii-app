@@ -424,7 +424,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
               <span className="text-[22px] font-bold text-gray-900 leading-none">{savedCount}</span>
               <span className="text-[11px] text-gray-400 mt-1">Saved</span>
             </button>
-            <button onClick={() => router.push("/saved")} className="py-3.5 flex flex-col items-center gap-0.5 active:bg-gray-100 transition-colors">
+            <button onClick={() => router.push("/saved?tab=mine")} className="py-3.5 flex flex-col items-center gap-0.5 active:bg-gray-100 transition-colors">
               <span className="text-[22px] font-bold text-gray-900 leading-none">{collectionsCount ?? "—"}</span>
               <span className="text-[11px] text-gray-400 mt-1">Collections</span>
             </button>

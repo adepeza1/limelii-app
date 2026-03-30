@@ -33,6 +33,25 @@ export function CollectionsTab({
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<{ collection: Collection; isOwner: boolean } | null>(null);
 
+  function getTagsForCollection(collection: Collection): string[] {
+    let ids: number[] = [];
+    if (Array.isArray(collection.experience_ids)) ids = collection.experience_ids;
+    else if (typeof collection.experience_ids === "string") {
+      try { ids = JSON.parse(collection.experience_ids); } catch { ids = []; }
+    }
+    const idSet = new Set(ids);
+    const activities = new Set<string>();
+    for (const exp of allExperiences) {
+      if (!idSet.has(exp.id)) continue;
+      for (const act of exp.activities ?? []) {
+        activities.add(act);
+        if (activities.size >= 4) break;
+      }
+      if (activities.size >= 4) break;
+    }
+    return Array.from(activities).slice(0, 4);
+  }
+
   function getExperiencesForCollection(collection: Collection): Experience[] {
     // experience_ids may come back from Xano as a JSON string — parse if needed
     let ids: number[] = [];
@@ -142,6 +161,7 @@ export function CollectionsTab({
               <CollectionCard
                 key={col.id}
                 collection={col}
+                tags={getTagsForCollection(col)}
                 onClick={() => setSelected({ collection: col, isOwner: true })}
               />
             ))}
@@ -158,6 +178,7 @@ export function CollectionsTab({
               <SavedCollectionCard
                 key={sc.id}
                 savedCollection={sc}
+                tags={getTagsForCollection(sc.collection)}
                 onClick={() => setSelected({ collection: sc.collection, isOwner: false })}
               />
             ))}

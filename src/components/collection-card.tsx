@@ -23,40 +23,51 @@ function LockIcon() {
 
 interface CollectionCardProps {
   collection: Collection;
-  fromHandle?: string; // set when this is a saved-from-others collection
+  fromHandle?: string;
+  tags?: string[];
   onClick: () => void;
 }
 
-export function CollectionCard({ collection, fromHandle, onClick }: CollectionCardProps) {
+export function CollectionCard({ collection, fromHandle, tags, onClick }: CollectionCardProps) {
   let ids: number[] = [];
   if (Array.isArray(collection.experience_ids)) ids = collection.experience_ids;
   else if (typeof collection.experience_ids === "string") {
     try { ids = JSON.parse(collection.experience_ids); } catch { ids = []; }
   }
   const count = ids.length;
+  const ownerHandle = fromHandle ?? collection.owner_handle;
 
   return (
-    <button
-      onClick={onClick}
-      className="w-full text-left"
-    >
+    <button onClick={onClick} className="w-full text-left">
       {/* Stacked card effect */}
-      <div className="relative h-[88px]">
+      <div className="relative h-auto min-h-[88px]">
         {/* Back card 2 */}
-        <div className="absolute inset-x-4 top-3 h-full rounded-2xl bg-[#FFF0F3] border border-[#FFD6DE]" />
+        <div className="absolute inset-x-4 top-3 bottom-0 rounded-2xl bg-[#FFF0F3] border border-[#FFD6DE]" />
         {/* Back card 1 */}
-        <div className="absolute inset-x-2 top-1.5 h-full rounded-2xl bg-[#FFE4EA] border border-[#FFBFCC]" />
+        <div className="absolute inset-x-2 top-1.5 bottom-0 rounded-2xl bg-[#FFE4EA] border border-[#FFBFCC]" />
         {/* Front card */}
-        <div className="relative h-full rounded-2xl bg-white border border-[#EAECF0] shadow-sm px-4 flex items-center gap-3">
+        <div className="relative rounded-2xl bg-white border border-[#EAECF0] shadow-sm px-4 py-3.5 flex items-start gap-3">
           {/* Text */}
           <div className="flex-1 min-w-0">
             <p className="text-[#101828] text-sm font-semibold truncate">{collection.name}</p>
             <p className="text-[#667085] text-xs mt-0.5">
               {count} {count === 1 ? "experience" : "experiences"}
-              {fromHandle && (
-                <span className="text-[#98A2B3]"> · by @{fromHandle}</span>
+              {ownerHandle && (
+                <span className="text-[#98A2B3]"> · by @{ownerHandle}</span>
               )}
             </p>
+            {tags && tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#F2F4F7] text-[#667085]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Visibility badge */}
@@ -76,15 +87,18 @@ export function CollectionCard({ collection, fromHandle, onClick }: CollectionCa
 
 export function SavedCollectionCard({
   savedCollection,
+  tags,
   onClick,
 }: {
   savedCollection: SavedCollection;
+  tags?: string[];
   onClick: () => void;
 }) {
   return (
     <CollectionCard
       collection={savedCollection.collection}
       fromHandle={savedCollection.collection.owner_handle}
+      tags={tags}
       onClick={onClick}
     />
   );
