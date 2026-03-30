@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import {
   Settings,
@@ -161,6 +161,7 @@ function loadPreferences(): UserPreferences {
 // ─── Component ────────────────────────────────────────────────────────────────
 export function ProfileClient({ givenName, familyName, email }: ProfileClientProps) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>(
     searchParams.get("tab") === "preferences" ? "preferences" : "created"
   );
@@ -415,18 +416,18 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
 
           {/* ── Stats bar ───────────────────────────────────────────────────── */}
           <div className="mt-5 grid grid-cols-3 divide-x divide-gray-100 bg-gray-50 rounded-2xl overflow-hidden">
-            <div className="py-3.5 flex flex-col items-center gap-0.5">
+            <button onClick={() => setActiveTab("created")} className="py-3.5 flex flex-col items-center gap-0.5 active:bg-gray-100 transition-colors">
               <span className="text-[22px] font-bold text-gray-900 leading-none">{createdCount ?? "—"}</span>
               <span className="text-[11px] text-gray-400 mt-1">Created</span>
-            </div>
-            <div className="py-3.5 flex flex-col items-center gap-0.5">
+            </button>
+            <button onClick={() => setActiveTab("saved")} className="py-3.5 flex flex-col items-center gap-0.5 active:bg-gray-100 transition-colors">
               <span className="text-[22px] font-bold text-gray-900 leading-none">{savedCount}</span>
               <span className="text-[11px] text-gray-400 mt-1">Saved</span>
-            </div>
-            <div className="py-3.5 flex flex-col items-center gap-0.5">
+            </button>
+            <button onClick={() => router.push("/saved")} className="py-3.5 flex flex-col items-center gap-0.5 active:bg-gray-100 transition-colors">
               <span className="text-[22px] font-bold text-gray-900 leading-none">{collectionsCount ?? "—"}</span>
               <span className="text-[11px] text-gray-400 mt-1">Collections</span>
-            </div>
+            </button>
           </div>
         </div>
 
