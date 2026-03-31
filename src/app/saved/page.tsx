@@ -17,7 +17,8 @@ interface Comment {
   created_at: number;
   user_id: number;
   collection_id: number;
-  text: string;
+  text?: string;
+  comment_text?: string;
   _user?: { username?: string; name?: string };
 }
 
@@ -149,7 +150,7 @@ function CommentsSheet({
                   <p className="text-xs font-semibold text-[#101828]">
                     {c._user?.username ? `@${c._user.username}` : (c._user?.name ?? "user")}
                   </p>
-                  <p className="text-sm text-[#344054] mt-0.5">{c.text}</p>
+                  <p className="text-sm text-[#344054] mt-0.5">{c.comment_text ?? c.text}</p>
                 </div>
               </div>
             ))

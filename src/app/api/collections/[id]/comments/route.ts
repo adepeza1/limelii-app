@@ -32,7 +32,7 @@ export async function POST(
   const res = await apiFetch(`/collections/${id}/comments`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ comment_text: text }),
   });
 
   if (!res.ok) {
