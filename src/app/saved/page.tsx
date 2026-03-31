@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Search, SlidersHorizontal, Heart, MessageCircle } from "lucide-react";
+import { Search, SlidersHorizontal, Heart, MessageCircle, X, Send } from "lucide-react";
 import { CollectionsTab } from "@/components/collections-tab";
 import type { Experience, DiscoveryResponse } from "@/app/page";
 import type { Collection, SavedCollection } from "@/lib/collections";
@@ -11,6 +11,15 @@ import { listCollections, listPublicCollections } from "@/lib/collections";
 import { API_BASE } from "@/lib/xano";
 
 type CollectionsPageTab = "browse" | "following" | "mine";
+
+interface Comment {
+  id: number;
+  created_at: number;
+  user_id: number;
+  collection_id: number;
+  text: string;
+  _user?: { username?: string; name?: string };
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -50,7 +59,6 @@ function CollectionMosaic({ ids, allExperiences }: { ids: number[]; allExperienc
     .map((id) => allExperiences.find((e) => e.id === id))
     .map((exp, i): string => (exp ? (getExpImage(exp) ?? MOSAIC_COLORS[i]) : MOSAIC_COLORS[i]));
 
-  // Pad to at least 1 slot
   if (slots.length === 0) slots.push(MOSAIC_COLORS[0]);
 
   return (
@@ -69,6 +77,105 @@ function CollectionMosaic({ ids, allExperiences }: { ids: number[]; allExperienc
   );
 }
 
+// ─── Comments Sheet ───────────────────────────────────────────────────────────
+
+function CommentsSheet({
+  collectionId,
+  onClose,
+}: {
+  collectionId: number;
+  onClose: () => void;
+}) {
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [text, setText] = useState("");
+  const [posting, setPosting] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/collections/${collectionId}/comments`)
+      .then((r) => r.json())
+      .then((data) => setComments(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [collectionId]);
+
+  async function handlePost() {
+    if (!text.trim() || posting) return;
+    setPosting(true);
+    try {
+      const res = await fetch(`/api/collections/${collectionId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text.trim() }),
+      });
+      if (res.ok) {
+        const comment = await res.json();
+        setComments((prev) => [...prev, comment]);
+        setText("");
+      }
+    } finally {
+      setPosting(false);
+    }
+  }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/40 z-[800]"
+        onClick={onClose}
+      />
+      {/* Sheet */}
+      <div className="fixed bottom-0 left-0 right-0 z-[801] bg-white rounded-t-2xl max-h-[70vh] flex flex-col max-w-5xl mx-auto">
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[#EAECF0]">
+          <p className="text-[#101828] font-semibold text-base">Comments</p>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-[#F2F4F7]">
+            <X size={16} className="text-[#667085]" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-3 flex flex-col gap-3">
+          {loading ? (
+            <p className="text-sm text-[#667085] text-center py-8">Loading…</p>
+          ) : comments.length === 0 ? (
+            <p className="text-sm text-[#667085] text-center py-8">No comments yet. Be the first!</p>
+          ) : (
+            comments.map((c) => (
+              <div key={c.id} className="flex gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-[#F2F4F7] flex items-center justify-center text-[10px] font-bold text-[#667085] shrink-0">
+                  {(c._user?.username ?? "?").slice(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-[#101828]">@{c._user?.username ?? "user"}</p>
+                  <p className="text-sm text-[#344054] mt-0.5">{c.text}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Input */}
+        <div className="px-4 py-3 border-t border-[#EAECF0] flex items-center gap-2" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}>
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handlePost(); }}
+            placeholder="Add a comment…"
+            className="flex-1 text-sm bg-[#F9FAFB] rounded-full px-4 py-2 outline-none border border-[#EAECF0] placeholder:text-[#98A2B3]"
+          />
+          <button
+            onClick={handlePost}
+            disabled={!text.trim() || posting}
+            className="w-9 h-9 rounded-full bg-[#E8405A] flex items-center justify-center disabled:opacity-40"
+          >
+            <Send size={15} className="text-white" />
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── Browse Collection Card ───────────────────────────────────────────────────
 
 function BrowseCollectionCard({
@@ -80,88 +187,152 @@ function BrowseCollectionCard({
   allExperiences: Experience[];
   tags: string[];
 }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const col = collection as any;
+  const [liked, setLiked] = useState<boolean>(col.liked ?? false);
+  const [likeCount, setLikeCount] = useState<number>(col.likes_count ?? 0);
   const [following, setFollowing] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentCount, setCommentCount] = useState<number>(col.comments_count ?? 0);
+
   const ids = parseExperienceIds(collection);
   const count = ids.length;
   const ownerHandle = collection._users?.username ?? collection.owner_handle;
+  const ownerId = collection._users?.id ?? col.users_id;
   const initials = ownerHandle ? ownerHandle.slice(0, 2).toUpperCase() : "?";
   const planUrl = ids.length > 0 ? `/plan?exp_ids=${ids.slice(0, 30).join(",")}` : "/plan";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const col = collection as any;
-  const likesCount: number = col.likes_count ?? 0;
-  const commentsCount: number = col.comments_count ?? 0;
+
+  async function handleLike() {
+    // Optimistic update
+    setLiked((prev) => !prev);
+    setLikeCount((prev) => liked ? prev - 1 : prev + 1);
+    try {
+      const res = await fetch(`/api/collections/${collection.id}/like`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setLiked(data.liked);
+        setLikeCount(data.count);
+      }
+    } catch {
+      // Revert on failure
+      setLiked((prev) => !prev);
+      setLikeCount((prev) => liked ? prev + 1 : prev - 1);
+    }
+  }
+
+  async function handleFollow() {
+    const next = !following;
+    setFollowing(next);
+    try {
+      const res = await fetch(`/api/users/${ownerId}/follow`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setFollowing(data.following);
+      }
+    } catch {
+      setFollowing(!next);
+    }
+  }
 
   return (
-    <div className="rounded-2xl border border-[#EAECF0] overflow-hidden bg-white shadow-sm">
-      {/* Mosaic */}
-      <div className="relative h-44">
-        <CollectionMosaic ids={ids} allExperiences={allExperiences} />
-        {tags.length > 0 && (
-          <div className="absolute bottom-2.5 left-2.5 flex gap-1.5 flex-wrap max-w-[75%]">
-            {tags.slice(0, 2).map((tag) => (
-              <span
-                key={tag}
-                className="text-xs font-medium px-2.5 py-1 rounded-full text-white"
-                style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="px-4 pt-3">
-        {/* Author + follow */}
-        <div className="flex items-center justify-between mb-2.5">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-[#F2F4F7] flex items-center justify-center text-[10px] font-bold text-[#667085]">
-              {initials}
+    <>
+      <div className="rounded-2xl border border-[#EAECF0] overflow-hidden bg-white shadow-sm">
+        {/* Mosaic */}
+        <div className="relative h-44">
+          <CollectionMosaic ids={ids} allExperiences={allExperiences} />
+          {tags.length > 0 && (
+            <div className="absolute bottom-2.5 left-2.5 flex gap-1.5 flex-wrap max-w-[75%]">
+              {tags.slice(0, 2).map((tag) => (
+                <span
+                  key={tag}
+                  className="text-xs font-medium px-2.5 py-1 rounded-full text-white"
+                  style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
-            <span className="text-[#667085] text-sm">@{ownerHandle ?? "unknown"}</span>
-          </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); setFollowing((f) => !f); }}
-            className={`text-sm font-medium px-4 py-1.5 rounded-full border transition-colors ${
-              following
-                ? "border-[#667085] text-[#667085] bg-[#F9FAFB]"
-                : "border-[#101828] text-[#101828]"
-            }`}
-          >
-            {following ? "Following" : "+ Follow"}
-          </button>
+          )}
         </div>
 
-        {/* Title + save heart */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <p className="text-[#101828] text-base font-semibold leading-snug">{collection.name}</p>
-            <p className="text-[#667085] text-xs mt-0.5">{count} {count === 1 ? "experience" : "experiences"}</p>
+        <div className="px-4 pt-3">
+          {/* Author + follow */}
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-[#F2F4F7] flex items-center justify-center text-[10px] font-bold text-[#667085]">
+                {initials}
+              </div>
+              <span className="text-[#667085] text-sm">@{ownerHandle ?? "unknown"}</span>
+            </div>
+            {ownerId && (
+              <button
+                onClick={handleFollow}
+                className={`text-sm font-medium px-4 py-1.5 rounded-full border transition-colors ${
+                  following
+                    ? "border-[#667085] text-[#667085] bg-[#F9FAFB]"
+                    : "border-[#101828] text-[#101828]"
+                }`}
+              >
+                {following ? "Following" : "+ Follow"}
+              </button>
+            )}
           </div>
-          <button className="w-8 h-8 rounded-full border border-[#EAECF0] flex items-center justify-center shrink-0 mt-0.5">
-            <Heart size={14} className="text-[#667085]" />
-          </button>
-        </div>
 
-        {/* Reactions + Plan my day */}
-        <div className="flex items-center gap-2 pt-3 pb-4">
-          <button className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#EAECF0] text-sm text-[#667085]">
-            <Heart size={13} />
-            <span>{likesCount}</span>
-          </button>
-          <button className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#EAECF0] text-sm text-[#667085]">
-            <MessageCircle size={13} />
-            <span>{commentsCount}</span>
-          </button>
-          <Link
-            href={planUrl}
-            className="ml-auto flex items-center gap-1 text-sm font-semibold text-[#E8405A]"
-          >
-            → Plan my day
-          </Link>
+          {/* Title + save heart */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-[#101828] text-base font-semibold leading-snug">{collection.name}</p>
+              <p className="text-[#667085] text-xs mt-0.5">{count} {count === 1 ? "experience" : "experiences"}</p>
+            </div>
+            <button className="w-8 h-8 rounded-full border border-[#EAECF0] flex items-center justify-center shrink-0 mt-0.5">
+              <Heart size={14} className="text-[#667085]" />
+            </button>
+          </div>
+
+          {/* Reactions + Plan my day */}
+          <div className="flex items-center gap-2 pt-3 pb-4">
+            <button
+              onClick={handleLike}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm transition-colors ${
+                liked
+                  ? "border-[#E8405A] text-[#E8405A] bg-[#FFF0F3]"
+                  : "border-[#EAECF0] text-[#667085]"
+              }`}
+            >
+              <Heart size={13} fill={liked ? "currentColor" : "none"} />
+              <span>{likeCount}</span>
+            </button>
+            <button
+              onClick={() => setShowComments(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#EAECF0] text-sm text-[#667085]"
+            >
+              <MessageCircle size={13} />
+              <span>{commentCount}</span>
+            </button>
+            <Link
+              href={planUrl}
+              className="ml-auto flex items-center gap-1 text-sm font-semibold text-[#E8405A]"
+            >
+              → Plan my day
+            </Link>
+          </div>
         </div>
       </div>
-    </div>
+
+      {showComments && (
+        <CommentsSheet
+          collectionId={collection.id}
+          onClose={() => {
+            setShowComments(false);
+            // Refresh comment count
+            fetch(`/api/collections/${collection.id}/comments`)
+              .then((r) => r.json())
+              .then((data) => { if (Array.isArray(data)) setCommentCount(data.length); })
+              .catch(() => {});
+          }}
+        />
+      )}
+    </>
   );
 }
 
@@ -184,7 +355,6 @@ function BrowseTab({
 }) {
   return (
     <>
-      {/* Filter pills */}
       <div
         className="flex gap-2 px-5 py-3 overflow-x-auto"
         style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
@@ -243,20 +413,57 @@ function BrowseTab({
 
 // ─── Following Tab ────────────────────────────────────────────────────────────
 
-function FollowingTab() {
-  return (
-    <div className="px-5 py-16 flex flex-col items-center gap-3 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-[#F2F4F7] flex items-center justify-center">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#667085" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-          <circle cx="9" cy="7" r="4" />
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-        </svg>
+function FollowingTab({ allExperiences }: { allExperiences: Experience[] }) {
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/collections/following")
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => setCollections(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="px-5 py-16 flex items-center justify-center">
+        <p className="text-sm text-[#667085]">Loading…</p>
       </div>
-      <p className="text-[#101828] font-semibold text-base">No followed users yet</p>
-      <p className="text-[#667085] text-sm max-w-[240px]">
-        Follow users from Browse to see their collections here.
-      </p>
+    );
+  }
+
+  if (collections.length === 0) {
+    return (
+      <div className="px-5 py-16 flex flex-col items-center gap-3 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-[#F2F4F7] flex items-center justify-center">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#667085" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </div>
+        <p className="text-[#101828] font-semibold text-base">No followed users yet</p>
+        <p className="text-[#667085] text-sm max-w-[240px]">
+          Follow users from Browse to see their collections here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-5 pb-28 flex flex-col gap-4 pt-4">
+      {collections.map((col) => {
+        const tags = getTagsForCollection(col, allExperiences);
+        return (
+          <BrowseCollectionCard
+            key={col.id}
+            collection={col}
+            allExperiences={allExperiences}
+            tags={tags}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -407,10 +614,10 @@ function CollectionsPageInner() {
           loading={browseLoading && !browseLoaded}
           filterPills={filterPills}
           activeFilter={activeFilter}
-          onFilterChange={(f) => { setActiveFilter(f); }}
+          onFilterChange={setActiveFilter}
         />
       ) : activeTab === "following" ? (
-        <FollowingTab />
+        <FollowingTab allExperiences={allExperiences} />
       ) : (
         <CollectionsTab
           allExperiences={allExperiences}
