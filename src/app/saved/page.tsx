@@ -143,10 +143,12 @@ function CommentsSheet({
             comments.map((c) => (
               <div key={c.id} className="flex gap-2.5">
                 <div className="w-7 h-7 rounded-full bg-[#F2F4F7] flex items-center justify-center text-[10px] font-bold text-[#667085] shrink-0">
-                  {(c._user?.username ?? "?").slice(0, 2).toUpperCase()}
+                  {(c._user?.username ?? c._user?.name ?? "?").slice(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-[#101828]">@{c._user?.username ?? "user"}</p>
+                  <p className="text-xs font-semibold text-[#101828]">
+                    {c._user?.username ? `@${c._user.username}` : (c._user?.name ?? "user")}
+                  </p>
                   <p className="text-sm text-[#344054] mt-0.5">{c.text}</p>
                 </div>
               </div>
