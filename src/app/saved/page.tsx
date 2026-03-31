@@ -135,7 +135,7 @@ function CommentsSheet({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-3 flex flex-col gap-3">
+        <div className="flex-1 overflow-y-auto px-5 py-3 pb-6 flex flex-col gap-3">
           {loading ? (
             <p className="text-sm text-[#667085] text-center py-8">Loading…</p>
           ) : comments.length === 0 ? (
