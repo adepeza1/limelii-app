@@ -603,7 +603,7 @@ function CollectionsPageInner() {
 
       {/* Header */}
       <div className="px-5 pt-4 pb-3 flex items-center justify-between">
-        <h1 className="text-[#101828] text-[2rem] font-bold leading-tight">collections</h1>
+        <h1 className="text-[#101828] text-2xl font-bold leading-tight">Collections</h1>
         <div className="flex items-center gap-2">
           <button className="w-9 h-9 rounded-full border border-[#EAECF0] flex items-center justify-center">
             <Search size={16} className="text-[#667085]" />

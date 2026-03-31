@@ -317,7 +317,7 @@ function PlanPageInner() {
       {/* ── Map ── */}
       <div className="absolute inset-0 z-0">
         <PlanBackgroundMap
-          experiences={matchedExperiences}
+          experiences={resultsOpen && results ? results : matchedExperiences}
           onExperienceClick={handlePinClick}
         />
       </div>
