@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import {
@@ -140,7 +141,8 @@ const PlanBackgroundMap = dynamic(
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function PlanPage() {
+function PlanPageInner() {
+  const searchParams = useSearchParams();
   const [allExperiences, setAllExperiences] = useState<Experience[]>([]);
   const [location, setLocation] = useState("All NYC");
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<string[]>([]);
@@ -175,6 +177,21 @@ export default function PlanPage() {
       })
       .catch(() => {});
   }, []);
+
+  // Pre-load experiences from a collection via ?exp_ids=1,2,3
+  useEffect(() => {
+    if (allExperiences.length === 0) return;
+    const expIdsParam = searchParams.get("exp_ids");
+    if (!expIdsParam) return;
+    const ids = new Set(expIdsParam.split(",").map(Number).filter(Boolean));
+    const preloaded = allExperiences.filter((e) => ids.has(e.id));
+    if (preloaded.length > 0) {
+      setResults(preloaded);
+      setResultsOpen(true);
+    }
+  // Only run once when experiences first load with the param
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allExperiences]);
 
   // matchedExperiences = all when no filters active, filtered subset otherwise
   const matchedExperiences = useMemo(
@@ -583,5 +600,13 @@ export default function PlanPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PlanPage() {
+  return (
+    <Suspense fallback={<div className="bg-white min-h-screen" />}>
+      <PlanPageInner />
+    </Suspense>
   );
 }
