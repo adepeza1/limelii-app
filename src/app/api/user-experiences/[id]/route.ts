@@ -12,7 +12,7 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const res = await apiFetch(`/user_experiences?user_experiences_id=${id}`, { method: "DELETE" });
+  const res = await apiFetch(`/experiences/${id}`, { method: "DELETE" });
 
   if (!res.ok && res.status !== 404) {
     return NextResponse.json({ error: "Failed to delete experience" }, { status: res.status });
