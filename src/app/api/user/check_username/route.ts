@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiFetch } from "@/lib/api";
+import { USER_API_BASE } from "@/lib/xano";
 
 export async function GET(request: NextRequest) {
   const username = request.nextUrl.searchParams.get("username");
@@ -7,7 +8,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ available: false });
   }
 
-  const res = await apiFetch(`/user/check_username?username=${encodeURIComponent(username)}`);
+  const res = await apiFetch(`/user/check_username?username=${encodeURIComponent(username)}`, {}, USER_API_BASE);
 
   // If request failed entirely, don't block the user — assume available
   if (!res.ok) {
