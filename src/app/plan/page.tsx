@@ -187,7 +187,6 @@ function PlanPageInner() {
     const preloaded = allExperiences.filter((e) => ids.has(e.id));
     if (preloaded.length > 0) {
       setResults(preloaded);
-      setResultsOpen(true);
     }
   // Only run once when experiences first load with the param
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -317,7 +316,7 @@ function PlanPageInner() {
       {/* ── Map ── */}
       <div className="absolute inset-0 z-0">
         <PlanBackgroundMap
-          experiences={resultsOpen && results ? results : matchedExperiences}
+          experiences={results ? results : matchedExperiences}
           onExperienceClick={handlePinClick}
         />
       </div>

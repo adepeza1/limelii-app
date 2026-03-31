@@ -185,7 +185,7 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
                     onClick={() => setSelectedExperience(exp)}
                   />
                   {/* Delete button overlay */}
-                  <div className="absolute top-2 right-2">
+                  <div className="absolute top-[52px] right-2">
                     <button
                       onClick={(e) => { e.stopPropagation(); setDeleteTarget(exp); }}
                       className="w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm"
