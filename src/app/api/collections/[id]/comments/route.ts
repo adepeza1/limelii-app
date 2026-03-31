@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const res = await fetch(`${API_BASE}/collections/${id}/comments`);
+  const res = await fetch(`${API_BASE}/get_collection_comments?collection_id=${id}`);
 
   if (!res.ok) {
     return NextResponse.json({ error: "Failed to fetch comments" }, { status: res.status });
@@ -32,7 +32,7 @@ export async function POST(
   const res = await apiFetch(`/collections/${id}/comments`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ comment_text: text }),
   });
 
   if (!res.ok) {

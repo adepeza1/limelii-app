@@ -17,7 +17,8 @@ interface Comment {
   created_at: number;
   user_id: number;
   collection_id: number;
-  text: string;
+  text?: string;
+  comment_text?: string;
   _user?: { username?: string; name?: string };
 }
 
@@ -134,7 +135,7 @@ function CommentsSheet({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-3 flex flex-col gap-3">
+        <div className="flex-1 overflow-y-auto px-5 py-3 pb-6 flex flex-col gap-3">
           {loading ? (
             <p className="text-sm text-[#667085] text-center py-8">Loading…</p>
           ) : comments.length === 0 ? (
@@ -143,11 +144,13 @@ function CommentsSheet({
             comments.map((c) => (
               <div key={c.id} className="flex gap-2.5">
                 <div className="w-7 h-7 rounded-full bg-[#F2F4F7] flex items-center justify-center text-[10px] font-bold text-[#667085] shrink-0">
-                  {(c._user?.username ?? "?").slice(0, 2).toUpperCase()}
+                  {(c._user?.username ?? c._user?.name ?? "?").slice(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-[#101828]">@{c._user?.username ?? "user"}</p>
-                  <p className="text-sm text-[#344054] mt-0.5">{c.text}</p>
+                  <p className="text-xs font-semibold text-[#101828]">
+                    {c._user?.username ? `@${c._user.username}` : (c._user?.name ?? "user")}
+                  </p>
+                  <p className="text-sm text-[#344054] mt-0.5">{c.comment_text ?? c.text}</p>
                 </div>
               </div>
             ))
@@ -189,7 +192,13 @@ function BrowseCollectionCard({
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const col = collection as any;
-  const [liked, setLiked] = useState<boolean>(col.liked ?? false);
+
+  const LIKED_KEY = "limelii_liked_collections";
+  function getLikedIds(): number[] {
+    try { return JSON.parse(localStorage.getItem(LIKED_KEY) ?? "[]"); } catch { return []; }
+  }
+
+  const [liked, setLiked] = useState<boolean>(() => getLikedIds().includes(collection.id));
   const [likeCount, setLikeCount] = useState<number>(col.likes_count ?? 0);
   const [following, setFollowing] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -203,20 +212,32 @@ function BrowseCollectionCard({
   const planUrl = ids.length > 0 ? `/plan?exp_ids=${ids.slice(0, 30).join(",")}` : "/plan";
 
   async function handleLike() {
+    const nextLiked = !liked;
     // Optimistic update
-    setLiked((prev) => !prev);
-    setLikeCount((prev) => liked ? prev - 1 : prev + 1);
+    setLiked(nextLiked);
+    setLikeCount((prev) => nextLiked ? prev + 1 : prev - 1);
+    // Persist liked state in localStorage
+    const ids = getLikedIds().filter((id) => id !== collection.id);
+    if (nextLiked) ids.push(collection.id);
+    localStorage.setItem(LIKED_KEY, JSON.stringify(ids));
     try {
       const res = await fetch(`/api/collections/${collection.id}/like`, { method: "POST" });
       if (res.ok) {
         const data = await res.json();
         setLiked(data.liked);
         setLikeCount(data.count);
+        // Sync with server response
+        const synced = getLikedIds().filter((id) => id !== collection.id);
+        if (data.liked) synced.push(collection.id);
+        localStorage.setItem(LIKED_KEY, JSON.stringify(synced));
       }
     } catch {
       // Revert on failure
-      setLiked((prev) => !prev);
-      setLikeCount((prev) => liked ? prev + 1 : prev - 1);
+      setLiked(liked);
+      setLikeCount((prev) => nextLiked ? prev - 1 : prev + 1);
+      const reverted = getLikedIds().filter((id) => id !== collection.id);
+      if (liked) reverted.push(collection.id);
+      localStorage.setItem(LIKED_KEY, JSON.stringify(reverted));
     }
   }
 
