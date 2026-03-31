@@ -54,7 +54,8 @@ export async function refreshXanoToken(): Promise<string> {
 
 export async function apiFetch(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  base: string = API_BASE
 ): Promise<Response> {
   const cookieStore = await cookies();
   let xanoToken = cookieStore.get("xano_token")?.value;
@@ -67,7 +68,7 @@ export async function apiFetch(
     if (!headers.has("Content-Type") && options.body) {
       headers.set("Content-Type", "application/json");
     }
-    return fetch(`${API_BASE}${path}`, { ...options, headers });
+    return fetch(`${base}${path}`, { ...options, headers });
   };
 
   const response = await makeRequest(xanoToken);
