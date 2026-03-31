@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const res = await fetch(`${API_BASE}/get_collection_comments?collection_id=${id}`);
+  const res = await fetch(`${API_BASE}/collections/${id}/comments`);
 
   if (!res.ok) {
     return NextResponse.json({ error: "Failed to fetch comments" }, { status: res.status });
