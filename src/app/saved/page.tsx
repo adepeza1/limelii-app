@@ -110,9 +110,13 @@ function CommentsSheet({
         body: JSON.stringify({ text: text.trim() }),
       });
       if (res.ok) {
-        const comment = await res.json();
-        setComments((prev) => [...prev, comment]);
         setText("");
+        // Re-fetch to get enriched comment with _user
+        const refreshed = await fetch(`/api/collections/${collectionId}/comments`);
+        if (refreshed.ok) {
+          const data = await refreshed.json();
+          setComments(Array.isArray(data) ? data : []);
+        }
       }
     } finally {
       setPosting(false);
