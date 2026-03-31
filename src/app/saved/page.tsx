@@ -245,8 +245,8 @@ function BrowseCollectionCard({ collection, tags }: { collection: Collection; ta
             <p className="text-[#101828] text-sm font-semibold truncate">{collection.name}</p>
             <p className="text-[#667085] text-xs mt-0.5">
               {count} {count === 1 ? "experience" : "experiences"}
-              {collection.owner_handle && (
-                <span className="text-[#98A2B3]"> · by @{collection.owner_handle}</span>
+              {(collection._users?.username || collection.owner_handle) && (
+                <span className="text-[#98A2B3]"> · by @{collection._users?.username ?? collection.owner_handle}</span>
               )}
             </p>
             {tags.length > 0 && (

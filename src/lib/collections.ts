@@ -9,6 +9,7 @@ export interface Collection {
   owner_user_id: number;
   owner_handle?: string; // populated by API for saved-from-others
   experience_ids: number[];
+  _users?: { username?: string; name?: string; id?: number };
 }
 
 export interface SavedCollection {
