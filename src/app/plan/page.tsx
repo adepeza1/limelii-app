@@ -178,19 +178,20 @@ function PlanPageInner() {
       .catch(() => {});
   }, []);
 
-  // Pre-load experiences from a collection via ?exp_ids=1,2,3
+  // Pre-load experiences from a collection via ?collection_id=123
   useEffect(() => {
-    if (allExperiences.length === 0) return;
-    const expIdsParam = searchParams.get("exp_ids");
-    if (!expIdsParam) return;
-    const ids = new Set(expIdsParam.split(",").map(Number).filter(Boolean));
-    const preloaded = allExperiences.filter((e) => ids.has(e.id));
-    if (preloaded.length > 0) {
-      setResults(preloaded);
-    }
-  // Only run once when experiences first load with the param
+    const collectionId = searchParams.get("collection_id");
+    if (!collectionId) return;
+    fetch(`/api/collections/${collectionId}`)
+      .then((r) => r.json())
+      .then((col) => {
+        const exps: Experience[] = col._experiences ?? [];
+        if (exps.length > 0) setResults(exps);
+      })
+      .catch(() => {});
+  // Only run once on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allExperiences]);
+  }, []);
 
   // matchedExperiences = all when no filters active, filtered subset otherwise
   const matchedExperiences = useMemo(

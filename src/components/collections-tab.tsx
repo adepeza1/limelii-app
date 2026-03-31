@@ -53,7 +53,11 @@ export function CollectionsTab({
   }
 
   function getExperiencesForCollection(collection: Collection): Experience[] {
-    // experience_ids may come back from Xano as a JSON string — parse if needed
+    // Prefer _experiences from Xano enrichment (includes private/created experiences)
+    if (collection._experiences && collection._experiences.length > 0) {
+      return collection._experiences;
+    }
+    // Fallback: match IDs against discovery pool
     let ids: number[] = [];
     if (Array.isArray(collection.experience_ids)) {
       ids = collection.experience_ids;

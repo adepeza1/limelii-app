@@ -10,6 +10,7 @@ export interface Collection {
   owner_handle?: string; // populated by API for saved-from-others
   experience_ids: number[];
   _users?: { username?: string; name?: string; id?: number };
+  _experiences?: import("@/app/page").Experience[];
 }
 
 export interface SavedCollection {
