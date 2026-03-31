@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Trash2, FolderPlus, X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import type { Experience } from "@/app/page";
 import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
-import { AddToCollectionSheet } from "./add-to-collection-sheet";
 
 interface ProfileExperiencesProps {
   onCountLoaded?: (count: number) => void;
@@ -74,7 +73,6 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Experience | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [collectionTarget, setCollectionTarget] = useState<Experience | null>(null);
   const prevCountRef = useRef<number | null>(null);
 
   async function fetchExperiences() {
@@ -186,15 +184,8 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
                     className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
                     onClick={() => setSelectedExperience(exp)}
                   />
-                  {/* Action buttons overlay */}
-                  <div className="absolute top-2 right-2 flex flex-col gap-1.5">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setCollectionTarget(exp); }}
-                      className="w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm"
-                      title="Add to collection"
-                    >
-                      <FolderPlus size={13} className="text-[#344054]" />
-                    </button>
+                  {/* Delete button overlay */}
+                  <div className="absolute top-2 right-2">
                     <button
                       onClick={(e) => { e.stopPropagation(); setDeleteTarget(exp); }}
                       className="w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm"
@@ -219,13 +210,6 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
         />
       )}
 
-      {collectionTarget && (
-        <AddToCollectionSheet
-          experienceId={collectionTarget.id}
-          onFlatSave={() => setCollectionTarget(null)}
-          onClose={() => setCollectionTarget(null)}
-        />
-      )}
     </>
   );
 }
