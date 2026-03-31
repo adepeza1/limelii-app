@@ -8,7 +8,6 @@ import type { Collection } from "@/lib/collections";
 import { saveCollection } from "@/lib/collections";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
-import { API_BASE } from "@/lib/xano";
 import { use } from "react";
 
 interface PublicCollectionPageProps {
@@ -31,16 +30,9 @@ export default function PublicCollectionPage({ params }: PublicCollectionPagePro
         if (!r.ok) throw new Error("Collection not found or private");
         return r.json();
       })
-      .then(async (col: Collection) => {
+      .then((col: Collection) => {
         setCollection(col);
-        // Fetch all experiences to look up IDs
-        const discoveryRes = await fetch(`${API_BASE}/discovery`);
-        if (discoveryRes.ok) {
-          const data = await discoveryRes.json();
-          const flat: Experience[] = Object.values(data.experiences ?? {}).flat() as Experience[];
-          const ids = new Set(col.experience_ids ?? []);
-          setExperiences(flat.filter((e) => ids.has(e.id)));
-        }
+        setExperiences(col._experiences ?? []);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));

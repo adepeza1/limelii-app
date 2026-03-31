@@ -213,7 +213,7 @@ function BrowseCollectionCard({
   const ownerHandle = collection._users?.username ?? collection.owner_handle;
   const ownerId = collection._users?.id ?? col.users_id;
   const initials = ownerHandle ? ownerHandle.slice(0, 2).toUpperCase() : "?";
-  const planUrl = ids.length > 0 ? `/plan?exp_ids=${ids.slice(0, 30).join(",")}` : "/plan";
+  const planUrl = collection.id ? `/plan?collection_id=${collection.id}` : "/plan";
 
   async function handleLike() {
     const nextLiked = !liked;
