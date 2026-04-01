@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import type { Experience, DiscoveryResponse } from "@/app/page";
 import type { Collection } from "@/lib/collections";
@@ -148,13 +147,8 @@ function FollowingTab({ allExperiences }: { allExperiences: Experience[] }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-import React from "react";
-
-function CollectionsPageInner() {
-  const searchParams = useSearchParams();
-  const initialTab: CollectionsPageTab = "browse";
-
-  const [activeTab, setActiveTab] = useState<CollectionsPageTab>(initialTab);
+export default function CollectionsPage() {
+  const [activeTab, setActiveTab] = useState<CollectionsPageTab>("browse");
   const [activeFilter, setActiveFilter] = useState("All");
   const [allExperiences, setAllExperiences] = useState<Experience[]>([]);
 
@@ -257,13 +251,5 @@ function CollectionsPageInner() {
         <FollowingTab allExperiences={allExperiences} />
       )}
     </div>
-  );
-}
-
-export default function CollectionsPage() {
-  return (
-    <Suspense fallback={<div className="bg-white min-h-screen" />}>
-      <CollectionsPageInner />
-    </Suspense>
   );
 }
