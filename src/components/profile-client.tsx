@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import {
   Settings,
@@ -46,6 +46,8 @@ interface ProfileClientProps {
   givenName: string | null;
   familyName: string | null;
   email: string | null;
+  initialTab?: Tab;
+  initialCreating?: boolean;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -161,13 +163,10 @@ function loadPreferences(): UserPreferences {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export function ProfileClient({ givenName, familyName, email }: ProfileClientProps) {
-  const searchParams = useSearchParams();
+export function ProfileClient({ givenName, familyName, email, initialTab = "created", initialCreating = false }: ProfileClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>(
-    searchParams.get("tab") === "preferences" ? "preferences" : "created"
-  );
-  const [creating, setCreating] = useState(searchParams.get("creating") === "true");
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+  const [creating, setCreating] = useState(initialCreating);
   const [savedCount, setSavedCount] = useState(0);
   const [collectionsCount, setCollectionsCount] = useState<number | null>(null);
   const [createdCount, setCreatedCount] = useState<number | null>(null);
