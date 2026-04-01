@@ -176,7 +176,7 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
 
   return (
     <>
-      <div className="px-4 pb-24 flex gap-1 items-start">
+      <div className="px-4 pb-4 flex gap-1 items-start">
         {[leftCol, rightCol].map((col, colIdx) => (
           <div key={colIdx} className="flex-1 flex flex-col gap-1">
             {colIdx === 0 && creating && <CreatingPlaceholder />}
