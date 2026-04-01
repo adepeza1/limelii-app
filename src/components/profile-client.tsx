@@ -446,7 +446,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
                 onClick={() => setActiveTab(id)}
                 className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === id
-                    ? "border-[#416f7b] text-[#416f7b]"
+                    ? "border-[#E8405A] text-[#E8405A]"
                     : "border-transparent text-gray-400 hover:text-gray-600"
                 }`}
               >
@@ -457,7 +457,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
         </div>
 
         {/* ── Tab content ─────────────────────────────────────────────────── */}
-        <div className="pb-28">
+        <div className="pb-4">
           {/* Created */}
           {activeTab === "created" && (
             <div className="pt-4">

@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Search, SlidersHorizontal, Heart, MessageCircle, X, Send } from "lucide-react";
+import { Search, SlidersHorizontal, Heart, MessageCircle, X, Send, ChevronLeft, Trash2 } from "lucide-react";
 import { CollectionsTab } from "@/components/collections-tab";
+import { ExperienceCard } from "@/components/experience-card";
+import { ExperienceDetail } from "@/components/experience-detail";
 import type { Experience, DiscoveryResponse } from "@/app/page";
 import type { Collection, SavedCollection } from "@/lib/collections";
 import { listCollections, listPublicCollections } from "@/lib/collections";
@@ -50,6 +52,20 @@ function getTagsForCollection(collection: Collection, allExperiences: Experience
   return Array.from(activities).slice(0, 4);
 }
 
+function relativeTime(ts: number): string {
+  const diff = Date.now() - ts;
+  const s = Math.floor(diff / 1000);
+  if (s < 5) return "now";
+  if (s < 60) return `< 1m`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d`;
+  return `${Math.floor(d / 7)}w`;
+}
+
 // ─── Mosaic ───────────────────────────────────────────────────────────────────
 
 const MOSAIC_COLORS = ["#EDCFC6", "#D4C9B8", "#B8CBBF", "#C9D4E0", "#D4C9D4"];
@@ -92,6 +108,7 @@ function CommentsSheet({
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [posting, setPosting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   useEffect(() => {
     fetch(`/api/collections/${collectionId}/comments`)
@@ -99,6 +116,10 @@ function CommentsSheet({
       .then((data) => setComments(Array.isArray(data) ? data : []))
       .catch(() => {})
       .finally(() => setLoading(false));
+    fetch("/api/user/me")
+      .then((r) => r.ok ? r.json() : null)
+      .then((u) => { if (u?.id) setCurrentUserId(u.id); })
+      .catch(() => {});
   }, [collectionId]);
 
   async function handlePost() {
@@ -112,7 +133,6 @@ function CommentsSheet({
       });
       if (res.ok) {
         setText("");
-        // Re-fetch to get enriched comment with _user
         const refreshed = await fetch(`/api/collections/${collectionId}/comments`);
         if (refreshed.ok) {
           const data = await refreshed.json();
@@ -124,13 +144,15 @@ function CommentsSheet({
     }
   }
 
+  async function handleDelete(commentId: number) {
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    await fetch(`/api/collections/${collectionId}/comments/${commentId}`, { method: "DELETE" });
+  }
+
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/40 z-[800]"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/40 z-[800]" onClick={onClose} />
       {/* Sheet */}
       <div className="fixed bottom-0 left-0 right-0 z-[801] bg-white rounded-t-2xl max-h-[70vh] flex flex-col max-w-5xl mx-auto">
         <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[#EAECF0]">
@@ -152,11 +174,19 @@ function CommentsSheet({
                   {(c._user?.username ?? c._user?.name ?? "?").slice(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-[#101828]">
-                    {c._user?.username ? `@${c._user.username}` : (c._user?.name ?? "user")}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-semibold text-[#101828]">
+                      {c._user?.username ?? c._user?.name ?? "user"}
+                    </p>
+                    <p className="text-[10px] text-[#98A2B3]">{relativeTime(c.created_at)}</p>
+                  </div>
                   <p className="text-sm text-[#344054] mt-0.5">{c.comment_text ?? c.text}</p>
                 </div>
+                {currentUserId && c.user_id === currentUserId && (
+                  <button onClick={() => handleDelete(c.id)} className="shrink-0 p-1 text-[#98A2B3] hover:text-[#E8405A]">
+                    <Trash2 size={13} />
+                  </button>
+                )}
               </div>
             ))
           )}
@@ -208,6 +238,8 @@ function BrowseCollectionCard({
   const [following, setFollowing] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState<number>(col.comments_count ?? 0);
+  const [showDetail, setShowDetail] = useState(false);
+  const [selectedExp, setSelectedExp] = useState<Experience | null>(null);
 
   const ids = parseExperienceIds(collection);
   const count = ids.length;
@@ -263,8 +295,8 @@ function BrowseCollectionCard({
   return (
     <>
       <div className="rounded-2xl border border-[#EAECF0] overflow-hidden bg-white shadow-sm">
-        {/* Mosaic */}
-        <div className="relative h-44">
+        {/* Mosaic — click opens detail */}
+        <div className="relative h-44 cursor-pointer" onClick={() => setShowDetail(true)}>
           <CollectionMosaic ids={ids} allExperiences={allExperiences} resolvedExperiences={collection._experiences} />
           {tags.length > 0 && (
             <div className="absolute bottom-2.5 left-2.5 flex gap-1.5 flex-wrap max-w-[75%]">
@@ -288,7 +320,7 @@ function BrowseCollectionCard({
               <div className="w-7 h-7 rounded-full bg-[#F2F4F7] flex items-center justify-center text-[10px] font-bold text-[#667085]">
                 {initials}
               </div>
-              <span className="text-[#667085] text-sm">@{ownerHandle ?? "unknown"}</span>
+              <span className="text-[#667085] text-sm">{ownerHandle ?? "unknown"}</span>
             </div>
             {ownerId && (
               <button
@@ -306,7 +338,7 @@ function BrowseCollectionCard({
 
           {/* Title + save heart */}
           <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setShowDetail(true)}>
               <p className="text-[#101828] text-base font-semibold leading-snug">{collection.name}</p>
               <p className="text-[#667085] text-xs mt-0.5">{count} {count === 1 ? "experience" : "experiences"}</p>
             </div>
@@ -350,13 +382,57 @@ function BrowseCollectionCard({
           collectionId={collection.id}
           onClose={() => {
             setShowComments(false);
-            // Refresh comment count
             fetch(`/api/collections/${collection.id}/comments`)
               .then((r) => r.json())
               .then((data) => { if (Array.isArray(data)) setCommentCount(data.length); })
               .catch(() => {});
           }}
         />
+      )}
+
+      {showDetail && (
+        <div className="fixed inset-0 z-[700] bg-white overflow-y-auto">
+          {selectedExp ? (
+            <ExperienceDetail experience={selectedExp} onBack={() => setSelectedExp(null)} />
+          ) : (
+            <>
+              <div className="sticky top-0 bg-white border-b border-[#EAECF0] px-4 py-3 flex items-center gap-3 z-10">
+                <div className="h-[44px]" />
+                <button onClick={() => setShowDetail(false)} className="p-1">
+                  <ChevronLeft size={22} className="text-[#101828]" />
+                </button>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[#101828] truncate">{collection.name}</p>
+                  <p className="text-xs text-[#667085]">{count} {count === 1 ? "experience" : "experiences"}</p>
+                </div>
+              </div>
+              {(collection._experiences ?? []).length === 0 ? (
+                <div className="px-5 py-16 text-center">
+                  <p className="text-[#667085] text-sm">No experiences in this collection yet.</p>
+                </div>
+              ) : (
+                <div className="px-4 pt-4 pb-28 flex gap-2">
+                  {[
+                    (collection._experiences ?? []).filter((_, i) => i % 2 === 0),
+                    (collection._experiences ?? []).filter((_, i) => i % 2 === 1),
+                  ].map((col, colIdx) => (
+                    <div key={colIdx} className="flex-1 flex flex-col gap-2">
+                      {col.map((exp) => (
+                        <ExperienceCard
+                          key={exp.id}
+                          experience={exp}
+                          compact
+                          className="!aspect-auto !rounded-xl h-[200px]"
+                          onClick={() => setSelectedExp(exp)}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       )}
     </>
   );
