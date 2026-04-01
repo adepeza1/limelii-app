@@ -159,9 +159,20 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
 
   if (!creating && experiences.length === 0) {
     return (
-      <p className="text-center text-gray-500 py-12 px-4">
-        No experiences yet. Create one to get started!
-      </p>
+      <div className="py-16 flex flex-col items-center gap-3 text-center px-5">
+        <div className="w-14 h-14 rounded-2xl bg-[#FFF0F3] flex items-center justify-center">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FB6983" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+            <rect x="9" y="3" width="6" height="4" rx="1" />
+            <line x1="12" y1="12" x2="12" y2="16" />
+            <line x1="10" y1="14" x2="14" y2="14" />
+          </svg>
+        </div>
+        <p className="text-[#101828] font-semibold text-base">Nothing created yet</p>
+        <p className="text-[#667085] text-sm max-w-[240px]">
+          Head to the create tab to create experiences.
+        </p>
+      </div>
     );
   }
 

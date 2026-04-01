@@ -115,13 +115,15 @@ export function CollectionsTab({
           <span className="text-xs text-[#667085] uppercase tracking-wide font-medium">
             {loading ? "Loading…" : `${total} collection${total !== 1 ? "s" : ""}`}
           </span>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 text-sm font-semibold text-[#FB6983]"
-          >
-            <Plus className="w-4 h-4" />
-            New
-          </button>
+          {visibleMine.length > 0 && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="flex items-center gap-1.5 text-sm font-semibold text-[#FB6983]"
+            >
+              <Plus className="w-4 h-4" />
+              New
+            </button>
+          )}
         </div>
       )}
 
