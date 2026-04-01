@@ -8,6 +8,7 @@ import { createCollection } from "@/lib/collections";
 import { CollectionCard, SavedCollectionCard } from "./collection-card";
 import { CreateCollectionModal } from "./create-collection-modal";
 import { CollectionDetail } from "./collection-detail";
+import { BrowseCollectionCard, getTagsForCollection as getBrowseTags } from "./browse-collection-card";
 import type { Experience } from "@/app/page";
 
 interface CollectionsTabProps {
@@ -160,13 +161,14 @@ export function CollectionsTab({
       {visibleMine.length > 0 && (
         <section className="mb-6">
           {!mode && <h2 className="text-xs text-[#98A2B3] uppercase tracking-wide font-medium mb-3">My Collections</h2>}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             {visibleMine.map((col) => (
-              <CollectionCard
+              <BrowseCollectionCard
                 key={col.id}
                 collection={col}
-                tags={getTagsForCollection(col)}
-                onClick={() => setSelected({ collection: col, isOwner: true })}
+                allExperiences={allExperiences}
+                tags={getBrowseTags(col, allExperiences)}
+                hideFollow
               />
             ))}
           </div>
