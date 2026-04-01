@@ -4,9 +4,9 @@ import { API_BASE } from "@/lib/xano";
 // Public endpoint — returns a user's public collections by username
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ username: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { username } = await params;
+  const { id: username } = await params;
 
   const res = await fetch(`${API_BASE}/public_collections`, { cache: "no-store" });
   if (!res.ok) {
