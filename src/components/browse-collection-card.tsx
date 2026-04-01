@@ -310,12 +310,16 @@ export function BrowseCollectionCard({
         <div className="px-4 pt-3">
           {/* Author + follow */}
           <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-2">
+            <Link
+              href={ownerHandle ? `/users/${encodeURIComponent(ownerHandle)}` : "#"}
+              className="flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="w-7 h-7 rounded-full bg-[#F2F4F7] flex items-center justify-center text-[10px] font-bold text-[#667085]">
                 {initials}
               </div>
               <span className="text-[#667085] text-sm">{ownerHandle ?? "unknown"}</span>
-            </div>
+            </Link>
             {!hideFollow && ownerId && (
               <button
                 onClick={handleFollow}
