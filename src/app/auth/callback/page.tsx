@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function AuthCallbackPage() {
+function AuthCallbackInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,7 +31,9 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        router.replace("/");
+        // Redirect to original destination if provided, otherwise home
+        const redirectTo = searchParams.get("redirect_to");
+        router.replace(redirectTo && redirectTo.startsWith("/") ? redirectTo : "/");
       } catch (err) {
         setError("Something went wrong during login");
         console.error("[auth/callback] error:", err);
@@ -38,7 +41,7 @@ export default function AuthCallbackPage() {
     }
 
     exchangeToken();
-  }, [router]);
+  }, [router, searchParams]);
 
   if (error) {
     return (
@@ -53,5 +56,15 @@ export default function AuthCallbackPage() {
     <div style={{ padding: "2rem", textAlign: "center" }}>
       <p>Completing login...</p>
     </div>
+  );
+}
+
+import { Suspense } from "react";
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense>
+      <AuthCallbackInner />
+    </Suspense>
   );
 }
