@@ -54,10 +54,11 @@ function getTagsForCollection(collection: Collection, allExperiences: Experience
 
 const MOSAIC_COLORS = ["#EDCFC6", "#D4C9B8", "#B8CBBF", "#C9D4E0", "#D4C9D4"];
 
-function CollectionMosaic({ ids, allExperiences }: { ids: number[]; allExperiences: Experience[] }) {
+function CollectionMosaic({ ids, allExperiences, resolvedExperiences }: { ids: number[]; allExperiences: Experience[]; resolvedExperiences?: Experience[] }) {
+  const pool = resolvedExperiences && resolvedExperiences.length > 0 ? resolvedExperiences : allExperiences;
   const slots = ids
     .slice(0, 3)
-    .map((id) => allExperiences.find((e) => e.id === id))
+    .map((id) => pool.find((e) => e.id === id))
     .map((exp, i): string => (exp ? (getExpImage(exp) ?? MOSAIC_COLORS[i]) : MOSAIC_COLORS[i]));
 
   if (slots.length === 0) slots.push(MOSAIC_COLORS[0]);
@@ -264,7 +265,7 @@ function BrowseCollectionCard({
       <div className="rounded-2xl border border-[#EAECF0] overflow-hidden bg-white shadow-sm">
         {/* Mosaic */}
         <div className="relative h-44">
-          <CollectionMosaic ids={ids} allExperiences={allExperiences} />
+          <CollectionMosaic ids={ids} allExperiences={allExperiences} resolvedExperiences={collection._experiences} />
           {tags.length > 0 && (
             <div className="absolute bottom-2.5 left-2.5 flex gap-1.5 flex-wrap max-w-[75%]">
               {tags.slice(0, 2).map((tag) => (

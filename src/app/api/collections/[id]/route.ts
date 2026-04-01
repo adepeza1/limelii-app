@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const { id } = await params;
   // Fetch without auth so Xano returns public collections to anyone, not just the owner
-  const res = await fetch(`${API_BASE}/collections/${id}`);
+  const res = await fetch(`${API_BASE}/collections/${id}`, { cache: "no-store" });
 
   if (!res.ok) {
     return NextResponse.json({ error: "Collection not found" }, { status: res.status });
