@@ -30,7 +30,10 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        router.replace("/");
+        // Read redirect_to from URL without useSearchParams (avoids Suspense issues)
+        const params = new URLSearchParams(window.location.search);
+        const redirectTo = params.get("redirect_to");
+        router.replace(redirectTo && redirectTo.startsWith("/") ? redirectTo : "/");
       } catch (err) {
         setError("Something went wrong during login");
         console.error("[auth/callback] error:", err);
