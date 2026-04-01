@@ -15,10 +15,12 @@ import {
   UserCircle,
 } from "lucide-react";
 import { ProfileExperiences } from "@/components/profile-experiences";
+import { CollectionsTab } from "@/components/collections-tab";
 import type { Experience } from "@/app/page";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import { listCollections } from "@/lib/collections";
+import type { Collection, SavedCollection } from "@/lib/collections";
 import { listSavedExperiences } from "@/lib/saved";
 import { API_BASE } from "@/lib/xano";
 import type { DiscoveryResponse } from "@/app/page";
@@ -38,7 +40,7 @@ interface UserPreferences {
   interests: string[];
 }
 
-type Tab = "created" | "saved" | "preferences";
+type Tab = "created" | "saved" | "collections" | "preferences";
 
 interface ProfileClientProps {
   givenName: string | null;
@@ -179,6 +181,11 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
   const [showSettings, setShowSettings] = useState(false);
   const [dragY, setDragY] = useState(0);
   const dragStartY = useRef(0);
+  const [myCollections, setMyCollections] = useState<Collection[]>([]);
+  const [savedCollections, setSavedCollections] = useState<SavedCollection[]>([]);
+  const [collectionsLoaded, setCollectionsLoaded] = useState(false);
+  const [collectionsLoading, setCollectionsLoading] = useState(false);
+  const [allExperiences, setAllExperiences] = useState<Experience[]>([]);
 
   useEffect(() => {
     const prefs = loadPreferences();
@@ -206,6 +213,25 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== "collections" || collectionsLoaded || collectionsLoading) return;
+    setCollectionsLoading(true);
+    listCollections()
+      .then((data) => {
+        setMyCollections(data.my_collections ?? []);
+        setSavedCollections(data.saved_collections ?? []);
+        setCollectionsLoaded(true);
+      })
+      .catch(() => setCollectionsLoaded(true))
+      .finally(() => setCollectionsLoading(false));
+    if (allExperiences.length === 0) {
+      fetch(`${API_BASE}/discovery`)
+        .then((r) => r.json())
+        .then((data) => setAllExperiences(Object.values(data.experiences ?? {}).flat() as Experience[]))
+        .catch(() => {});
+    }
+  }, [activeTab, collectionsLoaded, collectionsLoading, allExperiences.length]);
 
   function persistPreferences(updated: UserPreferences) {
     localStorage.setItem(PREFS_KEY, JSON.stringify(updated));
@@ -424,7 +450,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
               <span className="text-[22px] font-bold text-gray-900 leading-none">{savedCount}</span>
               <span className="text-[11px] text-gray-400 mt-1">Saved</span>
             </button>
-            <button onClick={() => router.push("/saved?tab=mine")} className="py-3.5 flex flex-col items-center gap-0.5 active:bg-gray-100 transition-colors">
+            <button onClick={() => setActiveTab("collections")} className="py-3.5 flex flex-col items-center gap-0.5 active:bg-gray-100 transition-colors">
               <span className="text-[22px] font-bold text-gray-900 leading-none">{collectionsCount ?? "—"}</span>
               <span className="text-[11px] text-gray-400 mt-1">Collections</span>
             </button>
@@ -438,6 +464,7 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
               [
                 { id: "created", label: "Created" },
                 { id: "saved", label: "Saved" },
+                { id: "collections", label: "Collections" },
                 { id: "preferences", label: "Preferences" },
               ] as { id: Tab; label: string }[]
             ).map(({ id, label }) => (
@@ -507,6 +534,19 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
                 </div>
               )}
             </div>
+          )}
+
+          {/* Collections */}
+          {activeTab === "collections" && (
+            <CollectionsTab
+              allExperiences={allExperiences}
+              myCollections={myCollections}
+              savedCollections={savedCollections}
+              loading={collectionsLoading && !collectionsLoaded}
+              onMyCollectionsChange={setMyCollections}
+              onSavedCollectionsChange={setSavedCollections}
+              mode="mine"
+            />
           )}
 
           {/* Preferences */}
