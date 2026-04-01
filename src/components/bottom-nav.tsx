@@ -49,10 +49,10 @@ function DiscoverIcon({ color }: { color: string }) {
   );
 }
 
-function HeartIcon({ color }: { color: string }) {
+function FolderIcon({ color }: { color: string }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M15.7 4C18.87 4 21 6.98 21 9.76C21 15.39 12.16 20 12 20C11.84 20 3 15.39 3 9.76C3 6.98 5.13 4 8.3 4C10.12 4 11.31 4.91 12 5.71C12.69 4.91 13.88 4 15.7 4Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
@@ -106,7 +106,7 @@ export function BottomNav() {
               {tab.href === "/" ? (
                 <DiscoverIcon color={color} />
               ) : tab.href === "/saved" ? (
-                <HeartIcon color={color} />
+                <FolderIcon color={color} />
               ) : isCenter ? (
                 /* 24px layout placeholder keeps the row the same height as other tabs.
                    The actual icon is absolutely centred over it at a larger visual size. */
