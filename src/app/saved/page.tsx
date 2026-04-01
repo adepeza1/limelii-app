@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import type { Experience, DiscoveryResponse } from "@/app/page";
 import type { Collection } from "@/lib/collections";
@@ -154,7 +154,8 @@ export default function CollectionsPage() {
 
 
   const [publicCollections, setPublicCollections] = useState<Collection[]>([]);
-  const [browseLoading, setBrowseLoading] = useState(true);
+  const [browseLoading, setBrowseLoading] = useState(false);
+  const [browseLoaded, setBrowseLoaded] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE}/discovery`)
@@ -163,12 +164,22 @@ export default function CollectionsPage() {
         setAllExperiences(Object.values(data.experiences ?? {}).flat());
       })
       .catch(() => {});
+  }, []);
 
+  const loadPublicCollections = useCallback(() => {
+    setBrowseLoading(true);
     listPublicCollections()
-      .then((cols) => setPublicCollections(cols))
-      .catch(() => {})
+      .then((cols) => {
+        setPublicCollections(cols);
+        setBrowseLoaded(true);
+      })
+      .catch(() => setBrowseLoaded(true))
       .finally(() => setBrowseLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!browseLoaded) loadPublicCollections();
+  }, [browseLoaded, loadPublicCollections]);
 
   const filterPills = useMemo(() => {
     const tagSet = new Set<string>();
@@ -230,7 +241,7 @@ export default function CollectionsPage() {
         <BrowseTab
           collections={filteredPublic}
           allExperiences={allExperiences}
-          loading={browseLoading}
+          loading={browseLoading && !browseLoaded}
           filterPills={filterPills}
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
