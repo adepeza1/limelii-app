@@ -69,10 +69,11 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col px-6 pt-16" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 40px)" }}>
-      {/* Logo / wordmark */}
-      <div className="mb-12">
-        <p className="text-2xl font-bold text-[#101828] tracking-tight">limelii</p>
-        <p className="text-sm text-[#667085] mt-1">Let's set up your profile</p>
+      {/* Logo */}
+      <div className="mb-6">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/limelii-logo.svg" alt="limelii" className="h-8 w-auto" />
+        <p className="text-sm text-[#667085] mt-2">Let's set up your profile</p>
       </div>
 
       {/* Step */}
