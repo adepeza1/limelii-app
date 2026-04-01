@@ -225,13 +225,26 @@ export function ProfileClient({ givenName, familyName, email }: ProfileClientPro
       })
       .catch(() => setCollectionsLoaded(true))
       .finally(() => setCollectionsLoading(false));
-    if (allExperiences.length === 0) {
-      fetch(`${API_BASE}/discovery`)
-        .then((r) => r.json())
-        .then((data) => setAllExperiences(Object.values(data.experiences ?? {}).flat() as Experience[]))
-        .catch(() => {});
-    }
-  }, [activeTab, collectionsLoaded, collectionsLoading, allExperiences.length]);
+    // Fetch both public discovery pool and user's created (private) experiences
+    // so CollectionMosaic can resolve images for all experience types
+    Promise.all([
+      fetch(`${API_BASE}/discovery`).then((r) => r.json()).catch(() => ({ experiences: {} })),
+      fetch("/api/user-experiences").then((r) => r.ok ? r.json() : { experiences: [] }).catch(() => ({ experiences: [] })),
+    ]).then(([discoveryData, userExpData]) => {
+      const discovery = Object.values(discoveryData.experiences ?? {}).flat() as Experience[];
+      const userExps: Experience[] = Array.isArray(userExpData.experiences) ? userExpData.experiences : [];
+      // Merge, deduplicating by id
+      const seen = new Set<number>();
+      const merged: Experience[] = [];
+      for (const e of [...discovery, ...userExps]) {
+        if (!seen.has((e as Experience).id)) {
+          seen.add((e as Experience).id);
+          merged.push(e as Experience);
+        }
+      }
+      setAllExperiences(merged);
+    }).catch(() => {});
+  }, [activeTab, collectionsLoaded, collectionsLoading]);
 
   function persistPreferences(updated: UserPreferences) {
     localStorage.setItem(PREFS_KEY, JSON.stringify(updated));
