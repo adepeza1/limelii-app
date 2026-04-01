@@ -15,7 +15,8 @@ export async function DELETE(
   const res = await apiFetch(`/collection_comments/${comment_id}`, { method: "DELETE" });
 
   if (!res.ok) {
-    return NextResponse.json({ error: "Failed to delete comment" }, { status: res.status });
+    const body = await res.text();
+    return NextResponse.json({ error: "Failed to delete comment", xano_error: body }, { status: res.status });
   }
 
   return new NextResponse(null, { status: 204 });

@@ -4,15 +4,14 @@ import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "rea
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search, SlidersHorizontal, Heart, MessageCircle, X, Send, ChevronLeft, Trash2 } from "lucide-react";
-import { CollectionsTab } from "@/components/collections-tab";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import type { Experience, DiscoveryResponse } from "@/app/page";
-import type { Collection, SavedCollection } from "@/lib/collections";
-import { listCollections, listPublicCollections } from "@/lib/collections";
+import type { Collection } from "@/lib/collections";
+import { listPublicCollections } from "@/lib/collections";
 import { API_BASE } from "@/lib/xano";
 
-type CollectionsPageTab = "browse" | "following" | "mine";
+type CollectionsPageTab = "browse" | "following";
 
 interface Comment {
   id: number;
@@ -576,23 +575,16 @@ import React from "react";
 
 function CollectionsPageInner() {
   const searchParams = useSearchParams();
-  const initialTab: CollectionsPageTab =
-    searchParams.get("tab") === "mine" ? "mine" : "browse";
+  const initialTab: CollectionsPageTab = "browse";
 
   const [activeTab, setActiveTab] = useState<CollectionsPageTab>(initialTab);
   const [activeFilter, setActiveFilter] = useState("All");
   const [allExperiences, setAllExperiences] = useState<Experience[]>([]);
 
-  const [myCollections, setMyCollections] = useState<Collection[]>([]);
-  const [savedCollections, setSavedCollections] = useState<SavedCollection[]>([]);
-  const [myLoading, setMyLoading] = useState(false);
-  const [myLoaded, setMyLoaded] = useState(false);
 
   const [publicCollections, setPublicCollections] = useState<Collection[]>([]);
   const [browseLoading, setBrowseLoading] = useState(false);
   const [browseLoaded, setBrowseLoaded] = useState(false);
-
-  const loadingRef = useRef(false);
 
   useEffect(() => {
     if (allExperiences.length > 0) return;
@@ -603,24 +595,6 @@ function CollectionsPageInner() {
       })
       .catch(() => {});
   }, [allExperiences.length]);
-
-  const loadMyCollections = useCallback(() => {
-    if (loadingRef.current) return;
-    loadingRef.current = true;
-    setMyLoading(true);
-    listCollections()
-      .then((data) => {
-        setMyCollections(data.my_collections ?? []);
-        setSavedCollections(data.saved_collections ?? []);
-        setMyLoaded(true);
-      })
-      .catch(() => setMyLoaded(true))
-      .finally(() => { setMyLoading(false); loadingRef.current = false; });
-  }, []);
-
-  useEffect(() => {
-    if (!myLoaded) loadMyCollections();
-  }, [myLoaded, loadMyCollections]);
 
   const loadPublicCollections = useCallback(() => {
     setBrowseLoading(true);
@@ -636,21 +610,6 @@ function CollectionsPageInner() {
   useEffect(() => {
     if (!browseLoaded) loadPublicCollections();
   }, [browseLoaded, loadPublicCollections]);
-
-  useEffect(() => {
-    function handleUpdate(e: Event) {
-      const updated: Collection[] = (e as CustomEvent).detail?.updated ?? [];
-      if (updated.length === 0) return;
-      setMyCollections((prev) =>
-        prev.map((c) => {
-          const fresh = updated.find((u) => u.id === c.id);
-          return fresh ?? c;
-        })
-      );
-    }
-    window.addEventListener("limelii:collections-updated", handleUpdate);
-    return () => window.removeEventListener("limelii:collections-updated", handleUpdate);
-  }, []);
 
   const filterPills = useMemo(() => {
     const tagSet = new Set<string>();
@@ -671,7 +630,6 @@ function CollectionsPageInner() {
   const TAB_LABELS: { id: CollectionsPageTab; label: string }[] = [
     { id: "browse", label: "Browse" },
     { id: "following", label: "Following" },
-    { id: "mine", label: "Mine" },
   ];
 
   return (
@@ -718,18 +676,8 @@ function CollectionsPageInner() {
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
         />
-      ) : activeTab === "following" ? (
-        <FollowingTab allExperiences={allExperiences} />
       ) : (
-        <CollectionsTab
-          allExperiences={allExperiences}
-          myCollections={myCollections}
-          savedCollections={savedCollections}
-          loading={myLoading && !myLoaded}
-          onMyCollectionsChange={setMyCollections}
-          onSavedCollectionsChange={setSavedCollections}
-          mode="mine"
-        />
+        <FollowingTab allExperiences={allExperiences} />
       )}
     </div>
   );
