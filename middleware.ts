@@ -8,8 +8,6 @@ export default withAuth(async function middleware(req: NextRequest) {
 
   if (!hasXanoToken && req.nextUrl.pathname !== "/auth/callback") {
     const callbackUrl = new URL("/auth/callback", req.url);
-    // Pass the original destination so callback can redirect there after exchange
-    callbackUrl.searchParams.set("redirect_to", req.nextUrl.pathname);
     return NextResponse.redirect(callbackUrl);
   }
 }, {
