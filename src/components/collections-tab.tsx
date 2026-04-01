@@ -144,7 +144,7 @@ export function CollectionsTab({
             <>
               <p className="text-[#101828] font-semibold text-base">No collections yet</p>
               <p className="text-[#667085] text-sm max-w-[240px]">
-                Create a collection to curate your favourite experiences.
+                Create a collection to curate your favorite experiences. You can add curated experiences as well as the ones you created.
               </p>
               <button
                 onClick={() => setShowCreate(true)}
