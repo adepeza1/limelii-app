@@ -68,7 +68,7 @@ export default function OnboardingPage() {
   const isValid = username.length >= 3 && usernameState !== "taken";
 
   return (
-    <div className="min-h-screen bg-white flex flex-col px-6 pt-16 pb-10">
+    <div className="min-h-screen bg-white flex flex-col px-6 pt-16" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 40px)" }}>
       {/* Logo / wordmark */}
       <div className="mb-12">
         <p className="text-2xl font-bold text-[#101828] tracking-tight">limelii</p>
