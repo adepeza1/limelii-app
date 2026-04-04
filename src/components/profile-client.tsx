@@ -203,7 +203,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
       const res = await fetch("/api/user/avatar", { method: "POST", body: fd });
       if (res.ok) {
         const data = await res.json();
-        const url = data?.picture ?? data?.photo?.url ?? null;
+        const url = data?.photo?.url ?? null;
         if (url) setAvatarUrl(url);
       }
     } finally {
@@ -220,7 +220,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
     // Load user photo from Xano
     fetch("/api/user/me")
       .then((r) => r.ok ? r.json() : null)
-      .then((u) => { if (u?.picture) setAvatarUrl(u.picture); })
+      .then((u) => { if (u?.photo?.url) setAvatarUrl(u.photo.url); })
       .catch(() => {});
     listCollections()
       .then((data) => setCollectionsCount((data.my_collections?.length ?? 0) + (data.saved_collections?.length ?? 0)))
