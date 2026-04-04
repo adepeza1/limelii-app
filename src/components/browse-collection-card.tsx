@@ -240,8 +240,13 @@ export function BrowseCollectionCard({
   const [showDetail, setShowDetail] = useState(false);
   const [selectedExp, setSelectedExp] = useState<Experience | null>(null);
 
-  useBackHandler(showDetail && !selectedExp, () => setShowDetail(false));
-  useBackHandler(!!selectedExp, () => setSelectedExp(null));
+  useBackHandler(showDetail, () => {
+    if (selectedExp) {
+      setSelectedExp(null);
+    } else {
+      setShowDetail(false);
+    }
+  });
 
   const ids = parseExperienceIds(collection);
   const count = ids.length;
