@@ -216,9 +216,17 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   useEffect(() => {
     if (activeTab !== "collections" || collectionsLoaded || collectionsLoading) return;
     setCollectionsLoading(true);
-    listCollections()
-      .then((data) => {
-        setMyCollections(data.my_collections ?? []);
+    Promise.all([
+      listCollections(),
+      fetch("/api/user/me").then((r) => r.ok ? r.json() : null).catch(() => null),
+    ])
+      .then(([data, me]) => {
+        const username: string | undefined = me?.username;
+        // Inject _users into myCollections so BrowseCollectionCard shows the username
+        const mine = (data.my_collections ?? []).map((col) =>
+          col._users ? col : { ...col, _users: { username, name: me?.name, id: me?.id } }
+        );
+        setMyCollections(mine);
         setSavedCollections(data.saved_collections ?? []);
         setCollectionsLoaded(true);
       })
