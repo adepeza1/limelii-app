@@ -14,6 +14,7 @@ import {
   Bell,
   Lock,
   UserCircle,
+  Camera,
 } from "lucide-react";
 import { ProfileExperiences } from "@/components/profile-experiences";
 import { CollectionsTab } from "@/components/collections-tab";
@@ -181,6 +182,9 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   const [showSettings, setShowSettings] = useState(false);
   const [dragY, setDragY] = useState(0);
   const dragStartY = useRef(0);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [myCollections, setMyCollections] = useState<Collection[]>([]);
   const [savedCollections, setSavedCollections] = useState<SavedCollection[]>([]);
   const [collectionsLoaded, setCollectionsLoaded] = useState(false);
@@ -189,10 +193,35 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
 
   useBackHandler(!!selectedExperience, handleBack);
 
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const fd = new FormData();
+      fd.append("photo", file);
+      const res = await fetch("/api/user/avatar", { method: "POST", body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        const url = data?.photo?.url ?? data?.avatar_url ?? null;
+        if (url) setAvatarUrl(url);
+      }
+    } finally {
+      setUploadingAvatar(false);
+      // Reset so the same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
   useEffect(() => {
     const prefs = loadPreferences();
     setPreferences(prefs);
     setBioInput(prefs.bio);
+    // Load user photo from Xano
+    fetch("/api/user/me")
+      .then((r) => r.ok ? r.json() : null)
+      .then((u) => { if (u?.photo?.url) setAvatarUrl(u.photo.url); })
+      .catch(() => {});
     listCollections()
       .then((data) => setCollectionsCount((data.my_collections?.length ?? 0) + (data.saved_collections?.length ?? 0)))
       .catch(() => setCollectionsCount(0));
@@ -395,13 +424,39 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
         <div className="px-5 pt-6 pb-5">
           <div className="flex items-start gap-4">
             {/* Avatar */}
-            <div
-              className="w-[72px] h-[72px] rounded-full flex-shrink-0 flex items-center justify-center text-white text-xl font-bold select-none shadow-sm"
-              style={{
-                background: "linear-gradient(135deg, #416f7b 0%, #FB6983 100%)",
-              }}
-            >
-              {initials}
+            <div className="relative flex-shrink-0">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="w-[72px] h-[72px] rounded-full overflow-hidden flex items-center justify-center text-white text-xl font-bold select-none shadow-sm focus:outline-none"
+                style={avatarUrl ? undefined : { background: "linear-gradient(135deg, #416f7b 0%, #FB6983 100%)" }}
+              >
+                {uploadingAvatar ? (
+                  <div className="w-full h-full rounded-full bg-black/40 flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  initials
+                )}
+              </button>
+              {/* Camera badge */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute -bottom-0.5 -right-0.5 w-[22px] h-[22px] rounded-full bg-[#FB6983] border-2 border-white flex items-center justify-center"
+              >
+                <Camera size={10} className="text-white" />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
             </div>
 
             {/* Name, location, bio */}
