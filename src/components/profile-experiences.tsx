@@ -5,6 +5,7 @@ import { Trash2, ClipboardList } from "lucide-react";
 import type { Experience } from "@/app/page";
 import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
+import { useBackHandler } from "@/hooks/useBackHandler";
 
 interface ProfileExperiencesProps {
   onCountLoaded?: (count: number) => void;
@@ -74,6 +75,8 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
   const [deleteTarget, setDeleteTarget] = useState<Experience | null>(null);
   const [deleting, setDeleting] = useState(false);
   const prevCountRef = useRef<number | null>(null);
+
+  useBackHandler(!!selectedExperience, () => setSelectedExperience(null));
 
   async function fetchExperiences() {
     try {

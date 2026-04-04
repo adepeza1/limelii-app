@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useBackHandler } from "@/hooks/useBackHandler";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import {
   Settings,
@@ -185,6 +186,8 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   const [collectionsLoaded, setCollectionsLoaded] = useState(false);
   const [collectionsLoading, setCollectionsLoading] = useState(false);
   const [allExperiences, setAllExperiences] = useState<Experience[]>([]);
+
+  useBackHandler(!!selectedExperience, handleBack);
 
   useEffect(() => {
     const prefs = loadPreferences();

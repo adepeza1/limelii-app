@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useBackHandler } from "@/hooks/useBackHandler";
 import { ChevronLeft, Share2, MoreVertical, Compass, ClipboardList, Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { Collection } from "@/lib/collections";
@@ -31,6 +32,8 @@ export function CollectionDetail({
 }: CollectionDetailProps) {
   const [selected, setSelected] = useState<Experience | null>(null);
   const [showEdit, setShowEdit] = useState(false);
+
+  useBackHandler(!!selected, () => setSelected(null));
   const [showMenu, setShowMenu] = useState(false);
   const [savingCollection, setSavingCollection] = useState(false);
   const [collectionSaved, setCollectionSaved] = useState(isSaved);
