@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useBackHandler } from "@/hooks/useBackHandler";
 import Link from "next/link";
 import { Heart, MessageCircle, X, Send, ChevronLeft, Trash2 } from "lucide-react";
 import { ExperienceCard } from "@/components/experience-card";
@@ -238,6 +239,9 @@ export function BrowseCollectionCard({
   const [commentCount, setCommentCount] = useState<number>(col.comments_count ?? 0);
   const [showDetail, setShowDetail] = useState(false);
   const [selectedExp, setSelectedExp] = useState<Experience | null>(null);
+
+  useBackHandler(showDetail && !selectedExp, () => setShowDetail(false));
+  useBackHandler(!!selectedExp, () => setSelectedExp(null));
 
   const ids = parseExperienceIds(collection);
   const count = ids.length;

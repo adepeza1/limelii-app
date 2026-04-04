@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useBackHandler } from "@/hooks/useBackHandler";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import type { Collection, SavedCollection } from "@/lib/collections";
@@ -33,6 +34,8 @@ export function CollectionsTab({
 }: CollectionsTabProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<{ collection: Collection; isOwner: boolean } | null>(null);
+
+  useBackHandler(!!selected, () => setSelected(null));
 
   function getTagsForCollection(collection: Collection): string[] {
     let ids: number[] = [];
