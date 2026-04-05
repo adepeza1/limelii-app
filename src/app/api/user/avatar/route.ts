@@ -27,5 +27,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: text || "Upload failed" }, { status: res.status });
   }
 
-  return NextResponse.json(await res.json());
+  const data = await res.json();
+  console.log("[avatar upload] Xano response:", JSON.stringify(data).slice(0, 1000));
+  return NextResponse.json(data);
 }
