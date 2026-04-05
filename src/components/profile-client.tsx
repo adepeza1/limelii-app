@@ -184,6 +184,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   const dragStartY = useRef(0);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [myCollections, setMyCollections] = useState<Collection[]>([]);
   const [savedCollections, setSavedCollections] = useState<SavedCollection[]>([]);
@@ -220,7 +221,10 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
     // Load user photo from Xano
     fetch("/api/user/me")
       .then((r) => r.ok ? r.json() : null)
-      .then((u) => { if (u?.photo?.url) setAvatarUrl(u.photo.url); })
+      .then((u) => {
+        if (u?.photo?.url) setAvatarUrl(u.photo.url);
+        if (u?.username) setUsername(u.username);
+      })
       .catch(() => {});
     listCollections()
       .then((data) => setCollectionsCount((data.my_collections?.length ?? 0) + (data.saved_collections?.length ?? 0)))
@@ -464,6 +468,9 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
               <p className="text-gray-900 font-semibold text-[17px] leading-tight truncate">
                 {displayName}
               </p>
+              {username && (
+                <p className="text-[#98A2B3] text-sm leading-tight">@{username}</p>
+              )}
 
               {/* Neighborhood */}
               <button
