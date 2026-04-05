@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { Search, X, SlidersHorizontal } from "lucide-react";
 import type { Experience, DiscoveryResponse } from "@/app/page";
 import type { Collection } from "@/lib/collections";
 import { listPublicCollections } from "@/lib/collections";
@@ -62,11 +62,11 @@ function BrowseTab({
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
             </svg>
           </div>
-          <p className="text-[#101828] font-semibold text-base">No public collections yet</p>
+          <p className="text-[#101828] font-semibold text-base">No collections found</p>
           <p className="text-[#667085] text-sm max-w-[240px]">
-            {activeFilter === "All"
-              ? "Collections made public by other users will appear here."
-              : `No collections tagged "${activeFilter}" yet.`}
+            {activeFilter !== "All"
+              ? `No collections tagged "${activeFilter}".`
+              : "Try a different search term."}
           </p>
         </div>
       ) : (
@@ -147,10 +147,45 @@ function FollowingTab({ allExperiences }: { allExperiences: Experience[] }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function collectionMatchesQuery(col: Collection, query: string, allExperiences: Experience[]): boolean {
+  const q = query.toLowerCase();
+  // Collection name
+  if (col.name?.toLowerCase().includes(q)) return true;
+  // Resolve experiences for this collection
+  let ids: number[] = [];
+  if (Array.isArray(col.experience_ids)) ids = col.experience_ids as unknown as number[];
+  else if (typeof col.experience_ids === "string") {
+    try { ids = JSON.parse(col.experience_ids); } catch { ids = []; }
+  }
+  const idSet = new Set(ids);
+  const exps = allExperiences.filter((e) => idSet.has(e.id));
+  for (const exp of exps) {
+    if (exp.title?.toLowerCase().includes(q)) return true;
+    for (const place of exp.places_id ?? []) {
+      if (place.name?.toLowerCase().includes(q)) return true;
+      if (place.neighborhood?.toLowerCase().includes(q)) return true;
+      if (place.borough?.toLowerCase().includes(q)) return true;
+      for (const t of place._location_details?.location_type ?? []) {
+        if (t.toLowerCase().includes(q)) return true;
+      }
+    }
+    for (const act of exp.activities ?? []) {
+      if (act.toLowerCase().includes(q)) return true;
+    }
+    for (const n of exp.neighborhoods ?? []) {
+      if (n.toLowerCase().includes(q)) return true;
+    }
+  }
+  return false;
+}
+
 export default function CollectionsPage() {
   const [activeTab, setActiveTab] = useState<CollectionsPageTab>("browse");
   const [activeFilter, setActiveFilter] = useState("All");
   const [allExperiences, setAllExperiences] = useState<Experience[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
 
   const [publicCollections, setPublicCollections] = useState<Collection[]>([]);
@@ -190,12 +225,18 @@ export default function CollectionsPage() {
   }, [publicCollections, allExperiences]);
 
   const filteredPublic = useMemo(() => {
-    if (activeFilter === "All") return publicCollections;
-    return publicCollections.filter((col) => {
-      const tags = getTagsForCollection(col, allExperiences);
-      return tags.some((t) => t.toLowerCase() === activeFilter.toLowerCase());
-    });
-  }, [publicCollections, allExperiences, activeFilter]);
+    let result = publicCollections;
+    if (activeFilter !== "All") {
+      result = result.filter((col) => {
+        const tags = getTagsForCollection(col, allExperiences);
+        return tags.some((t) => t.toLowerCase() === activeFilter.toLowerCase());
+      });
+    }
+    if (searchQuery.trim()) {
+      result = result.filter((col) => collectionMatchesQuery(col, searchQuery.trim(), allExperiences));
+    }
+    return result;
+  }, [publicCollections, allExperiences, activeFilter, searchQuery]);
 
   const TAB_LABELS: { id: CollectionsPageTab; label: string }[] = [
     { id: "browse", label: "Browse" },
@@ -207,16 +248,48 @@ export default function CollectionsPage() {
       <div className="h-[44px]" />
 
       {/* Header */}
-      <div className="px-5 pt-4 pb-3 flex items-center justify-between">
-        <h1 className="text-[#101828] text-2xl font-bold leading-tight">Collections</h1>
-        <div className="flex items-center gap-2">
-          <button className="w-9 h-9 rounded-full border border-[#EAECF0] flex items-center justify-center">
-            <Search size={16} className="text-[#667085]" />
-          </button>
-          <button className="w-9 h-9 rounded-full border border-[#EAECF0] flex items-center justify-center">
-            <SlidersHorizontal size={16} className="text-[#667085]" />
-          </button>
-        </div>
+      <div className="px-5 pt-4 pb-3">
+        {searchOpen ? (
+          <div className="flex items-center gap-2">
+            <div className="flex-1 flex items-center gap-2 bg-[#F9FAFB] border border-[#EAECF0] rounded-2xl px-3 py-2">
+              <Search size={15} className="text-[#98A2B3] shrink-0" />
+              <input
+                ref={searchInputRef}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name, place, type…"
+                className="flex-1 text-sm text-[#101828] placeholder:text-[#98A2B3] bg-transparent outline-none"
+                autoFocus
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")}>
+                  <X size={14} className="text-[#98A2B3]" />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
+              className="text-sm font-medium text-[#667085] shrink-0"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <h1 className="text-[#101828] text-2xl font-bold leading-tight">Collections</h1>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setSearchOpen(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
+                className="w-9 h-9 rounded-full border border-[#EAECF0] flex items-center justify-center"
+              >
+                <Search size={16} className="text-[#667085]" />
+              </button>
+              <button className="w-9 h-9 rounded-full border border-[#EAECF0] flex items-center justify-center">
+                <SlidersHorizontal size={16} className="text-[#667085]" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tab bar */}
