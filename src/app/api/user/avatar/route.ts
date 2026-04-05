@@ -28,6 +28,5 @@ export async function POST(request: NextRequest) {
   }
 
   const data = await res.json();
-  console.log("[avatar upload] Xano response:", JSON.stringify(data).slice(0, 1000));
   return NextResponse.json(data);
 }
