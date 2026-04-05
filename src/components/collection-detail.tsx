@@ -239,25 +239,37 @@ export function CollectionDetail({
           </div>
         </div>
       ) : (
-        <div className="px-5 flex flex-col gap-4 pb-28">
-          {localExperiences.map((exp) => (
-            <div key={exp.id} className="relative">
-              <ExperienceCard
-                experience={exp}
-                onClick={() => setSelected(exp)}
-              />
-              {isOwner && (
-                <button
-                  onClick={() => handleRemoveExperience(exp.id)}
-                  disabled={removingId === exp.id}
-                  aria-label="Remove from collection"
-                  className={`absolute top-3 left-3 z-[3] w-9 h-9 flex items-center justify-center rounded-full backdrop-blur-sm transition-colors disabled:opacity-50 ${
-                    removeErrorId === exp.id ? "bg-red-500/80" : "bg-black/30"
-                  }`}
-                >
-                  <Trash2 className="w-4 h-4 text-white" />
-                </button>
-              )}
+        <div className="px-4 flex gap-1 items-start pb-28">
+          {[
+            localExperiences.filter((_, i) => i % 2 === 0),
+            localExperiences.filter((_, i) => i % 2 === 1),
+          ].map((col, colIdx) => (
+            <div key={colIdx} className="flex-1 flex flex-col gap-1">
+              {col.map((exp, rowIdx) => {
+                const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
+                return (
+                  <div key={exp.id} className="relative">
+                    <ExperienceCard
+                      experience={exp}
+                      compact
+                      className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                      onClick={() => setSelected(exp)}
+                    />
+                    {isOwner && (
+                      <button
+                        onClick={() => handleRemoveExperience(exp.id)}
+                        disabled={removingId === exp.id}
+                        aria-label="Remove from collection"
+                        className={`absolute top-3 left-3 z-[3] w-9 h-9 flex items-center justify-center rounded-full backdrop-blur-sm transition-colors disabled:opacity-50 ${
+                          removeErrorId === exp.id ? "bg-red-500/80" : "bg-black/30"
+                        }`}
+                      >
+                        <Trash2 className="w-4 h-4 text-white" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
