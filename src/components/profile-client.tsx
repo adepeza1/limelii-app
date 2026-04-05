@@ -429,7 +429,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
                 className="w-[72px] h-[72px] rounded-full overflow-hidden flex items-center justify-center text-white text-xl font-bold select-none shadow-sm focus:outline-none"
-                style={avatarUrl ? undefined : { background: "linear-gradient(135deg, #416f7b 0%, #FB6983 100%)" }}
+                style={{ background: "linear-gradient(135deg, #416f7b 0%, #FB6983 100%)" }}
               >
                 {uploadingAvatar ? (
                   <div className="w-full h-full rounded-full bg-black/40 flex items-center justify-center">
