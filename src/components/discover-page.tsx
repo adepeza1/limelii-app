@@ -307,7 +307,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
                   onClick={() => handleCategoryChange(cat.id)}
                   className={`shrink-0 text-sm font-medium pb-2 transition-colors ${
                     activeCategory === cat.id
-                      ? "text-gray-900 border-b-2 border-gray-900"
+                      ? "text-[#E8405A] border-b-2 border-[#E8405A]"
                       : "text-gray-500"
                   }`}
                 >
