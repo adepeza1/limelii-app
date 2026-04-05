@@ -408,30 +408,41 @@ export function BrowseCollectionCard({
                   <p className="text-xs text-[#667085]">{count} {count === 1 ? "experience" : "experiences"}</p>
                 </div>
               </div>
-              {(collection._experiences ?? []).length === 0 ? (
-                <div className="px-5 py-16 text-center">
-                  <p className="text-[#667085] text-sm">No experiences in this collection yet.</p>
-                </div>
-              ) : (
-                <div className="px-4 pt-4 pb-28 flex gap-2">
-                  {[
-                    (collection._experiences ?? []).filter((_, i) => i % 2 === 0),
-                    (collection._experiences ?? []).filter((_, i) => i % 2 === 1),
-                  ].map((col, colIdx) => (
-                    <div key={colIdx} className="flex-1 flex flex-col gap-2">
-                      {col.map((exp) => (
-                        <ExperienceCard
-                          key={exp.id}
-                          experience={exp}
-                          compact
-                          className="!aspect-auto !rounded-xl h-[200px]"
-                          onClick={() => setSelectedExp(exp)}
-                        />
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              )}
+              {(() => {
+                // Prefer _experiences from Xano; fall back to matching IDs against allExperiences
+                const detailExps = (collection._experiences ?? []).length > 0
+                  ? (collection._experiences ?? [])
+                  : parseExperienceIds(collection)
+                      .map((id) => allExperiences.find((e) => e.id === id))
+                      .filter(Boolean) as Experience[];
+                return detailExps.length === 0 ? (
+                  <div className="px-5 py-16 text-center">
+                    <p className="text-[#667085] text-sm">No experiences in this collection yet.</p>
+                  </div>
+                ) : (
+                  <div className="px-4 pt-4 pb-28 flex gap-1 items-start">
+                    {[
+                      detailExps.filter((_, i) => i % 2 === 0),
+                      detailExps.filter((_, i) => i % 2 === 1),
+                    ].map((col, colIdx) => (
+                      <div key={colIdx} className="flex-1 flex flex-col gap-1">
+                        {col.map((exp, rowIdx) => {
+                          const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
+                          return (
+                            <ExperienceCard
+                              key={exp.id}
+                              experience={exp}
+                              compact
+                              className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                              onClick={() => setSelectedExp(exp)}
+                            />
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>
