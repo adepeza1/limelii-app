@@ -5,7 +5,7 @@ import { useBackHandler } from "@/hooks/useBackHandler";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import type { Collection, SavedCollection } from "@/lib/collections";
-import { createCollection } from "@/lib/collections";
+import { createCollection, getCollection } from "@/lib/collections";
 import { CollectionCard, SavedCollectionCard } from "./collection-card";
 import { CreateCollectionModal } from "./create-collection-modal";
 import { CollectionDetail } from "./collection-detail";
@@ -34,8 +34,22 @@ export function CollectionsTab({
 }: CollectionsTabProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<{ collection: Collection; isOwner: boolean } | null>(null);
+  const [loadingCollection, setLoadingCollection] = useState(false);
 
   useBackHandler(!!selected, () => setSelected(null));
+
+  async function openCollection(col: Collection, isOwner: boolean) {
+    setLoadingCollection(true);
+    try {
+      const full = await getCollection(col.id);
+      setSelected({ collection: full, isOwner });
+    } catch {
+      // Fall back to whatever data we have
+      setSelected({ collection: col, isOwner });
+    } finally {
+      setLoadingCollection(false);
+    }
+  }
 
   function getTagsForCollection(collection: Collection): string[] {
     let ids: number[] = [];
@@ -87,6 +101,14 @@ export function CollectionsTab({
       onMyCollectionsChange(myCollections.filter((c) => c.id !== selected.collection.id));
     }
     setSelected(null);
+  }
+
+  if (loadingCollection) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-6 h-6 border-2 border-[#FB6983] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   if (selected) {
@@ -190,7 +212,7 @@ export function CollectionsTab({
                 key={sc.id}
                 savedCollection={sc}
                 tags={getTagsForCollection(sc.collection)}
-                onClick={() => setSelected({ collection: sc.collection, isOwner: false })}
+                onClick={() => openCollection(sc.collection, false)}
               />
             ))}
           </div>
