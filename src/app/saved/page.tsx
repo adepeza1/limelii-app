@@ -22,6 +22,7 @@ function BrowseTab({
   filterPills,
   activeFilter,
   onFilterChange,
+  currentUserId,
 }: {
   collections: Collection[];
   allExperiences: Experience[];
@@ -29,6 +30,7 @@ function BrowseTab({
   filterPills: string[];
   activeFilter: string;
   onFilterChange: (f: string) => void;
+  currentUserId?: number | null;
 }) {
   return (
     <>
@@ -79,6 +81,7 @@ function BrowseTab({
                 collection={col}
                 allExperiences={allExperiences}
                 tags={tags}
+                currentUserId={currentUserId}
               />
             );
           })}
@@ -90,7 +93,7 @@ function BrowseTab({
 
 // ─── Following Tab ────────────────────────────────────────────────────────────
 
-function FollowingTab({ allExperiences }: { allExperiences: Experience[] }) {
+function FollowingTab({ allExperiences, currentUserId }: { allExperiences: Experience[]; currentUserId?: number | null }) {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -138,6 +141,7 @@ function FollowingTab({ allExperiences }: { allExperiences: Experience[] }) {
             collection={col}
             allExperiences={allExperiences}
             tags={tags}
+            currentUserId={currentUserId}
           />
         );
       })}
@@ -186,11 +190,18 @@ export default function CollectionsPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
-
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   const [publicCollections, setPublicCollections] = useState<Collection[]>([]);
   const [browseLoading, setBrowseLoading] = useState(false);
   const [browseLoaded, setBrowseLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/user/me")
+      .then((r) => r.ok ? r.json() : null)
+      .then((u) => { if (u?.id) setCurrentUserId(u.id); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch(`${API_BASE}/discovery`)
@@ -318,9 +329,10 @@ export default function CollectionsPage() {
           filterPills={filterPills}
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
+          currentUserId={currentUserId}
         />
       ) : (
-        <FollowingTab allExperiences={allExperiences} />
+        <FollowingTab allExperiences={allExperiences} currentUserId={currentUserId} />
       )}
     </div>
   );
