@@ -218,11 +218,13 @@ export function BrowseCollectionCard({
   allExperiences,
   tags,
   hideFollow,
+  currentUserId,
 }: {
   collection: Collection;
   allExperiences: Experience[];
   tags: string[];
   hideFollow?: boolean;
+  currentUserId?: number | null;
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const col = collection as any;
@@ -329,7 +331,7 @@ export function BrowseCollectionCard({
               </div>
               <span className="text-[#667085] text-sm">{ownerHandle ?? "unknown"}</span>
             </Link>
-            {!hideFollow && ownerId && (
+            {!hideFollow && ownerId && currentUserId !== ownerId && (
               <button
                 onClick={handleFollow}
                 className={`text-sm font-medium px-4 py-1.5 rounded-full border transition-colors ${
