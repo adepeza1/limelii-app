@@ -288,15 +288,10 @@ export function BrowseCollectionCard({
     setFollowing(next);
     try {
       const res = await fetch(`/api/users/${ownerId}/follow`, { method: "POST" });
-      if (res.ok) {
-        const data = await res.json();
-        if (typeof data.following === "boolean") {
-          setFollowing(data.following);
-        }
-        // else keep optimistic state — backend confirmed the request succeeded
-      } else {
-        setFollowing(!next);
+      if (!res.ok) {
+        setFollowing(!next); // revert only on failure
       }
+      // On 2xx: keep optimistic state — follow was registered
     } catch {
       setFollowing(!next);
     }

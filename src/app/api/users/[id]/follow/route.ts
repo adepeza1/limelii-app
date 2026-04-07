@@ -18,5 +18,7 @@ export async function POST(
     return NextResponse.json({ error: "Failed to toggle follow" }, { status: res.status });
   }
 
-  return NextResponse.json(await res.json());
+  const data = await res.json();
+  console.log("[follow] Xano response:", JSON.stringify(data).slice(0, 300));
+  return NextResponse.json(data);
 }

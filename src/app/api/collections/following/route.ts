@@ -14,5 +14,11 @@ export async function GET() {
     return NextResponse.json([], { status: 200 });
   }
 
-  return NextResponse.json(await res.json());
+  const raw = await res.json();
+  console.log("[following_collections] response:", JSON.stringify(raw).slice(0, 500));
+  // Unwrap common Xano response shapes (plain array or wrapped object)
+  const data = Array.isArray(raw)
+    ? raw
+    : (raw?.result ?? raw?.items ?? raw?.data ?? raw?.collections ?? []);
+  return NextResponse.json(Array.isArray(data) ? data : []);
 }
