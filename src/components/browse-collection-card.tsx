@@ -290,7 +290,12 @@ export function BrowseCollectionCard({
       const res = await fetch(`/api/users/${ownerId}/follow`, { method: "POST" });
       if (res.ok) {
         const data = await res.json();
-        setFollowing(data.following);
+        if (typeof data.following === "boolean") {
+          setFollowing(data.following);
+        }
+        // else keep optimistic state — backend confirmed the request succeeded
+      } else {
+        setFollowing(!next);
       }
     } catch {
       setFollowing(!next);
@@ -331,7 +336,7 @@ export function BrowseCollectionCard({
               </div>
               <span className="text-[#667085] text-sm">{ownerHandle ?? "unknown"}</span>
             </Link>
-            {!hideFollow && ownerId && currentUserId !== ownerId && (
+            {!hideFollow && ownerId && currentUserId && currentUserId !== ownerId && (
               <button
                 onClick={handleFollow}
                 className={`text-sm font-medium px-4 py-1.5 rounded-full border transition-colors ${
