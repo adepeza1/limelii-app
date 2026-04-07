@@ -211,9 +211,9 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
 
   return (
     <div className="bg-white min-h-screen max-w-5xl mx-auto relative">
+      <div className="h-[env(safe-area-inset-top,44px)]" />
       {/* Top Bar */}
       <header className="sticky top-0 z-10 bg-white">
-        <div className="h-[44px]" />
         {searchOpen ? (
           <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100">
             <button onClick={closeSearch} aria-label="Close search">
