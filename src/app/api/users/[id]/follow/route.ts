@@ -1,7 +1,6 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { apiFetch } from "@/lib/api";
-import { USER_API_BASE } from "@/lib/xano";
 
 export async function POST(
   _request: NextRequest,
@@ -16,7 +15,7 @@ export async function POST(
   const targetId = parseInt(id, 10);
 
   // Get current follow records for the authenticated user
-  const listRes = await apiFetch("/user_follows", {}, USER_API_BASE);
+  const listRes = await apiFetch("/user_follows");
   if (!listRes.ok) {
     return NextResponse.json({ error: "Failed to fetch follows" }, { status: listRes.status });
   }
@@ -29,7 +28,7 @@ export async function POST(
 
   if (existing) {
     // Already following → unfollow (DELETE)
-    const delRes = await apiFetch(`/user_follows/${existing.id}`, { method: "DELETE" }, USER_API_BASE);
+    const delRes = await apiFetch(`/user_follows/${existing.id}`, { method: "DELETE" });
     if (!delRes.ok) {
       return NextResponse.json({ error: "Failed to unfollow" }, { status: delRes.status });
     }
@@ -39,7 +38,7 @@ export async function POST(
     const addRes = await apiFetch("/user_follows", {
       method: "POST",
       body: JSON.stringify({ following_user_id: targetId }),
-    }, USER_API_BASE);
+    });
     if (!addRes.ok) {
       const errBody = await addRes.text();
       console.log("[follow] POST /user_follows failed:", addRes.status, errBody);
