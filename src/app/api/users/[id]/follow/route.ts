@@ -1,6 +1,7 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { apiFetch } from "@/lib/api";
+import { USER_API_BASE } from "@/lib/xano";
 
 export async function POST(
   _request: NextRequest,
@@ -12,13 +13,38 @@ export async function POST(
   }
 
   const { id } = await params;
-  const res = await apiFetch(`/users/${id}/follow`, { method: "POST" });
+  const targetId = parseInt(id, 10);
 
-  if (!res.ok) {
-    return NextResponse.json({ error: "Failed to toggle follow" }, { status: res.status });
+  // Get current follow records for the authenticated user
+  const listRes = await apiFetch("/user_follows", {}, USER_API_BASE);
+  if (!listRes.ok) {
+    return NextResponse.json({ error: "Failed to fetch follows" }, { status: listRes.status });
   }
+  const follows = await listRes.json();
+  console.log("[follow] user_follows list:", JSON.stringify(follows).slice(0, 500));
 
-  const data = await res.json();
-  console.log("[follow] Xano response:", JSON.stringify(data).slice(0, 300));
-  return NextResponse.json(data);
+  // Find existing follow record for this target user
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const existing = Array.isArray(follows) ? follows.find((f: any) => f.following_user_id === targetId) : null;
+
+  if (existing) {
+    // Already following → unfollow (DELETE)
+    const delRes = await apiFetch(`/user_follows/${existing.id}`, { method: "DELETE" }, USER_API_BASE);
+    if (!delRes.ok) {
+      return NextResponse.json({ error: "Failed to unfollow" }, { status: delRes.status });
+    }
+    return NextResponse.json({ following: false });
+  } else {
+    // Not following → follow (POST)
+    const addRes = await apiFetch("/user_follows", {
+      method: "POST",
+      body: JSON.stringify({ following_user_id: targetId }),
+    }, USER_API_BASE);
+    if (!addRes.ok) {
+      const errBody = await addRes.text();
+      console.log("[follow] POST /user_follows failed:", addRes.status, errBody);
+      return NextResponse.json({ error: "Failed to follow" }, { status: addRes.status });
+    }
+    return NextResponse.json({ following: true });
+  }
 }
