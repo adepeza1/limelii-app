@@ -274,10 +274,10 @@ export default function CollectionsPage() {
 
   return (
     <div className="bg-white min-h-screen max-w-5xl mx-auto">
-      <div className="h-[44px]" />
+      <div className="h-[env(safe-area-inset-top,44px)]" />
 
       {/* Header */}
-      <div className="px-5 pt-4 pb-3">
+      <div className="px-5 pt-2 pb-3">
         {searchOpen ? (
           <div className="flex items-center gap-2">
             <div className="flex-1 flex items-center gap-2 bg-[#F9FAFB] border border-[#EAECF0] rounded-2xl px-3 py-2">
@@ -329,7 +329,7 @@ export default function CollectionsPage() {
             onClick={() => { setActiveTab(id); if (id === "following") setFollowingTabKey((k) => k + 1); }}
             className={`mr-6 pb-3 text-sm font-semibold transition-colors ${
               activeTab === id
-                ? "text-[#E8405A] border-b-2 border-[#E8405A]"
+                ? "text-[#FF9A56] border-b-2 border-[#FF9A56]"
                 : "text-[#667085]"
             }`}
           >
