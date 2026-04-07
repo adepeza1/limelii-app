@@ -24,7 +24,7 @@ export async function POST(
 
   // Find existing follow record for this target user
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const existing = Array.isArray(follows) ? follows.find((f: any) => f.following_user_id === targetId) : null;
+  const existing = Array.isArray(follows) ? follows.find((f: any) => f.following_id === targetId) : null;
 
   if (existing) {
     // Already following → unfollow (DELETE)
@@ -37,13 +37,15 @@ export async function POST(
     // Not following → follow (POST)
     const addRes = await apiFetch("/user_follows", {
       method: "POST",
-      body: JSON.stringify({ following_user_id: targetId }),
+      body: JSON.stringify({ following_id: targetId }),
     });
     if (!addRes.ok) {
       const errBody = await addRes.text();
       console.log("[follow] POST /user_follows failed:", addRes.status, errBody);
       return NextResponse.json({ error: "Failed to follow" }, { status: addRes.status });
     }
+    const addData = await addRes.json();
+    console.log("[follow] created record:", JSON.stringify(addData));
     return NextResponse.json({ following: true });
   }
 }
