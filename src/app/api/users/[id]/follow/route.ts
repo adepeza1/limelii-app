@@ -22,6 +22,14 @@ export async function POST(
   const follows = await listRes.json();
   console.log("[follow] user_follows list:", JSON.stringify(follows).slice(0, 500));
 
+  // Clean up corrupt records (null following_id) left by old buggy code
+  if (Array.isArray(follows)) {
+    const nullRecords = follows.filter((f: any) => !f.following_id); // eslint-disable-line @typescript-eslint/no-explicit-any
+    await Promise.allSettled(
+      nullRecords.map((f: any) => apiFetch(`/user_follows/${f.id}`, { method: "DELETE" })) // eslint-disable-line @typescript-eslint/no-explicit-any
+    );
+  }
+
   // Find existing follow record for this target user
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const existing = Array.isArray(follows) ? follows.find((f: any) => f.following_id === targetId) : null;
