@@ -191,6 +191,7 @@ export default function CollectionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [followingTabKey, setFollowingTabKey] = useState(0);
 
   const [publicCollections, setPublicCollections] = useState<Collection[]>([]);
   const [browseLoading, setBrowseLoading] = useState(false);
@@ -308,7 +309,7 @@ export default function CollectionsPage() {
         {TAB_LABELS.map(({ id, label }) => (
           <button
             key={id}
-            onClick={() => setActiveTab(id)}
+            onClick={() => { setActiveTab(id); if (id === "following") setFollowingTabKey((k) => k + 1); }}
             className={`mr-6 pb-3 text-sm font-semibold transition-colors ${
               activeTab === id
                 ? "text-[#E8405A] border-b-2 border-[#E8405A]"
@@ -332,7 +333,7 @@ export default function CollectionsPage() {
           currentUserId={currentUserId}
         />
       ) : (
-        <FollowingTab allExperiences={allExperiences} currentUserId={currentUserId} />
+        <FollowingTab key={followingTabKey} allExperiences={allExperiences} currentUserId={currentUserId} />
       )}
     </div>
   );

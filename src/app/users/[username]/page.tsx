@@ -15,6 +15,14 @@ export default function UserProfilePage() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [allExperiences, setAllExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/user/me")
+      .then((r) => r.ok ? r.json() : null)
+      .then((u) => { if (u?.id) setCurrentUserId(u.id); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -72,6 +80,7 @@ export default function UserProfilePage() {
               collection={col}
               allExperiences={allExperiences}
               tags={getTagsForCollection(col, allExperiences)}
+              currentUserId={currentUserId}
             />
           ))}
         </div>
