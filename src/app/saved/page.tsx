@@ -305,7 +305,7 @@ export default function CollectionsPage() {
           </div>
         ) : (
           <div className="flex items-center justify-between">
-            <h1 className="text-[#101828] text-2xl font-bold leading-tight">Collections</h1>
+            <h1 className="text-[#101828] text-lg font-medium">Collections</h1>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => { setSearchOpen(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}

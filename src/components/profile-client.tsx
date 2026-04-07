@@ -412,7 +412,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
       {/* ── Sticky header ───────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-5 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-900">Profile</h1>
+          <h1 className="text-lg font-medium text-gray-900">Profile</h1>
           <button
             onClick={() => setShowSettings(true)}
             className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
