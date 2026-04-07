@@ -20,7 +20,7 @@ function BrowseTab({
   allExperiences,
   loading,
   filterPills,
-  activeFilter,
+  activeFilters,
   onFilterChange,
   currentUserId,
 }: {
@@ -28,24 +28,24 @@ function BrowseTab({
   allExperiences: Experience[];
   loading: boolean;
   filterPills: string[];
-  activeFilter: string;
+  activeFilters: string[];
   onFilterChange: (f: string) => void;
   currentUserId?: number | null;
 }) {
   return (
     <>
       <div
-        className="flex gap-2 px-5 py-3 overflow-x-auto"
+        className="flex gap-6 px-5 py-3 overflow-x-auto"
         style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
       >
         {filterPills.map((pill) => (
           <button
             key={pill}
             onClick={() => onFilterChange(pill)}
-            className={`shrink-0 text-sm px-4 py-1.5 rounded-full font-medium transition-colors ${
-              activeFilter === pill
-                ? "bg-[#E8405A] text-white"
-                : "bg-white border border-[#EAECF0] text-[#101828]"
+            className={`shrink-0 text-sm font-medium pb-2 transition-colors ${
+              activeFilters.includes(pill)
+                ? "text-[#FB6983] border-b-2 border-[#FB6983]"
+                : "text-[#667085]"
             }`}
           >
             {pill}
@@ -66,8 +66,8 @@ function BrowseTab({
           </div>
           <p className="text-[#101828] font-semibold text-base">No collections found</p>
           <p className="text-[#667085] text-sm max-w-[240px]">
-            {activeFilter !== "All"
-              ? `No collections tagged "${activeFilter}".`
+            {!activeFilters.includes("All")
+              ? `No collections tagged "${activeFilters.join('", "')}".`
               : "Try a different search term."}
           </p>
         </div>
@@ -185,7 +185,7 @@ function collectionMatchesQuery(col: Collection, query: string, allExperiences: 
 
 export default function CollectionsPage() {
   const [activeTab, setActiveTab] = useState<CollectionsPageTab>("browse");
-  const [activeFilter, setActiveFilter] = useState("All");
+  const [activeFilters, setActiveFilters] = useState<string[]>(["All"]);
   const [allExperiences, setAllExperiences] = useState<Experience[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -236,19 +236,36 @@ export default function CollectionsPage() {
     return ["All", ...Array.from(tagSet).slice(0, 8)];
   }, [publicCollections, allExperiences]);
 
+  const handleFilterChange = useCallback((pill: string) => {
+    if (pill === "All") {
+      setActiveFilters(["All"]);
+      return;
+    }
+    setActiveFilters((prev) => {
+      const withoutAll = prev.filter((f) => f !== "All");
+      const isSelected = withoutAll.includes(pill);
+      const next = isSelected
+        ? withoutAll.filter((f) => f !== pill)
+        : [...withoutAll, pill];
+      return next.length === 0 ? ["All"] : next;
+    });
+  }, []);
+
   const filteredPublic = useMemo(() => {
     let result = publicCollections;
-    if (activeFilter !== "All") {
+    if (!activeFilters.includes("All")) {
       result = result.filter((col) => {
         const tags = getTagsForCollection(col, allExperiences);
-        return tags.some((t) => t.toLowerCase() === activeFilter.toLowerCase());
+        return activeFilters.some((f) =>
+          tags.some((t) => t.toLowerCase() === f.toLowerCase())
+        );
       });
     }
     if (searchQuery.trim()) {
       result = result.filter((col) => collectionMatchesQuery(col, searchQuery.trim(), allExperiences));
     }
     return result;
-  }, [publicCollections, allExperiences, activeFilter, searchQuery]);
+  }, [publicCollections, allExperiences, activeFilters, searchQuery]);
 
   const TAB_LABELS: { id: CollectionsPageTab; label: string }[] = [
     { id: "browse", label: "Browse" },
@@ -328,8 +345,8 @@ export default function CollectionsPage() {
           allExperiences={allExperiences}
           loading={browseLoading && !browseLoaded}
           filterPills={filterPills}
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
+          activeFilters={activeFilters}
+          onFilterChange={handleFilterChange}
           currentUserId={currentUserId}
         />
       ) : (
