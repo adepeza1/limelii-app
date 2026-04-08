@@ -123,6 +123,7 @@ export function BottomNav() {
                       backgroundSize: "100%",
                       backgroundPosition: "center",
                       backgroundRepeat: "no-repeat",
+                      filter: isActive ? "hue-rotate(34deg)" : "none",
                     }}
                   />
                 </div>
