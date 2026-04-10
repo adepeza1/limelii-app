@@ -219,12 +219,14 @@ export function BrowseCollectionCard({
   tags,
   hideFollow,
   currentUserId,
+  followedIds,
 }: {
   collection: Collection;
   allExperiences: Experience[];
   tags: string[];
   hideFollow?: boolean;
   currentUserId?: number | null;
+  followedIds?: number[] | null;
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const col = collection as any;
@@ -239,12 +241,24 @@ export function BrowseCollectionCard({
     try { return JSON.parse(localStorage.getItem(FOLLOWED_KEY) ?? "[]"); } catch { return []; }
   }
 
+  const ownerIdForFollow: number | undefined = collection._users?.id ?? (col.users_id as number | undefined);
+
   const [liked, setLiked] = useState<boolean>(() => getLikedIds().includes(collection.id));
   const [likeCount, setLikeCount] = useState<number>(col.likes_count ?? 0);
   const [following, setFollowing] = useState<boolean>(() => {
-    const id = collection._users?.id ?? (col.users_id as number | undefined);
-    return id != null ? getFollowedIds().includes(id) : false;
+    // Prefer the server-authoritative prop; fall back to localStorage cache
+    if (followedIds != null) return ownerIdForFollow != null ? followedIds.includes(ownerIdForFollow) : false;
+    return ownerIdForFollow != null ? getFollowedIds().includes(ownerIdForFollow) : false;
   });
+
+  // Sync when the server-confirmed followedIds prop arrives after mount
+  useEffect(() => {
+    if (followedIds != null && ownerIdForFollow != null) {
+      setFollowing(followedIds.includes(ownerIdForFollow));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [followedIds]);
+
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState<number>(col.comments_count ?? 0);
   const [showDetail, setShowDetail] = useState(false);
