@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useBackHandler } from "@/hooks/useBackHandler";
 import Link from "next/link";
-import { Heart, MessageCircle, X, Send, ChevronLeft, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, X, Send, ChevronLeft, Trash2, MapPin } from "lucide-react";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import type { Experience } from "@/app/page";
@@ -47,6 +47,28 @@ export function getTagsForCollection(collection: Collection, allExperiences: Exp
     if (activities.size >= 4) break;
   }
   return Array.from(activities).slice(0, 4);
+}
+
+export function getCollectionLocationHint(
+  collection: Collection,
+  allExperiences: Experience[]
+): string | null {
+  const ids = new Set(parseExperienceIds(collection));
+  const freq = new Map<string, number>();
+  for (const exp of allExperiences) {
+    if (!ids.has(exp.id)) continue;
+    for (const place of exp.places_id ?? []) {
+      const loc = place.neighborhood || place.borough;
+      if (loc) freq.set(loc, (freq.get(loc) ?? 0) + 1);
+    }
+  }
+  if (freq.size === 0) return null;
+  let topLoc = "";
+  let topCount = 0;
+  for (const [loc, count] of freq) {
+    if (count > topCount) { topCount = count; topLoc = loc; }
+  }
+  return `${topCount} ${topCount === 1 ? "Gem" : "Gems"} in ${topLoc}`;
 }
 
 export function relativeTime(ts: number): string {
@@ -278,6 +300,8 @@ export function BrowseCollectionCard({
   const ownerId = collection._users?.id ?? col.users_id;
   const initials = ownerHandle ? ownerHandle.slice(0, 2).toUpperCase() : "?";
   const planUrl = collection.id ? `/plan?collection_id=${collection.id}` : "/plan";
+  const locationHint = getCollectionLocationHint(collection, allExperiences);
+  const subtitle = locationHint ?? `${count} ${count === 1 ? "experience" : "experiences"}`;
 
   async function handleLike() {
     const nextLiked = !liked;
@@ -344,19 +368,6 @@ export function BrowseCollectionCard({
         {/* Mosaic — click opens detail */}
         <div className="relative h-44 cursor-pointer" onClick={() => setShowDetail(true)}>
           <CollectionMosaic ids={ids} allExperiences={allExperiences} resolvedExperiences={collection._experiences} />
-          {tags.length > 0 && (
-            <div className="absolute bottom-2.5 left-2.5 flex gap-1.5 flex-wrap max-w-[75%]">
-              {tags.slice(0, 2).map((tag) => (
-                <span
-                  key={tag}
-                  className="text-xs font-medium px-2.5 py-1 rounded-full text-white"
-                  style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="px-4 pt-3">
@@ -389,11 +400,22 @@ export function BrowseCollectionCard({
           {/* Title */}
           <div className="cursor-pointer" onClick={() => setShowDetail(true)}>
             <p className="text-[#101828] text-base font-semibold leading-snug">{collection.name}</p>
-            <p className="text-[#667085] text-xs mt-0.5">{count} {count === 1 ? "experience" : "experiences"}</p>
+            <p className="text-[#667085] text-xs mt-0.5">{subtitle}</p>
           </div>
 
-          {/* Reactions + Plan my day */}
-          <div className="flex items-center gap-2 pt-3 pb-4">
+          {/* Tag pills */}
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {tags.slice(0, 3).map((tag) => (
+                <span key={tag} className="text-xs font-medium px-2.5 py-1 rounded-full bg-[#F2F4F7] text-[#667085]">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Reactions */}
+          <div className="flex items-center gap-2 pt-3">
             <button
               onClick={handleLike}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm transition-colors ${
@@ -412,13 +434,16 @@ export function BrowseCollectionCard({
               <MessageCircle size={13} />
               <span>{commentCount}</span>
             </button>
-            <Link
-              href={planUrl}
-              className="ml-auto flex items-center gap-1 text-sm font-semibold text-[#E8405A]"
-            >
-              → Plan my day
-            </Link>
           </div>
+
+          {/* Explore button */}
+          <Link
+            href={planUrl}
+            className="w-full mt-3 mb-4 py-2.5 rounded-full bg-[#E8405A] text-white text-sm font-semibold flex items-center justify-center gap-2"
+          >
+            <MapPin size={14} strokeWidth={2.5} />
+            Explore
+          </Link>
         </div>
       </div>
 
