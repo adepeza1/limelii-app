@@ -35,10 +35,20 @@ export function parseExperienceIds(collection: Collection): number[] {
   return [];
 }
 
+function resolveExperiences(collection: Collection, allExperiences: Experience[]): Experience[] {
+  // collection._experiences carries user-created experiences not in the public discovery feed;
+  // merge both pools so helpers work for all collection types.
+  const resolved = collection._experiences ?? [];
+  if (resolved.length === 0) return allExperiences;
+  const resolvedIds = new Set(resolved.map((e) => e.id));
+  return [...resolved, ...allExperiences.filter((e) => !resolvedIds.has(e.id))];
+}
+
 export function getTagsForCollection(collection: Collection, allExperiences: Experience[]): string[] {
   const ids = new Set(parseExperienceIds(collection));
+  const pool = resolveExperiences(collection, allExperiences);
   const activities = new Set<string>();
-  for (const exp of allExperiences) {
+  for (const exp of pool) {
     if (!ids.has(exp.id)) continue;
     for (const act of exp.activities ?? []) {
       activities.add(act);
@@ -54,9 +64,10 @@ export function getCollectionLocationHint(
   allExperiences: Experience[]
 ): string | null {
   const ids = new Set(parseExperienceIds(collection));
+  const pool = resolveExperiences(collection, allExperiences);
   const seen = new Set<string>();
   const neighborhoods: string[] = [];
-  for (const exp of allExperiences) {
+  for (const exp of pool) {
     if (!ids.has(exp.id)) continue;
     for (const place of exp.places_id ?? []) {
       const loc = place.neighborhood || place.borough;
