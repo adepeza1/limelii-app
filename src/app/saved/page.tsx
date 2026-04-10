@@ -23,6 +23,7 @@ function BrowseTab({
   activeFilters,
   onFilterChange,
   currentUserId,
+  followedIds,
 }: {
   collections: Collection[];
   allExperiences: Experience[];
@@ -31,6 +32,7 @@ function BrowseTab({
   activeFilters: string[];
   onFilterChange: (f: string) => void;
   currentUserId?: number | null;
+  followedIds?: number[] | null;
 }) {
   return (
     <>
@@ -82,6 +84,7 @@ function BrowseTab({
                 allExperiences={allExperiences}
                 tags={tags}
                 currentUserId={currentUserId}
+                followedIds={followedIds}
               />
             );
           })}
@@ -93,7 +96,7 @@ function BrowseTab({
 
 // ─── Following Tab ────────────────────────────────────────────────────────────
 
-function FollowingTab({ allExperiences, currentUserId }: { allExperiences: Experience[]; currentUserId?: number | null }) {
+function FollowingTab({ allExperiences, currentUserId, followedIds }: { allExperiences: Experience[]; currentUserId?: number | null; followedIds?: number[] | null }) {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -142,6 +145,7 @@ function FollowingTab({ allExperiences, currentUserId }: { allExperiences: Exper
             allExperiences={allExperiences}
             tags={tags}
             currentUserId={currentUserId}
+            followedIds={followedIds}
           />
         );
       })}
@@ -191,6 +195,7 @@ export default function CollectionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [followedIds, setFollowedIds] = useState<number[] | null>(null);
   const [followingTabKey, setFollowingTabKey] = useState(0);
 
   const [publicCollections, setPublicCollections] = useState<Collection[]>([]);
@@ -200,7 +205,15 @@ export default function CollectionsPage() {
   useEffect(() => {
     fetch("/api/user/me")
       .then((r) => r.ok ? r.json() : null)
-      .then((u) => { if (u?.id) setCurrentUserId(u.id); })
+      .then((u) => {
+        if (u?.id) {
+          setCurrentUserId(u.id);
+          fetch("/api/users/me/following")
+            .then((r) => r.ok ? r.json() : null)
+            .then((data) => { if (Array.isArray(data?.followingIds)) setFollowedIds(data.followingIds); })
+            .catch(() => setFollowedIds([]));
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -348,9 +361,10 @@ export default function CollectionsPage() {
           activeFilters={activeFilters}
           onFilterChange={handleFilterChange}
           currentUserId={currentUserId}
+          followedIds={followedIds}
         />
       ) : (
-        <FollowingTab key={followingTabKey} allExperiences={allExperiences} currentUserId={currentUserId} />
+        <FollowingTab key={followingTabKey} allExperiences={allExperiences} currentUserId={currentUserId} followedIds={followedIds} />
       )}
     </div>
   );
