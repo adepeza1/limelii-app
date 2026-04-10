@@ -70,8 +70,9 @@ export function getCollectionLocationHint(
   for (const exp of pool) {
     if (!ids.has(exp.id)) continue;
     for (const place of exp.places_id ?? []) {
-      const loc = place.neighborhood || place.borough;
-      if (loc && !seen.has(loc)) { seen.add(loc); neighborhoods.push(loc); }
+      const loc = (place.neighborhood || place.borough)?.trim();
+      const key = loc?.toLowerCase();
+      if (loc && key && !seen.has(key)) { seen.add(key); neighborhoods.push(loc); }
     }
   }
   return neighborhoods.length > 0 ? neighborhoods.join(" · ") : null;
