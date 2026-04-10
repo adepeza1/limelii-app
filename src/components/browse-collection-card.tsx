@@ -54,21 +54,16 @@ export function getCollectionLocationHint(
   allExperiences: Experience[]
 ): string | null {
   const ids = new Set(parseExperienceIds(collection));
-  const freq = new Map<string, number>();
+  const seen = new Set<string>();
+  const neighborhoods: string[] = [];
   for (const exp of allExperiences) {
     if (!ids.has(exp.id)) continue;
     for (const place of exp.places_id ?? []) {
       const loc = place.neighborhood || place.borough;
-      if (loc) freq.set(loc, (freq.get(loc) ?? 0) + 1);
+      if (loc && !seen.has(loc)) { seen.add(loc); neighborhoods.push(loc); }
     }
   }
-  if (freq.size === 0) return null;
-  let topLoc = "";
-  let topCount = 0;
-  for (const [loc, count] of freq) {
-    if (count > topCount) { topCount = count; topLoc = loc; }
-  }
-  return `${topCount} ${topCount === 1 ? "Gem" : "Gems"} in ${topLoc}`;
+  return neighborhoods.length > 0 ? neighborhoods.join(" · ") : null;
 }
 
 export function relativeTime(ts: number): string {
