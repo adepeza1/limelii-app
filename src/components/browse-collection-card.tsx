@@ -234,9 +234,17 @@ export function BrowseCollectionCard({
     try { return JSON.parse(localStorage.getItem(LIKED_KEY) ?? "[]"); } catch { return []; }
   }
 
+  const FOLLOWED_KEY = "limelii_followed_users";
+  function getFollowedIds(): number[] {
+    try { return JSON.parse(localStorage.getItem(FOLLOWED_KEY) ?? "[]"); } catch { return []; }
+  }
+
   const [liked, setLiked] = useState<boolean>(() => getLikedIds().includes(collection.id));
   const [likeCount, setLikeCount] = useState<number>(col.likes_count ?? 0);
-  const [following, setFollowing] = useState(false);
+  const [following, setFollowing] = useState<boolean>(() => {
+    const id = collection._users?.id ?? (col.users_id as number | undefined);
+    return id != null ? getFollowedIds().includes(id) : false;
+  });
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState<number>(col.comments_count ?? 0);
   const [showDetail, setShowDetail] = useState(false);
@@ -284,16 +292,35 @@ export function BrowseCollectionCard({
   }
 
   async function handleFollow() {
+    if (!ownerId) return;
     const next = !following;
     setFollowing(next);
+    // Optimistically update localStorage
+    const ids = getFollowedIds().filter((id) => id !== ownerId);
+    if (next) ids.push(ownerId);
+    localStorage.setItem(FOLLOWED_KEY, JSON.stringify(ids));
     try {
       const res = await fetch(`/api/users/${ownerId}/follow`, { method: "POST" });
-      if (!res.ok) {
-        setFollowing(!next); // revert only on failure
+      if (res.ok) {
+        const data = await res.json();
+        setFollowing(data.following);
+        // Sync localStorage with confirmed server state
+        const synced = getFollowedIds().filter((id) => id !== ownerId);
+        if (data.following) synced.push(ownerId);
+        localStorage.setItem(FOLLOWED_KEY, JSON.stringify(synced));
+      } else {
+        // Revert
+        setFollowing(!next);
+        const reverted = getFollowedIds().filter((id) => id !== ownerId);
+        if (!next) reverted.push(ownerId);
+        localStorage.setItem(FOLLOWED_KEY, JSON.stringify(reverted));
       }
-      // On 2xx: keep optimistic state — follow was registered
     } catch {
+      // Revert
       setFollowing(!next);
+      const reverted = getFollowedIds().filter((id) => id !== ownerId);
+      if (!next) reverted.push(ownerId);
+      localStorage.setItem(FOLLOWED_KEY, JSON.stringify(reverted));
     }
   }
 
