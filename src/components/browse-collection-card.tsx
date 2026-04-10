@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useBackHandler } from "@/hooks/useBackHandler";
 import Link from "next/link";
-import { Heart, MessageCircle, X, Send, ChevronLeft, Trash2, MapPin } from "lucide-react";
+import { Heart, MessageCircle, X, Send, ChevronLeft, Trash2, MapPin, ChevronRight } from "lucide-react";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import type { Experience } from "@/app/page";
@@ -436,13 +436,13 @@ export function BrowseCollectionCard({
             </button>
           </div>
 
-          {/* Explore button */}
+          {/* Explore link */}
           <Link
             href={planUrl}
-            className="w-full mt-3 mb-4 py-2.5 rounded-full bg-[#E8405A] text-white text-sm font-semibold flex items-center justify-center gap-2"
+            className="w-full mt-3 mb-4 flex items-center justify-center gap-1 text-sm font-normal text-[#E8405A]"
           >
-            <MapPin size={14} strokeWidth={2.5} />
-            Explore
+            Explore Map
+            <ChevronRight size={14} strokeWidth={1.75} />
           </Link>
         </div>
       </div>
