@@ -69,10 +69,9 @@ const FullscreenMap = dynamic(
 );
 
 function getPlaceImage(place: Place): string | null {
-  if (place.display_images && place.display_images.length > 0) {
-    return place.display_images[0].url;
-  }
-  return null;
+  return (place.display_images ?? []).find((img) => img.url)?.url
+    ?? (place.images ?? []).find((img) => img.url)?.url
+    ?? null;
 }
 
 function getFullAddress(place: Place): string {
@@ -91,7 +90,7 @@ function PlaceImageCard({
 }: {
   place: Place;
 }) {
-  const images = (place.display_images || []).slice(0, 4).map((img) => img.url);
+  const images = [...(place.display_images ?? []), ...(place.images ?? [])].slice(0, 4).map((img) => img.url);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   if (images.length === 0) return null;
 
@@ -195,7 +194,7 @@ export function ExperienceDetail({
   }, [experience.id]);
 
   const placesWithImages = experience.places_id.filter(
-    (p) => p.display_images && p.display_images.length > 0
+    (p) => (p.display_images?.length ?? 0) > 0 || (p.images?.length ?? 0) > 0
   );
 
   // Track active slide via scroll position

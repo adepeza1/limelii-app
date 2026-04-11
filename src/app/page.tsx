@@ -14,6 +14,7 @@ export interface Place {
   state?: string;
   zipcode?: string;
   latlong?: { type: string; data: { lat: number; lng: number } } | null;
+  images: { url: string }[] | null;
   display_images: { url: string }[] | null;
   _location_details: {
     Description: string;
