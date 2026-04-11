@@ -13,6 +13,7 @@ interface PublicProfile {
   name: string;
   username: string;
   picture?: string;
+  profile_photo_url?: string;
   bio?: string;
   neighborhood?: string;
   follower_count: number;
@@ -200,11 +201,16 @@ export default function PublicProfilePage() {
           <div className="px-5 pt-5 pb-4 border-b border-[#EAECF0]">
             <div className="flex items-start justify-between gap-4">
               {/* Avatar */}
-              <div className="w-16 h-16 rounded-full bg-[#F2F4F7] flex items-center justify-center text-xl font-bold text-[#667085] shrink-0 overflow-hidden">
-                {profile.picture
-                  ? <img src={profile.picture} alt={profile.username} className="w-full h-full object-cover" />
-                  : initials}
-              </div>
+              {(() => {
+                const photoUrl = profile.profile_photo_url ?? profile.picture;
+                return (
+                  <div className="w-16 h-16 rounded-full bg-[#F2F4F7] flex items-center justify-center text-xl font-bold text-[#667085] shrink-0 overflow-hidden">
+                    {photoUrl
+                      ? <img src={photoUrl} alt={profile.username} className="w-full h-full object-cover" />
+                      : initials}
+                  </div>
+                );
+              })()}
 
               {/* Follow button */}
               {!isOwnProfile && currentUserId && (
@@ -227,7 +233,7 @@ export default function PublicProfilePage() {
               {profile.name && (
                 <p className="font-semibold text-[#101828] text-base leading-tight">{profile.name}</p>
               )}
-              <p className="text-sm text-[#667085]">@{profile.username}</p>
+              <p className="text-sm text-[#667085]">@{profile.username || username}</p>
             </div>
 
             {/* Bio */}
