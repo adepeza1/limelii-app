@@ -29,11 +29,20 @@ export interface CollectionsResponse {
 
 // Collections saved by the current user via a private share link
 export interface SharedCollection {
+  // base shared_collections row fields
   id: number;
   created_at: number;
-  user_id: number;
+  users_id: number;
+  collections_id: number;
+  // eval-joined fields from collections + users tables
   collection_id: number;
-  collection: Collection & { _users?: { username?: string; id?: number } };
+  collection_name: string;
+  collection_description: string;
+  collection_is_public: boolean;
+  collection_share_token?: string;
+  collection_experience_ids: string; // JSON-encoded array
+  owner_id: number;
+  owner_username: string;
 }
 
 // ─── Client-side API helpers ──────────────────────────────────────────────────
