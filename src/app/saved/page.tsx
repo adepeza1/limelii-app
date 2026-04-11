@@ -3,15 +3,16 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Search, X, SlidersHorizontal } from "lucide-react";
 import type { Experience, DiscoveryResponse } from "@/app/page";
-import type { Collection } from "@/lib/collections";
-import { listPublicCollections } from "@/lib/collections";
+import type { Collection, SharedCollection } from "@/lib/collections";
+import { listPublicCollections, listSharedCollections } from "@/lib/collections";
 import { API_BASE } from "@/lib/xano";
+import { Lock } from "lucide-react";
 import {
   BrowseCollectionCard,
   getTagsForCollection,
 } from "@/components/browse-collection-card";
 
-type CollectionsPageTab = "browse" | "following";
+type CollectionsPageTab = "browse" | "following" | "shared";
 
 // ─── Browse Tab ───────────────────────────────────────────────────────────────
 
@@ -153,6 +154,84 @@ function FollowingTab({ allExperiences, currentUserId, followedIds }: { allExper
   );
 }
 
+// ─── Shared Tab ───────────────────────────────────────────────────────────────
+
+function SharedTab({ allExperiences, currentUserId }: { allExperiences: Experience[]; currentUserId?: number | null }) {
+  const [items, setItems] = useState<SharedCollection[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    listSharedCollections()
+      .then((data) => setItems(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="px-5 py-16 flex items-center justify-center">
+        <p className="text-sm text-[#667085]">Loading…</p>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="px-5 py-16 flex flex-col items-center gap-3 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-[#F2F4F7] flex items-center justify-center">
+          <Lock size={24} className="text-[#667085]" />
+        </div>
+        <p className="text-[#101828] font-semibold text-base">No shared collections</p>
+        <p className="text-[#667085] text-sm max-w-[240px]">
+          Collections shared with you via a private link will appear here.
+        </p>
+      </div>
+    );
+  }
+
+  // Map SharedCollection → Collection shape for BrowseCollectionCard
+  const asCollections: Collection[] = items.map((item) => {
+    let expIds: number[] = [];
+    try { expIds = JSON.parse(item.collection_experience_ids); } catch { expIds = []; }
+    return {
+      id: item.collection_id,
+      created_at: item.created_at,
+      name: item.collection_name,
+      description: item.collection_description,
+      is_public: item.collection_is_public,
+      owner_user_id: item.owner_id,
+      owner_handle: item.owner_username,
+      experience_ids: expIds,
+      share_token: item.collection_share_token,
+    };
+  });
+
+  return (
+    <div className="px-5 pb-28 flex flex-col gap-4 pt-4">
+      {asCollections.map((col) => {
+        const tags = getTagsForCollection(col, allExperiences);
+        return (
+          <div key={col.id} className="relative">
+            {!col.is_public && (
+              <div className="absolute top-3 left-3 z-10 w-6 h-6 rounded-full bg-black/40 flex items-center justify-center">
+                <Lock size={11} className="text-white" />
+              </div>
+            )}
+            <BrowseCollectionCard
+              collection={col}
+              allExperiences={allExperiences}
+              tags={tags}
+              currentUserId={currentUserId}
+              followedIds={null}
+              hideFollow
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 function collectionMatchesQuery(col: Collection, query: string, allExperiences: Experience[]): boolean {
@@ -283,6 +362,7 @@ export default function CollectionsPage() {
   const TAB_LABELS: { id: CollectionsPageTab; label: string }[] = [
     { id: "browse", label: "Browse" },
     { id: "following", label: "Following" },
+    { id: "shared", label: "Shared" },
   ];
 
   return (
@@ -363,8 +443,10 @@ export default function CollectionsPage() {
           currentUserId={currentUserId}
           followedIds={followedIds}
         />
-      ) : (
+      ) : activeTab === "following" ? (
         <FollowingTab key={followingTabKey} allExperiences={allExperiences} currentUserId={currentUserId} followedIds={followedIds} />
+      ) : (
+        <SharedTab allExperiences={allExperiences} currentUserId={currentUserId} />
       )}
     </div>
   );
