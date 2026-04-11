@@ -1,8 +1,14 @@
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { apiFetch } from "@/lib/api";
 import { USER_API_BASE } from "@/lib/xano";
 
 export async function PATCH(request: NextRequest) {
+  const { isAuthenticated } = getKindeServerSession();
+  if (!(await isAuthenticated())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const body = await request.json();
   const res = await apiFetch("/user/update_username", {
     method: "PATCH",
