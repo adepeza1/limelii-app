@@ -7,10 +7,9 @@ import { AddToCollectionSheet } from "./add-to-collection-sheet";
 import { saveExperience, unsaveExperience } from "@/lib/saved";
 
 function getPlaceImage(place: Place): string | null {
-  if (place.display_images && place.display_images.length > 0) {
-    return place.display_images[0].url;
-  }
-  return null;
+  return (place.display_images ?? []).find((img) => img.url)?.url
+    ?? (place.images ?? []).find((img) => img.url)?.url
+    ?? null;
 }
 
 function getPlaceLocation(place: Place): string {
@@ -91,7 +90,7 @@ export function ExperienceCard({
   }, []);
 
   const placesWithImages = experience.places_id.filter(
-    (p) => p.display_images && p.display_images.length > 0
+    (p) => (p.display_images?.length ?? 0) > 0 || (p.images?.length ?? 0) > 0
   );
 
   const activePlace =

@@ -24,7 +24,13 @@ interface Comment {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function getExpImage(exp: Experience): string | null {
-  return (exp.places_id ?? []).flatMap((p) => p.display_images ?? []).find((img) => img.url)?.url ?? null;
+  for (const p of exp.places_id ?? []) {
+    const url =
+      (p.display_images ?? []).find((img) => img.url)?.url ??
+      (p.images ?? []).find((img) => img.url)?.url;
+    if (url) return url;
+  }
+  return null;
 }
 
 export function parseExperienceIds(collection: Collection): number[] {
