@@ -12,8 +12,9 @@ interface PublicProfile {
   id: number;
   name: string;
   username: string;
-  picture?: string;
+  photo?: string;
   profile_photo_url?: string;
+  picture?: string;
   bio?: string;
   neighborhood?: string;
   follower_count: number;
@@ -202,11 +203,11 @@ export default function PublicProfilePage() {
             <div className="flex items-start justify-between gap-4">
               {/* Avatar */}
               {(() => {
-                const photoUrl = profile.profile_photo_url ?? profile.picture;
+                const photoUrl = profile.photo ?? profile.profile_photo_url ?? profile.picture;
                 return (
                   <div className="w-16 h-16 rounded-full bg-[#F2F4F7] flex items-center justify-center text-xl font-bold text-[#667085] shrink-0 overflow-hidden">
                     {photoUrl
-                      ? <img src={photoUrl} alt={profile.username} className="w-full h-full object-cover" />
+                      ? <img src={photoUrl} alt={profile.username || username} className="w-full h-full object-cover" />
                       : initials}
                   </div>
                 );
