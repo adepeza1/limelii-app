@@ -189,7 +189,8 @@ export default function SharedCollectionPage() {
                 <div key={colIdx} className="flex-1 flex flex-col gap-1">
                   {col.map((exp, rowIdx) => {
                     const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
-                    const photo = exp.places_id?.[0]?.photo?.url;
+                    const place = exp.places_id?.[0];
+                    const photo = place?.display_images?.[0]?.url ?? place?._location_details?.photo?.url;
                     return (
                       <div
                         key={exp.id}
