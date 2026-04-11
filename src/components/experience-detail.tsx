@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { ChevronLeft, MoreVertical, Maximize2 } from "lucide-react";
+import { ChevronLeft, Share2, Maximize2 } from "lucide-react";
 
 const SAVED_KEY = "limelii_saved";
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -157,6 +157,7 @@ export function ExperienceDetail({
   const [mapExpanded, setMapExpanded] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showCollectionSheet, setShowCollectionSheet] = useState(false);
+  const [shareState, setShareState] = useState<"idle" | "copied">("idle");
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const swipeTouchStart = useRef<{ x: number; y: number } | null>(null);
@@ -242,8 +243,25 @@ export function ExperienceDetail({
           <h1 className="flex-1 text-center text-lg font-medium text-black truncate">
             {experience.title}
           </h1>
-          <button aria-label="More options">
-            <MoreVertical className="w-6 h-6 text-black" />
+          <button
+            aria-label="Share experience"
+            className="relative p-1"
+            onClick={async () => {
+              const url = window.location.origin;
+              const text = `${experience.title} — check it out on Limelii`;
+              if (navigator.share) {
+                await navigator.share({ title: experience.title, text, url }).catch(() => {});
+              } else {
+                await navigator.clipboard.writeText(`${text}\n${url}`).catch(() => {});
+                setShareState("copied");
+                setTimeout(() => setShareState("idle"), 1500);
+              }
+            }}
+          >
+            <Share2 className={`w-5 h-5 transition-colors ${shareState === "copied" ? "text-[#12B76A]" : "text-black"}`} />
+            {shareState === "copied" && (
+              <span className="absolute -bottom-5 right-0 text-[10px] text-[#12B76A] whitespace-nowrap font-medium">Copied!</span>
+            )}
           </button>
         </div>
       </header>
