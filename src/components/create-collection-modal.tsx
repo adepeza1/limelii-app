@@ -100,8 +100,12 @@ export function CreateCollectionModal({ existing, onSave, onClose }: CreateColle
           {/* Public toggle */}
           <div className="flex items-center justify-between py-2">
             <div>
-              <p className="text-sm font-medium text-[#344054]">Make public</p>
-              <p className="text-xs text-[#667085] mt-0.5">Anyone with the link can view & save this collection</p>
+              <p className="text-sm font-medium text-[#344054]">{isPublic ? "Public" : "Private"}</p>
+              <p className="text-xs text-[#667085] mt-0.5">
+                {isPublic
+                  ? "Anyone can discover this collection"
+                  : "Only you can see this — shareable via link"}
+              </p>
             </div>
             <button
               type="button"

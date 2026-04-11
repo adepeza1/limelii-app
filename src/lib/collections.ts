@@ -9,6 +9,7 @@ export interface Collection {
   owner_user_id: number;
   owner_handle?: string; // populated by API for saved-from-others
   experience_ids: number[];
+  share_token?: string;
   _users?: { username?: string; name?: string; id?: number };
   _experiences?: import("@/app/page").Experience[];
 }
@@ -24,6 +25,15 @@ export interface SavedCollection {
 export interface CollectionsResponse {
   my_collections: Collection[];
   saved_collections: SavedCollection[];
+}
+
+// Collections saved by the current user via a private share link
+export interface SharedCollection {
+  id: number;
+  created_at: number;
+  user_id: number;
+  collection_id: number;
+  collection: Collection & { _users?: { username?: string; id?: number } };
 }
 
 // ─── Client-side API helpers ──────────────────────────────────────────────────
@@ -126,4 +136,19 @@ export async function saveCollection(collectionId: number): Promise<void> {
     method: "POST",
   });
   if (!res.ok) throw new Error("Failed to save collection");
+}
+
+export async function listSharedCollections(): Promise<SharedCollection[]> {
+  const res = await fetch("/api/collections/shared");
+  if (!res.ok) throw new Error("Failed to load shared collections");
+  return res.json();
+}
+
+export async function saveSharedCollection(collectionId: number): Promise<void> {
+  const res = await fetch("/api/collections/shared", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ collection_id: collectionId }),
+  });
+  if (!res.ok) throw new Error("Failed to save shared collection");
 }
