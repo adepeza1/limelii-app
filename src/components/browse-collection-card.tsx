@@ -313,6 +313,7 @@ export function BrowseCollectionCard({
   const count = ids.length;
   const ownerHandle = collection._users?.username ?? collection.owner_handle;
   const ownerId = collection._users?.id ?? col.users_id;
+  const ownerPhoto = collection._users?.profile_photo_url ?? collection._users?.picture;
   const initials = ownerHandle ? ownerHandle.slice(0, 2).toUpperCase() : "?";
   const planUrl = collection.id ? `/plan?collection_id=${collection.id}` : "/plan";
   const locationHint = getCollectionLocationHint(collection, allExperiences);
@@ -393,8 +394,11 @@ export function BrowseCollectionCard({
               className="flex items-center gap-2"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="w-7 h-7 rounded-full bg-[#F2F4F7] flex items-center justify-center text-[10px] font-bold text-[#667085]">
-                {initials}
+              <div className="w-7 h-7 rounded-full bg-[#F2F4F7] flex items-center justify-center text-[10px] font-bold text-[#667085] overflow-hidden shrink-0">
+                {ownerPhoto
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={ownerPhoto} alt={ownerHandle ?? ""} className="w-full h-full object-cover" />
+                  : initials}
               </div>
               <span className="text-[#667085] text-sm">{ownerHandle ?? "unknown"}</span>
             </Link>
