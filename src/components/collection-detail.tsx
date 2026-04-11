@@ -71,18 +71,17 @@ export function CollectionDetail({
   }
 
   async function handleShare() {
-    const url = `${window.location.origin}/collections/${localCollection.id}`;
-    if (navigator.share) {
-      await navigator.share({ title: localCollection.name, url });
-    } else {
-      try {
-        await navigator.clipboard.writeText(url);
-        setShareState("success");
-        setTimeout(() => setShareState("idle"), 1000);
-      } catch {
-        setShareState("error");
-        setTimeout(() => setShareState("idle"), 1000);
-      }
+    const token = localCollection.share_token;
+    const url = token
+      ? `${window.location.origin}/c/${token}`
+      : `${window.location.origin}/c/${localCollection.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareState("success");
+      setTimeout(() => setShareState("idle"), 1500);
+    } catch {
+      setShareState("error");
+      setTimeout(() => setShareState("idle"), 1500);
     }
   }
 
@@ -120,10 +119,10 @@ export function CollectionDetail({
           {localCollection.name}
         </h1>
         <div className="flex items-center gap-1">
-          {localCollection.is_public && (
+          {isOwner && (
             <button
               onClick={handleShare}
-              className="p-2"
+              className="p-2 relative"
               aria-label="Share collection"
             >
               <Share2 className={`w-5 h-5 transition-colors ${
@@ -131,6 +130,11 @@ export function CollectionDetail({
                 shareState === "error"   ? "text-red-500" :
                 "text-[#344054]"
               }`} />
+              {shareState === "success" && (
+                <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-[#12B76A] whitespace-nowrap font-medium">
+                  Copied!
+                </span>
+              )}
             </button>
           )}
           {isOwner && (
