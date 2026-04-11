@@ -42,12 +42,14 @@ export function parseExperienceIds(collection: Collection): number[] {
 }
 
 function resolveExperiences(collection: Collection, allExperiences: Experience[]): Experience[] {
-  // collection._experiences carries user-created experiences not in the public discovery feed;
-  // merge both pools so helpers work for all collection types.
-  const resolved = collection._experiences ?? [];
-  if (resolved.length === 0) return allExperiences;
-  const resolvedIds = new Set(resolved.map((e) => e.id));
-  return [...resolved, ...allExperiences.filter((e) => !resolvedIds.has(e.id))];
+  // Prefer allExperiences (full image data from discovery feed) for any IDs that appear there.
+  // _experiences may carry partial data (no display_images) for user-created entries;
+  // only append the entries whose IDs are NOT already in the feed.
+  const embedded = collection._experiences ?? [];
+  if (embedded.length === 0) return allExperiences;
+  const feedIds = new Set(allExperiences.map((e) => e.id));
+  const createdOnly = embedded.filter((e) => !feedIds.has(e.id));
+  return [...allExperiences, ...createdOnly];
 }
 
 export function getTagsForCollection(collection: Collection, allExperiences: Experience[]): string[] {
