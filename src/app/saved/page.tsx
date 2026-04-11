@@ -189,42 +189,46 @@ function SharedTab({ allExperiences, currentUserId }: { allExperiences: Experien
     );
   }
 
-  // Map SharedCollection → Collection shape for BrowseCollectionCard
-  const asCollections: Collection[] = items.map((item) => {
-    let expIds: number[] = [];
-    try { expIds = JSON.parse(item.collection_experience_ids); } catch { expIds = []; }
-    return {
-      id: item.collection_id,
-      created_at: item.created_at,
-      name: item.collection_name,
-      description: item.collection_description,
-      is_public: item.collection_is_public,
-      owner_user_id: item.owner_id,
-      owner_handle: item.owner_username,
-      experience_ids: expIds,
-      share_token: item.collection_share_token,
-    };
-  });
-
   return (
     <div className="px-5 pb-28 flex flex-col gap-4 pt-4">
-      {asCollections.map((col) => {
+      {items.map((item) => {
+        let expIds: number[] = [];
+        try { expIds = JSON.parse(item.collection_experience_ids); } catch { expIds = []; }
+        const col: Collection = {
+          id: item.collection_id,
+          created_at: item.created_at,
+          name: item.collection_name,
+          description: item.collection_description,
+          is_public: item.collection_is_public,
+          owner_user_id: item.owner_id,
+          owner_handle: item.owner_username,
+          experience_ids: expIds,
+          share_token: item.collection_share_token,
+        };
         const tags = getTagsForCollection(col, allExperiences);
+        const sharedByHandle = item.shared_by_username;
         return (
-          <div key={col.id} className="relative">
-            {!col.is_public && (
-              <div className="absolute top-3 left-3 z-10 w-6 h-6 rounded-full bg-black/40 flex items-center justify-center">
-                <Lock size={11} className="text-white" />
-              </div>
+          <div key={item.id} className="flex flex-col gap-1">
+            {sharedByHandle && (
+              <p className="text-xs text-[#98A2B3] px-1">
+                Shared by <span className="font-semibold text-[#667085]">@{sharedByHandle}</span>
+              </p>
             )}
-            <BrowseCollectionCard
-              collection={col}
-              allExperiences={allExperiences}
-              tags={tags}
-              currentUserId={currentUserId}
-              followedIds={null}
-              hideFollow
-            />
+            <div className="relative">
+              {!col.is_public && (
+                <div className="absolute top-3 left-3 z-10 w-6 h-6 rounded-full bg-black/40 flex items-center justify-center">
+                  <Lock size={11} className="text-white" />
+                </div>
+              )}
+              <BrowseCollectionCard
+                collection={col}
+                allExperiences={allExperiences}
+                tags={tags}
+                currentUserId={currentUserId}
+                followedIds={null}
+                hideFollow
+              />
+            </div>
           </div>
         );
       })}

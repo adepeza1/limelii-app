@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Heart, MessageCircle, X, Send, ChevronLeft, Trash2, MapPin, ChevronRight } from "lucide-react";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
+import { CollectionShareSheet } from "@/components/collection-share-sheet";
 import type { Experience } from "@/app/page";
 import type { Collection } from "@/lib/collections";
 
@@ -313,8 +314,9 @@ export function BrowseCollectionCard({
   const count = ids.length;
   const ownerHandle = collection._users?.username ?? collection.owner_handle;
   const ownerId = collection._users?.id ?? col.users_id;
-  const ownerPhoto = collection._users?.profile_photo_url ?? collection._users?.picture;
+  const ownerPhoto = collection._users?.photo ?? collection._users?.profile_photo_url ?? collection._users?.picture;
   const initials = ownerHandle ? ownerHandle.slice(0, 2).toUpperCase() : "?";
+  const [showShareSheet, setShowShareSheet] = useState(false);
   const planUrl = collection.id ? `/plan?collection_id=${collection.id}` : "/plan";
   const locationHint = getCollectionLocationHint(collection, allExperiences);
   const subtitle = locationHint ?? `${count} ${count === 1 ? "experience" : "experiences"}`;
@@ -453,6 +455,13 @@ export function BrowseCollectionCard({
               <MessageCircle size={13} />
               <span>{commentCount}</span>
             </button>
+            <button
+              onClick={() => setShowShareSheet(true)}
+              className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#EAECF0] text-sm text-[#667085]"
+              aria-label="Share collection"
+            >
+              <Send size={13} />
+            </button>
           </div>
 
           {/* Explore link */}
@@ -476,6 +485,14 @@ export function BrowseCollectionCard({
               .then((data) => { if (Array.isArray(data)) setCommentCount(data.length); })
               .catch(() => {});
           }}
+        />
+      )}
+
+      {showShareSheet && (
+        <CollectionShareSheet
+          collectionId={collection.id}
+          collectionName={collection.name}
+          onClose={() => setShowShareSheet(false)}
         />
       )}
 

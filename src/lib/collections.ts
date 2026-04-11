@@ -10,7 +10,7 @@ export interface Collection {
   owner_handle?: string; // populated by API for saved-from-others
   experience_ids: number[];
   share_token?: string;
-  _users?: { username?: string; name?: string; id?: number; profile_photo_url?: string; picture?: string };
+  _users?: { username?: string; name?: string; id?: number; photo?: string; profile_photo_url?: string; picture?: string };
   _experiences?: import("@/app/page").Experience[];
 }
 
@@ -43,6 +43,9 @@ export interface SharedCollection {
   collection_experience_ids: string; // JSON-encoded array
   owner_id: number;
   owner_username: string;
+  shared_by_user_id?: number;
+  shared_by_username?: string;
+  shared_by_photo?: string;
 }
 
 // ─── Client-side API helpers ──────────────────────────────────────────────────

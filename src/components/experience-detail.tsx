@@ -247,12 +247,11 @@ export function ExperienceDetail({
             aria-label="Share experience"
             className="relative p-1"
             onClick={async () => {
-              const url = window.location.origin;
-              const text = `${experience.title} — check it out on Limelii`;
+              const url = `${window.location.origin}/experience/${experience.id}`;
               if (navigator.share) {
-                await navigator.share({ title: experience.title, text, url }).catch(() => {});
+                await navigator.share({ title: experience.title, url }).catch(() => {});
               } else {
-                await navigator.clipboard.writeText(`${text}\n${url}`).catch(() => {});
+                await navigator.clipboard.writeText(url).catch(() => {});
                 setShareState("copied");
                 setTimeout(() => setShareState("idle"), 1500);
               }
