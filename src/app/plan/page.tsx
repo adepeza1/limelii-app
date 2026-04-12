@@ -213,7 +213,7 @@ function PlanPageInner() {
 
         if (toShow.length > 0) {
           setResults(toShow);
-          setResultsOpen(true);
+          // Don't open the results drawer — Explore Map shows pins on the map only
         }
       })
       .catch(() => {});
