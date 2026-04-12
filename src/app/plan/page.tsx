@@ -204,17 +204,19 @@ function PlanPageInner() {
           try { ids = JSON.parse(col.experience_ids); } catch { ids = []; }
         }
 
-        // Match against full discovery data (has images + map coordinates)
         const idSet = new Set(ids);
-        const matched = allExperiences.filter((e) => idSet.has(e.id));
 
-        // Fall back to embedded _experiences if none matched (e.g. user-created exps)
-        const toShow = matched.length > 0 ? matched : (col._experiences ?? []);
+        // Discovery experiences — full data with images + coordinates
+        const fromDiscovery = allExperiences.filter((e) => idSet.has(e.id));
+        const discoveryIds = new Set(fromDiscovery.map((e) => e.id));
 
-        if (toShow.length > 0) {
-          setResults(toShow);
-          // Don't open the results drawer — Explore Map shows pins on the map only
-        }
+        // User-created experiences live in _experiences, not the discovery feed.
+        // Append any _experiences entries whose IDs weren't found in discovery.
+        const embedded: Experience[] = col._experiences ?? [];
+        const createdOnly = embedded.filter((e) => idSet.has(e.id) && !discoveryIds.has(e.id));
+
+        const toShow = [...fromDiscovery, ...createdOnly];
+        if (toShow.length > 0) setResults(toShow);
       })
       .catch(() => {});
   // Re-run when allExperiences loads — collectionLoadedRef prevents duplicate fetches
