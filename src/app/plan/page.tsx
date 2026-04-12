@@ -169,8 +169,7 @@ function PlanPageInner() {
   // Filters drawer drag-to-dismiss
   const filtersDragStartY = useRef<number | null>(null);
   const [filtersDragY, setFiltersDragY] = useState(0);
-  const resetExploreRef = useRef<(() => void)>(() => {});
-  const collectionLoadedRef = useRef(false);
+  const resetExploreRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     fetch(`${API_BASE}/discovery`)
@@ -186,40 +185,20 @@ function PlanPageInner() {
   }, []);
 
   // Pre-load experiences from a collection via ?collection_id=123.
-  // Waits for allExperiences (discovery data) so we can match IDs against
-  // full experience objects that include images and coordinates.
+  // Uses _experiences joined by Xano — includes both discovery and user-created experiences.
   useEffect(() => {
     const collectionId = searchParams.get("collection_id");
-    if (!collectionId || allExperiences.length === 0 || collectionLoadedRef.current) return;
-    collectionLoadedRef.current = true;
-
+    if (!collectionId) return;
     fetch(`/api/collections/${collectionId}`)
       .then((r) => r.json())
       .then((col) => {
-        // Parse experience_ids (may come as array or JSON string from Xano)
-        let ids: number[] = [];
-        if (Array.isArray(col.experience_ids)) {
-          ids = col.experience_ids as unknown as number[];
-        } else if (typeof col.experience_ids === "string") {
-          try { ids = JSON.parse(col.experience_ids); } catch { ids = []; }
-        }
-
-        // Match against full discovery data (has images + map coordinates)
-        const idSet = new Set(ids);
-        const matched = allExperiences.filter((e) => idSet.has(e.id));
-
-        // Fall back to embedded _experiences if none matched (e.g. user-created exps)
-        const toShow = matched.length > 0 ? matched : (col._experiences ?? []);
-
-        if (toShow.length > 0) {
-          setResults(toShow);
-          // Don't open the results drawer — Explore Map shows pins on the map only
-        }
+        const exps: Experience[] = col._experiences ?? [];
+        if (exps.length > 0) setResults(exps);
       })
       .catch(() => {});
-  // Re-run when allExperiences loads — collectionLoadedRef prevents duplicate fetches
+  // Only run once on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allExperiences]);
+  }, []);
 
   // matchedExperiences = all when no filters active, filtered subset otherwise
   const matchedExperiences = useMemo(
