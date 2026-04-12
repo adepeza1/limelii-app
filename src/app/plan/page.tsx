@@ -170,6 +170,12 @@ function PlanPageInner() {
   const filtersDragStartY = useRef<number | null>(null);
   const [filtersDragY, setFiltersDragY] = useState(0);
   const resetExploreRef = useRef<() => void>(() => {});
+  // Stores parsed collection data so the second effect can merge once allExperiences loads
+  const [pendingCollection, setPendingCollection] = useState<{
+    idSet: Set<number>;
+    embedded: Experience[];
+  } | null>(null);
+  const collectionMergedRef = useRef(false);
 
   useEffect(() => {
     fetch(`${API_BASE}/discovery`)
@@ -184,21 +190,43 @@ function PlanPageInner() {
       .catch(() => {});
   }, []);
 
-  // Pre-load experiences from a collection via ?collection_id=123.
-  // Uses _experiences joined by Xano — includes both discovery and user-created experiences.
+  // Phase 1: fetch the collection on mount, use _experiences immediately as initial pins,
+  // and store parsed IDs so Phase 2 can upgrade once allExperiences loads.
   useEffect(() => {
     const collectionId = searchParams.get("collection_id");
     if (!collectionId) return;
     fetch(`/api/collections/${collectionId}`)
       .then((r) => r.json())
       .then((col) => {
-        const exps: Experience[] = col._experiences ?? [];
-        if (exps.length > 0) setResults(exps);
+        const embedded: Experience[] = col._experiences ?? [];
+        // Parse experience_ids (array or JSON string from Xano)
+        let ids: number[] = [];
+        if (Array.isArray(col.experience_ids)) {
+          ids = col.experience_ids as unknown as number[];
+        } else if (typeof col.experience_ids === "string") {
+          try { ids = JSON.parse(col.experience_ids); } catch { ids = []; }
+        }
+        setPendingCollection({ idSet: new Set(ids), embedded });
+        // Show embedded immediately — covers user-created experiences
+        if (embedded.length > 0) setResults(embedded);
       })
       .catch(() => {});
-  // Only run once on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Phase 2: once allExperiences (discovery) loads, upgrade results to include
+  // discovery experiences (better image data) merged with user-created ones.
+  useEffect(() => {
+    if (!pendingCollection || collectionMergedRef.current || allExperiences.length === 0) return;
+    collectionMergedRef.current = true;
+    const { idSet, embedded } = pendingCollection;
+    const fromDiscovery = allExperiences.filter((e) => idSet.has(e.id));
+    const discoveryIds = new Set(fromDiscovery.map((e) => e.id));
+    const createdOnly = embedded.filter((e) => idSet.has(e.id) && !discoveryIds.has(e.id));
+    const toShow = [...fromDiscovery, ...createdOnly];
+    if (toShow.length > 0) setResults(toShow);
+    else if (embedded.length > 0) setResults(embedded); // keep embedded if no discovery match
+  }, [pendingCollection, allExperiences]);
 
   // matchedExperiences = all when no filters active, filtered subset otherwise
   const matchedExperiences = useMemo(
