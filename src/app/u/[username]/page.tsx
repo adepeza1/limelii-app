@@ -203,10 +203,21 @@ export default function PublicProfilePage() {
             <div className="flex items-start justify-between gap-4">
               {/* Avatar */}
               {(() => {
-                const photoUrl = profile.photo ?? profile.profile_photo_url ?? profile.picture;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                function extractUrl(val: any): string | null {
+                  if (!val) return null;
+                  if (typeof val === "string") return val || null;
+                  if (typeof val === "object" && typeof val.url === "string") return val.url || null;
+                  return null;
+                }
+                const photoUrl =
+                  extractUrl(profile.photo) ??
+                  extractUrl(profile.profile_photo_url) ??
+                  extractUrl(profile.picture);
                 return (
                   <div className="w-16 h-16 rounded-full bg-[#F2F4F7] flex items-center justify-center text-xl font-bold text-[#667085] shrink-0 overflow-hidden">
                     {photoUrl
+                      // eslint-disable-next-line @next/next/no-img-element
                       ? <img src={photoUrl} alt={profile.username || username} className="w-full h-full object-cover" />
                       : initials}
                   </div>
