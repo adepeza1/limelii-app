@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Search, X, SlidersHorizontal } from "lucide-react";
 import type { Experience, DiscoveryResponse } from "@/app/page";
-import type { Collection, SharedCollection } from "@/lib/collections";
+import type { Collection, SharedCollection, SharedExperience } from "@/lib/collections";
 import { listPublicCollections, listSharedCollections } from "@/lib/collections";
 import { API_BASE } from "@/lib/xano";
-import { Lock } from "lucide-react";
+import { Lock, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   BrowseCollectionCard,
   getTagsForCollection,
@@ -157,14 +158,19 @@ function FollowingTab({ allExperiences, currentUserId, followedIds }: { allExper
 // ─── Shared Tab ───────────────────────────────────────────────────────────────
 
 function SharedTab({ allExperiences, currentUserId }: { allExperiences: Experience[]; currentUserId?: number | null }) {
-  const [items, setItems] = useState<SharedCollection[]>([]);
+  const router = useRouter();
+  const [collections, setCollections] = useState<SharedCollection[]>([]);
+  const [experiences, setExperiences] = useState<SharedExperience[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    listSharedCollections()
-      .then((data) => setItems(Array.isArray(data) ? data : []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      listSharedCollections().catch(() => [] as SharedCollection[]),
+      fetch("/api/experiences/shared").then((r) => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([cols, exps]) => {
+      setCollections(Array.isArray(cols) ? cols : []);
+      setExperiences(Array.isArray(exps) ? exps : []);
+    }).finally(() => setLoading(false));
   }, []);
 
   if (loading) {
@@ -175,15 +181,15 @@ function SharedTab({ allExperiences, currentUserId }: { allExperiences: Experien
     );
   }
 
-  if (items.length === 0) {
+  if (collections.length === 0 && experiences.length === 0) {
     return (
       <div className="px-5 py-16 flex flex-col items-center gap-3 text-center">
         <div className="w-14 h-14 rounded-2xl bg-[#F2F4F7] flex items-center justify-center">
           <Lock size={24} className="text-[#667085]" />
         </div>
-        <p className="text-[#101828] font-semibold text-base">No shared collections</p>
+        <p className="text-[#101828] font-semibold text-base">Nothing shared yet</p>
         <p className="text-[#667085] text-sm max-w-[240px]">
-          Collections shared with you via a private link will appear here.
+          Collections and experiences shared with you will appear here.
         </p>
       </div>
     );
@@ -191,7 +197,40 @@ function SharedTab({ allExperiences, currentUserId }: { allExperiences: Experien
 
   return (
     <div className="px-5 pb-28 flex flex-col gap-4 pt-4">
-      {items.map((item) => {
+      {/* Shared experiences */}
+      {experiences.map((item) => (
+        <div key={`exp-${item.id}`} className="flex flex-col gap-1">
+          {item.shared_by_username && (
+            <p className="text-xs text-[#98A2B3] px-1">
+              Shared by <span className="font-semibold text-[#667085]">@{item.shared_by_username}</span>
+            </p>
+          )}
+          <button
+            onClick={() => router.push(`/experience/${item.experience_id}`)}
+            className="w-full text-left bg-white rounded-2xl overflow-hidden shadow-sm border border-[#F2F4F7]"
+          >
+            {item.experience_image ? (
+              <div className="h-36 w-full overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={item.experience_image} alt={item.experience_title} className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div className="h-36 w-full bg-[#F2F4F7] flex items-center justify-center">
+                <MapPin size={28} className="text-[#D0D5DD]" />
+              </div>
+            )}
+            <div className="p-4">
+              <p className="font-semibold text-[#101828] text-sm leading-snug">{item.experience_title}</p>
+              {item.experience_description && (
+                <p className="text-xs text-[#667085] mt-1 line-clamp-2">{item.experience_description}</p>
+              )}
+            </div>
+          </button>
+        </div>
+      ))}
+
+      {/* Shared collections */}
+      {collections.map((item) => {
         let expIds: number[] = [];
         try { expIds = JSON.parse(item.collection_experience_ids); } catch { expIds = []; }
         const col: Collection = {
@@ -208,7 +247,7 @@ function SharedTab({ allExperiences, currentUserId }: { allExperiences: Experien
         const tags = getTagsForCollection(col, allExperiences);
         const sharedByHandle = item.shared_by_username;
         return (
-          <div key={item.id} className="flex flex-col gap-1">
+          <div key={`col-${item.id}`} className="flex flex-col gap-1">
             {sharedByHandle && (
               <p className="text-xs text-[#98A2B3] px-1">
                 Shared by <span className="font-semibold text-[#667085]">@{sharedByHandle}</span>
