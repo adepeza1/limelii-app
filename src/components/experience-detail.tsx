@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { ChevronLeft, Share2, Send, Maximize2 } from "lucide-react";
+import { ChevronLeft, Send, Maximize2 } from "lucide-react";
 import { ShareSheet } from "./collection-share-sheet";
 
 const SAVED_KEY = "limelii_saved";
@@ -158,7 +158,6 @@ export function ExperienceDetail({
   const [mapExpanded, setMapExpanded] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showCollectionSheet, setShowCollectionSheet] = useState(false);
-  const [shareState, setShareState] = useState<"idle" | "copied">("idle");
   const [showShareSheet, setShowShareSheet] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -245,36 +244,13 @@ export function ExperienceDetail({
           <h1 className="flex-1 text-center text-lg font-medium text-black truncate">
             {experience.title}
           </h1>
-          <div className="flex items-center gap-1">
-            {/* Send in-app */}
-            <button
-              aria-label="Send to someone"
-              className="p-1"
-              onClick={() => setShowShareSheet(true)}
-            >
-              <Send className="w-5 h-5 text-black" />
-            </button>
-            {/* Share link */}
-            <button
-              aria-label="Share link"
-              className="relative p-1"
-              onClick={async () => {
-                const url = `${window.location.origin}/experience/${experience.id}`;
-                if (navigator.share) {
-                  await navigator.share({ title: experience.title, url }).catch(() => {});
-                } else {
-                  await navigator.clipboard.writeText(url).catch(() => {});
-                  setShareState("copied");
-                  setTimeout(() => setShareState("idle"), 1500);
-                }
-              }}
-            >
-              <Share2 className={`w-5 h-5 transition-colors ${shareState === "copied" ? "text-[#12B76A]" : "text-black"}`} />
-              {shareState === "copied" && (
-                <span className="absolute -bottom-5 right-0 text-[10px] text-[#12B76A] whitespace-nowrap font-medium">Copied!</span>
-              )}
-            </button>
-          </div>
+          <button
+            aria-label="Share"
+            className="p-1"
+            onClick={() => setShowShareSheet(true)}
+          >
+            <Send className="w-5 h-5 text-black" />
+          </button>
         </div>
       </header>
 
@@ -434,8 +410,10 @@ export function ExperienceDetail({
 
       {showShareSheet && (
         <ShareSheet
-          title="Send experience"
+          title="Share experience"
           subtitle={experience.title}
+          shareUrl={typeof window !== "undefined" ? `${window.location.origin}/experience/${experience.id}` : undefined}
+          shareTitle={experience.title}
           onClose={() => setShowShareSheet(false)}
           onSend={async (userIds) => {
             await Promise.all(

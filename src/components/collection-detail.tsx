@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useBackHandler } from "@/hooks/useBackHandler";
-import { ChevronLeft, Share2, Send, MoreVertical, Compass, ClipboardList, Sparkles, Trash2 } from "lucide-react";
+import { ChevronLeft, Send, MoreVertical, Compass, ClipboardList, Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { Collection } from "@/lib/collections";
 import { deleteCollection, updateCollection, saveCollection, removeExperienceFromCollection } from "@/lib/collections";
@@ -42,7 +42,6 @@ export function CollectionDetail({
   const [localCollection, setLocalCollection] = useState<Collection>(collection);
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [removeErrorId, setRemoveErrorId] = useState<number | null>(null);
-  const [shareState, setShareState] = useState<"idle" | "success" | "error">("idle");
   const [saveColState, setSaveColState] = useState<"idle" | "error">("idle");
   const [showShareSheet, setShowShareSheet] = useState(false);
 
@@ -69,25 +68,6 @@ export function CollectionDetail({
       setTimeout(() => setRemoveErrorId(null), 1000);
     } finally {
       setRemovingId(null);
-    }
-  }
-
-  async function handleShare() {
-    const token = localCollection.share_token;
-    const url = token
-      ? `${window.location.origin}/c/${token}`
-      : `${window.location.origin}/c/${localCollection.id}`;
-    if (navigator.share) {
-      await navigator.share({ title: localCollection.name, url }).catch(() => {});
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setShareState("success");
-      setTimeout(() => setShareState("idle"), 1500);
-    } catch {
-      setShareState("error");
-      setTimeout(() => setShareState("idle"), 1500);
     }
   }
 
@@ -125,33 +105,13 @@ export function CollectionDetail({
           {localCollection.name}
         </h1>
         <div className="flex items-center gap-1">
-          {/* Send in-app — available to all users */}
           <button
             onClick={() => setShowShareSheet(true)}
             className="p-2"
-            aria-label="Send to someone"
+            aria-label="Share"
           >
             <Send className="w-5 h-5 text-[#344054]" />
           </button>
-          {/* Share link — owner only (has share_token) */}
-          {isOwner && (
-            <button
-              onClick={handleShare}
-              className="p-2 relative"
-              aria-label="Share link"
-            >
-              <Share2 className={`w-5 h-5 transition-colors ${
-                shareState === "success" ? "text-[#12B76A]" :
-                shareState === "error"   ? "text-red-500" :
-                "text-[#344054]"
-              }`} />
-              {shareState === "success" && (
-                <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-[#12B76A] whitespace-nowrap font-medium">
-                  Copied!
-                </span>
-              )}
-            </button>
-          )}
           {isOwner && (
             <div className="relative">
               <button
@@ -310,6 +270,12 @@ export function CollectionDetail({
         <ShareSheet
           title="Share collection"
           subtitle={localCollection.name}
+          shareUrl={typeof window !== "undefined"
+            ? localCollection.share_token
+              ? `${window.location.origin}/c/${localCollection.share_token}`
+              : `${window.location.origin}/c/${localCollection.id}`
+            : undefined}
+          shareTitle={localCollection.name}
           onClose={() => setShowShareSheet(false)}
           onSend={async (userIds) => {
             await Promise.all(
