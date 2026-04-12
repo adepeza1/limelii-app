@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Search, Check } from "lucide-react";
+import { X, Search, Check, Link2, ChevronRight } from "lucide-react";
 
 export interface ShareUser {
   id: number;
@@ -16,9 +16,11 @@ interface ShareSheetProps {
   subtitle: string;
   onSend: (userIds: number[]) => Promise<void>;
   onClose: () => void;
+  shareUrl?: string;   // when provided, shows a "Share link" row at the top
+  shareTitle?: string; // passed to navigator.share()
 }
 
-export function ShareSheet({ title, subtitle, onSend, onClose }: ShareSheetProps) {
+export function ShareSheet({ title, subtitle, onSend, onClose, shareUrl, shareTitle }: ShareSheetProps) {
   const [followedUsers, setFollowedUsers] = useState<ShareUser[]>([]);
   const [searchResults, setSearchResults] = useState<ShareUser[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,6 +28,7 @@ export function ShareSheet({ title, subtitle, onSend, onClose }: ShareSheetProps
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [linkState, setLinkState] = useState<"idle" | "copied">("idle");
 
   useEffect(() => {
     fetch("/api/users/me/following/profiles")
@@ -79,6 +82,17 @@ export function ShareSheet({ title, subtitle, onSend, onClose }: ShareSheetProps
     }
   }
 
+  async function handleShareLink() {
+    if (!shareUrl) return;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      await navigator.share({ title: shareTitle, url: shareUrl }).catch(() => {});
+    } else {
+      await navigator.clipboard.writeText(shareUrl).catch(() => {});
+      setLinkState("copied");
+      setTimeout(() => setLinkState("idle"), 2000);
+    }
+  }
+
   return (
     <>
       <div className="fixed inset-0 z-[900] bg-black/40" onClick={onClose} />
@@ -112,6 +126,28 @@ export function ShareSheet({ title, subtitle, onSend, onClose }: ShareSheetProps
 
         {/* User list */}
         <div className="flex-1 overflow-y-auto px-5 pb-4">
+          {/* Share link row */}
+          {shareUrl && (
+            <>
+              <button
+                onClick={handleShareLink}
+                className="flex items-center gap-3 py-2.5 w-full text-left"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#F2F4F7] flex items-center justify-center shrink-0">
+                  <Link2 size={18} className="text-[#667085]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[#101828]">Share link</p>
+                  <p className="text-xs text-[#667085]">Copy or share via…</p>
+                </div>
+                {linkState === "copied"
+                  ? <span className="text-xs text-[#12B76A] font-medium whitespace-nowrap">Copied!</span>
+                  : <ChevronRight size={16} className="text-[#98A2B3]" />}
+              </button>
+              <div className="h-px bg-[#F2F4F7] my-2" />
+            </>
+          )}
+
           {loading ? (
             <p className="text-sm text-[#667085] text-center py-10">Loading…</p>
           ) : displayList.length === 0 ? (
