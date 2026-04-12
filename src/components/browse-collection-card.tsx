@@ -314,7 +314,19 @@ export function BrowseCollectionCard({
   const count = ids.length;
   const ownerHandle = collection._users?.username ?? collection.owner_handle;
   const ownerId = collection._users?.id ?? col.users_id;
-  const ownerPhoto = collection._users?.photo ?? collection._users?.profile_photo_url ?? collection._users?.picture;
+
+  // Xano image fields can be a plain URL string or a file object {url: string}.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function extractUrl(val: any): string | null {
+    if (!val) return null;
+    if (typeof val === "string") return val || null;
+    if (typeof val === "object" && typeof val.url === "string") return val.url || null;
+    return null;
+  }
+  const ownerPhoto =
+    extractUrl(collection._users?.photo) ??
+    extractUrl(collection._users?.profile_photo_url) ??
+    extractUrl(collection._users?.picture);
   const initials = ownerHandle ? ownerHandle.slice(0, 2).toUpperCase() : "?";
   const [showShareSheet, setShowShareSheet] = useState(false);
   const planUrl = collection.id ? `/plan?collection_id=${collection.id}` : "/plan";
