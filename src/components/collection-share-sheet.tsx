@@ -3,23 +3,25 @@
 import { useEffect, useState } from "react";
 import { X, Search, Check } from "lucide-react";
 
-export interface FollowedUser {
+export interface ShareUser {
   id: number;
   username: string;
   name?: string;
   photo?: string;
 }
 
-interface Props {
-  collectionId: number;
-  collectionName: string;
+// Generic share sheet — reused by both collections and experiences
+interface ShareSheetProps {
+  title: string;
+  subtitle: string;
+  onSend: (userIds: number[]) => Promise<void>;
   onClose: () => void;
 }
 
-export function CollectionShareSheet({ collectionId, collectionName, onClose }: Props) {
-  const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
+export function ShareSheet({ title, subtitle, onSend, onClose }: ShareSheetProps) {
+  const [followedUsers, setFollowedUsers] = useState<ShareUser[]>([]);
+  const [searchResults, setSearchResults] = useState<ShareUser[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<FollowedUser[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -33,7 +35,7 @@ export function CollectionShareSheet({ collectionId, collectionName, onClose }: 
       .finally(() => setLoading(false));
   }, []);
 
-  // Filter following list client-side; search all users via API for broader queries
+  // Filter following list; supplement with search API for non-followers
   useEffect(() => {
     if (!searchQuery.trim()) { setSearchResults([]); return; }
     const q = searchQuery.toLowerCase();
@@ -42,16 +44,14 @@ export function CollectionShareSheet({ collectionId, collectionName, onClose }: 
     );
     setSearchResults(fromFollowing);
 
-    // Also hit search API for non-following users
     const controller = new AbortController();
     fetch(`/api/users/search?q=${encodeURIComponent(searchQuery.trim())}`, { signal: controller.signal })
       .then((r) => r.ok ? r.json() : [])
-      .then((data: FollowedUser[]) => {
-        if (Array.isArray(data)) {
-          const followIds = new Set(followedUsers.map((u) => u.id));
-          const extra = data.filter((u) => !followIds.has(u.id));
-          setSearchResults([...fromFollowing, ...extra]);
-        }
+      .then((data: ShareUser[]) => {
+        if (!Array.isArray(data)) return;
+        const followIds = new Set(followedUsers.map((u) => u.id));
+        const extra = data.filter((u) => !followIds.has(u.id));
+        setSearchResults([...fromFollowing, ...extra]);
       })
       .catch(() => {});
     return () => controller.abort();
@@ -71,15 +71,7 @@ export function CollectionShareSheet({ collectionId, collectionName, onClose }: 
     if (!selected.size || sending || sent) return;
     setSending(true);
     try {
-      await Promise.all(
-        Array.from(selected).map((userId) =>
-          fetch(`/api/collections/${collectionId}/share-to-user`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ recipient_user_id: userId }),
-          })
-        )
-      );
+      await onSend(Array.from(selected));
       setSent(true);
       setTimeout(onClose, 1200);
     } finally {
@@ -96,8 +88,8 @@ export function CollectionShareSheet({ collectionId, collectionName, onClose }: 
         {/* Header */}
         <div className="flex items-center justify-between px-5 pb-3 shrink-0">
           <div>
-            <p className="text-[#101828] font-semibold text-base">Share collection</p>
-            <p className="text-[#667085] text-xs mt-0.5 truncate max-w-[240px]">{collectionName}</p>
+            <p className="text-[#101828] font-semibold text-base">{title}</p>
+            <p className="text-[#667085] text-xs mt-0.5 truncate max-w-[240px]">{subtitle}</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-[#F2F4F7]">
             <X size={16} className="text-[#667085]" />
@@ -164,7 +156,7 @@ export function CollectionShareSheet({ collectionId, collectionName, onClose }: 
           )}
         </div>
 
-        {/* Send */}
+        {/* Send button */}
         <div className="px-5 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pt-2 shrink-0 border-t border-[#EAECF0]">
           <button
             onClick={handleSend}
@@ -176,5 +168,33 @@ export function CollectionShareSheet({ collectionId, collectionName, onClose }: 
         </div>
       </div>
     </>
+  );
+}
+
+// Thin wrapper kept for backward compatibility with browse-collection-card
+interface CollectionShareSheetProps {
+  collectionId: number;
+  collectionName: string;
+  onClose: () => void;
+}
+
+export function CollectionShareSheet({ collectionId, collectionName, onClose }: CollectionShareSheetProps) {
+  return (
+    <ShareSheet
+      title="Share collection"
+      subtitle={collectionName}
+      onClose={onClose}
+      onSend={async (userIds) => {
+        await Promise.all(
+          userIds.map((userId) =>
+            fetch(`/api/collections/${collectionId}/share-to-user`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ recipient_user_id: userId }),
+            })
+          )
+        );
+      }}
+    />
   );
 }

@@ -48,6 +48,21 @@ export interface SharedCollection {
   shared_by_photo?: string;
 }
 
+// Experiences shared with the current user by others in-app
+export interface SharedExperience {
+  id: number;
+  created_at: number;
+  users_id: number;
+  experience_id: number;
+  shared_by_user_id?: number;
+  shared_by_username?: string;
+  shared_by_photo?: string;
+  // eval-joined experience fields
+  experience_title: string;
+  experience_description?: string;
+  experience_image?: string; // first place image URL
+}
+
 // ─── Client-side API helpers ──────────────────────────────────────────────────
 // These call the Next.js BFF routes, which in turn proxy to Xano.
 
