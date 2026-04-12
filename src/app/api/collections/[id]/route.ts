@@ -7,8 +7,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  // Fetch without auth so Xano returns public collections to anyone, not just the owner
-  const res = await fetch(`${API_BASE}/collections/${id}`, { cache: "no-store" });
+  // Try authenticated first — Xano only joins _experiences when a valid token is present.
+  // Fall back to unauthenticated if the user isn't logged in (e.g. share-link previews).
+  const { isAuthenticated } = getKindeServerSession();
+  let res: Response;
+  if (await isAuthenticated()) {
+    res = await apiFetch(`/collections/${id}`);
+  } else {
+    res = await fetch(`${API_BASE}/collections/${id}`, { cache: "no-store" });
+  }
 
   if (!res.ok) {
     return NextResponse.json({ error: "Collection not found" }, { status: res.status });
