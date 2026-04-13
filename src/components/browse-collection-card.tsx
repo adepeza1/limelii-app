@@ -303,16 +303,24 @@ export function BrowseCollectionCard({
   const [selectedExp, setSelectedExp] = useState<Experience | null>(null);
   // Extra experiences fetched individually for IDs not found in the discovery feed.
   const [extraExperiences, setExtraExperiences] = useState<Experience[]>([]);
+  const mosaicLoadedRef = useRef(false);
   const detailLoadedRef = useRef(false);
 
-  // When detail opens, fetch individual experiences for any IDs not in allExperiences.
-  // /api/collections/${id} is owner-gated in Xano so we can't use it for others' collections.
+  // On mount: if _experiences is populated (profile page Xano join) and has IDs missing
+  // from the discovery feed, fetch up to 3 of them so the mosaic can show real images.
+  // Xano's db.query join doesn't include the places_id relationship, so getExpImage()
+  // returns null on the bare _experiences objects — we need the individually-fetched version.
   useEffect(() => {
-    if (!showDetail || detailLoadedRef.current) return;
-    detailLoadedRef.current = true;
+    if (mosaicLoadedRef.current) return;
+    const embedded = collection._experiences;
+    if (!embedded || embedded.length === 0) return;
     const feedIds = new Set(allExperiences.map((e) => e.id));
-    const missingIds = parseExperienceIds(collection).filter((id) => !feedIds.has(id));
+    const missingIds = embedded
+      .filter((e) => !feedIds.has(e.id))
+      .map((e) => e.id)
+      .slice(0, 3);
     if (missingIds.length === 0) return;
+    mosaicLoadedRef.current = true;
     Promise.all(
       missingIds.map((id) =>
         fetch(`/api/experiences/${id}`)
@@ -322,6 +330,33 @@ export function BrowseCollectionCard({
     ).then((results) => {
       const fetched = results.filter(Boolean) as Experience[];
       if (fetched.length > 0) setExtraExperiences(fetched);
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // When detail opens, fetch ALL missing IDs not already loaded (mosaic may have fetched some).
+  // /api/collections/${id} is owner-gated in Xano so we fetch individually instead.
+  useEffect(() => {
+    if (!showDetail || detailLoadedRef.current) return;
+    detailLoadedRef.current = true;
+    const feedIds = new Set(allExperiences.map((e) => e.id));
+    const extraIds = new Set(extraExperiences.map((e) => e.id));
+    const missingIds = parseExperienceIds(collection).filter(
+      (id) => !feedIds.has(id) && !extraIds.has(id)
+    );
+    if (missingIds.length === 0) return;
+    Promise.all(
+      missingIds.map((id) =>
+        fetch(`/api/experiences/${id}`)
+          .then((r) => r.ok ? r.json() : null)
+          .catch(() => null)
+      )
+    ).then((results) => {
+      const fetched = results.filter(Boolean) as Experience[];
+      if (fetched.length > 0) setExtraExperiences((prev) => {
+        const existingIds = new Set(prev.map((e) => e.id));
+        return [...prev, ...fetched.filter((e) => !existingIds.has(e.id))];
+      });
     }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showDetail]);
@@ -421,7 +456,7 @@ export function BrowseCollectionCard({
       <div className="rounded-2xl border border-[#EAECF0] overflow-hidden bg-white shadow-sm">
         {/* Mosaic — click opens detail */}
         <div className="relative h-44 cursor-pointer" onClick={() => setShowDetail(true)}>
-          <CollectionMosaic ids={ids} allExperiences={allExperiences} resolvedExperiences={resolveExperiences(collection, allExperiences)} />
+          <CollectionMosaic ids={ids} allExperiences={[...allExperiences, ...extraExperiences]} />
         </div>
 
         <div className="px-4 pt-3">
