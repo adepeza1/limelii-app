@@ -421,7 +421,7 @@ export function BrowseCollectionCard({
       <div className="rounded-2xl border border-[#EAECF0] overflow-hidden bg-white shadow-sm">
         {/* Mosaic — click opens detail */}
         <div className="relative h-44 cursor-pointer" onClick={() => setShowDetail(true)}>
-          <CollectionMosaic ids={ids} allExperiences={allExperiences} resolvedExperiences={collection._experiences} />
+          <CollectionMosaic ids={ids} allExperiences={allExperiences} resolvedExperiences={resolveExperiences(collection, allExperiences)} />
         </div>
 
         <div className="px-4 pt-3">
