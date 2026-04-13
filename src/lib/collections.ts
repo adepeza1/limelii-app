@@ -10,7 +10,8 @@ export interface Collection {
   owner_handle?: string; // populated by API for saved-from-others
   experience_ids: number[];
   share_token?: string;
-  _users?: { username?: string; name?: string; id?: number; photo?: string; profile_photo_url?: string; picture?: string };
+  // Xano may return image fields as a plain URL string or a file object {url: string}
+  _users?: { username?: string; name?: string; id?: number; photo?: string | { url: string }; profile_photo_url?: string | { url: string }; picture?: string | { url: string } };
   _experiences?: import("@/app/page").Experience[];
 }
 

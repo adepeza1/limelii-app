@@ -7,7 +7,10 @@ export interface ShareUser {
   id: number;
   username: string;
   name?: string;
-  photo?: string;
+  // Xano may return the profile picture under any of these field names
+  photo?: string | { url: string };
+  profile_photo_url?: string | { url: string };
+  picture?: string | { url: string };
 }
 
 // Generic share sheet — reused by both collections and experiences
@@ -18,6 +21,20 @@ interface ShareSheetProps {
   onClose: () => void;
   shareUrl?: string;   // when provided, shows a "Share link" row at the top
   shareTitle?: string; // passed to navigator.share()
+}
+
+// Xano image fields can be a plain URL string or a file object {url: string},
+// and the field name varies across endpoints.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractPhotoUrl(user: ShareUser): string | null {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function fromVal(val: any): string | null {
+    if (!val) return null;
+    if (typeof val === "string") return val || null;
+    if (typeof val === "object" && typeof val.url === "string") return val.url || null;
+    return null;
+  }
+  return fromVal(user.photo) ?? fromVal(user.profile_photo_url) ?? fromVal(user.picture);
 }
 
 export function ShareSheet({ title, subtitle, onSend, onClose, shareUrl, shareTitle }: ShareSheetProps) {
@@ -164,6 +181,7 @@ export function ShareSheet({ title, subtitle, onSend, onClose, shareUrl, shareTi
               {displayList.map((user) => {
                 const isSelected = selected.has(user.id);
                 const initials = user.username.slice(0, 2).toUpperCase();
+                const photoUrl = extractPhotoUrl(user);
                 return (
                   <button
                     key={user.id}
@@ -171,9 +189,9 @@ export function ShareSheet({ title, subtitle, onSend, onClose, shareUrl, shareTi
                     className="flex items-center gap-3 py-2.5 w-full text-left"
                   >
                     <div className="w-10 h-10 rounded-full bg-[#F2F4F7] flex items-center justify-center text-sm font-bold text-[#667085] shrink-0 overflow-hidden">
-                      {user.photo
+                      {photoUrl
                         // eslint-disable-next-line @next/next/no-img-element
-                        ? <img src={user.photo} alt={user.username} className="w-full h-full object-cover" />
+                        ? <img src={photoUrl} alt={user.username} className="w-full h-full object-cover" />
                         : initials}
                     </div>
                     <div className="flex-1 min-w-0">
