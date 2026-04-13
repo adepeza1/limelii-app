@@ -301,20 +301,28 @@ export function BrowseCollectionCard({
   const [commentCount, setCommentCount] = useState<number>(col.comments_count ?? 0);
   const [showDetail, setShowDetail] = useState(false);
   const [selectedExp, setSelectedExp] = useState<Experience | null>(null);
-  // richCollection: loaded lazily when the detail is opened, so we get full _experiences.
-  const [richCollection, setRichCollection] = useState<Collection>(collection);
-  const richLoadedRef = useRef(false);
+  // Extra experiences fetched individually for IDs not found in the discovery feed.
+  const [extraExperiences, setExtraExperiences] = useState<Experience[]>([]);
+  const detailLoadedRef = useRef(false);
 
-  // When detail opens, fetch the authenticated collection once to get full _experiences.
+  // When detail opens, fetch individual experiences for any IDs not in allExperiences.
+  // /api/collections/${id} is owner-gated in Xano so we can't use it for others' collections.
   useEffect(() => {
-    if (!showDetail || richLoadedRef.current) return;
-    if ((richCollection._experiences ?? []).length > 0) { richLoadedRef.current = true; return; }
-    richLoadedRef.current = true;
-    fetch(`/api/collections/${collection.id}`)
-      .then((r) => r.ok ? r.json() : null)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then((c: any) => { if (Array.isArray(c?._experiences) && c._experiences.length > 0) setRichCollection(c); })
-      .catch(() => {});
+    if (!showDetail || detailLoadedRef.current) return;
+    detailLoadedRef.current = true;
+    const feedIds = new Set(allExperiences.map((e) => e.id));
+    const missingIds = parseExperienceIds(collection).filter((id) => !feedIds.has(id));
+    if (missingIds.length === 0) return;
+    Promise.all(
+      missingIds.map((id) =>
+        fetch(`/api/experiences/${id}`)
+          .then((r) => r.ok ? r.json() : null)
+          .catch(() => null)
+      )
+    ).then((results) => {
+      const fetched = results.filter(Boolean) as Experience[];
+      if (fetched.length > 0) setExtraExperiences(fetched);
+    }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showDetail]);
 
@@ -541,8 +549,8 @@ export function BrowseCollectionCard({
                 </div>
               </div>
               {(() => {
-                // Merge: discovery (full image data) + user-created from richCollection._experiences
-                const mergedPool = resolveExperiences(richCollection, allExperiences);
+                // Merge: discovery (full image data) + individually-fetched user-created
+                const mergedPool = [...allExperiences, ...extraExperiences];
                 const detailExps = parseExperienceIds(collection)
                   .map((id) => mergedPool.find((e) => e.id === id))
                   .filter(Boolean) as Experience[];
