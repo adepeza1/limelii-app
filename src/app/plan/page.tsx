@@ -186,8 +186,8 @@ function PlanPageInner() {
         ).flat() as Experience[])
         .catch(() => [] as Experience[]),
       fetch("/api/user-experiences")
-        .then((r) => r.ok ? r.json() : [])
-        .then((data) => (Array.isArray(data) ? data : []) as Experience[])
+        .then((r) => r.ok ? r.json() : { experiences: [] })
+        .then((data) => (Array.isArray(data?.experiences) ? data.experiences : []) as Experience[])
         .catch(() => [] as Experience[]),
     ]).then(([discovery, userCreated]) => {
       // Merge: discovery first, then append user-created entries not already in discovery
