@@ -8,18 +8,7 @@ import type { Experience, DiscoveryResponse } from "@/app/page";
 import { API_BASE } from "@/lib/xano";
 import { saveSharedCollection } from "@/lib/collections";
 
-interface SharedCollectionData extends Collection {
-  _users?: {
-    id?: number;
-    username?: string;
-    name?: string;
-    // Xano may return the profile picture under any of these field names,
-    // as a plain URL string or a file object {url: string}
-    photo?: string | { url: string };
-    profile_photo_url?: string | { url: string };
-    picture?: string | { url: string };
-  };
-}
+type SharedCollectionData = Collection;
 
 export default function SharedCollectionPage() {
   const { token } = useParams<{ token: string }>();
