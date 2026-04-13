@@ -564,6 +564,11 @@ export function BrowseCollectionCard({
           collectionId={collection.id}
           collectionName={collection.name}
           onClose={() => setShowShareSheet(false)}
+          shareUrl={typeof window !== "undefined"
+            ? collection.share_token
+              ? `${window.location.origin}/c/${collection.share_token}`
+              : `${window.location.origin}/c/${collection.id}`
+            : undefined}
         />
       )}
 
