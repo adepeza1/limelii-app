@@ -301,6 +301,19 @@ export function BrowseCollectionCard({
   const [commentCount, setCommentCount] = useState<number>(col.comments_count ?? 0);
   const [showDetail, setShowDetail] = useState(false);
   const [selectedExp, setSelectedExp] = useState<Experience | null>(null);
+  // richCollection holds a fully-loaded version of the collection (with _experiences)
+  // fetched on mount when the profile endpoint didn't populate _experiences.
+  const [richCollection, setRichCollection] = useState<Collection>(collection);
+
+  useEffect(() => {
+    if ((collection._experiences ?? []).length > 0) return;
+    fetch(`/api/collections/${collection.id}`)
+      .then((r) => r.ok ? r.json() : null)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then((c: any) => { if ((c?._experiences ?? []).length > 0) setRichCollection(c); })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collection.id]);
 
   useBackHandler(showDetail, () => {
     if (selectedExp) {
@@ -397,7 +410,7 @@ export function BrowseCollectionCard({
       <div className="rounded-2xl border border-[#EAECF0] overflow-hidden bg-white shadow-sm">
         {/* Mosaic — click opens detail */}
         <div className="relative h-44 cursor-pointer" onClick={() => setShowDetail(true)}>
-          <CollectionMosaic ids={ids} allExperiences={allExperiences} resolvedExperiences={collection._experiences} />
+          <CollectionMosaic ids={ids} allExperiences={allExperiences} resolvedExperiences={resolveExperiences(richCollection, allExperiences)} />
         </div>
 
         <div className="px-4 pt-3">
@@ -525,12 +538,11 @@ export function BrowseCollectionCard({
                 </div>
               </div>
               {(() => {
-                // Prefer _experiences from Xano; fall back to matching IDs against allExperiences
-                const detailExps = (collection._experiences ?? []).length > 0
-                  ? (collection._experiences ?? [])
-                  : parseExperienceIds(collection)
-                      .map((id) => allExperiences.find((e) => e.id === id))
-                      .filter(Boolean) as Experience[];
+                // Merge: discovery (full image data) + user-created from richCollection._experiences
+                const mergedPool = resolveExperiences(richCollection, allExperiences);
+                const detailExps = parseExperienceIds(collection)
+                  .map((id) => mergedPool.find((e) => e.id === id))
+                  .filter(Boolean) as Experience[];
                 return detailExps.length === 0 ? (
                   <div className="px-5 py-16 text-center">
                     <p className="text-[#667085] text-sm">No experiences in this collection yet.</p>
