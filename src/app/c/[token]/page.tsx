@@ -9,7 +9,16 @@ import { API_BASE } from "@/lib/xano";
 import { saveSharedCollection } from "@/lib/collections";
 
 interface SharedCollectionData extends Collection {
-  _users?: { id?: number; username?: string; name?: string; photo?: string };
+  _users?: {
+    id?: number;
+    username?: string;
+    name?: string;
+    // Xano may return the profile picture under any of these field names,
+    // as a plain URL string or a file object {url: string}
+    photo?: string | { url: string };
+    profile_photo_url?: string | { url: string };
+    picture?: string | { url: string };
+  };
 }
 
 export default function SharedCollectionPage() {
@@ -89,7 +98,17 @@ export default function SharedCollectionPage() {
 
   const loginUrl = `/api/auth/login?post_login_redirect_url=${encodeURIComponent(`/c/${token}?autosave=1`)}`;
   const ownerHandle = collection?._users?.username;
-  const ownerPhoto = collection?._users?.photo;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function extractUrl(val: any): string | null {
+    if (!val) return null;
+    if (typeof val === "string") return val || null;
+    if (typeof val === "object" && typeof val.url === "string") return val.url || null;
+    return null;
+  }
+  const ownerPhoto =
+    extractUrl(collection?._users?.photo) ??
+    extractUrl(collection?._users?.profile_photo_url) ??
+    extractUrl(collection?._users?.picture);
 
   const resolvedIds: number[] = (() => {
     const raw = collection?.experience_ids;
