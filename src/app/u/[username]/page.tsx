@@ -173,7 +173,18 @@ export default function PublicProfilePage() {
 
   const initials = username ? username.slice(0, 2).toUpperCase() : "?";
   const isOwnProfile = currentUserId != null && profile?.id === currentUserId;
-  const collections: Collection[] = profile?.collections ?? [];
+  // Xano's by_username endpoint doesn't join _users onto collections.
+  // Inject the profile owner's info so cards show the correct username/avatar.
+  const collections: Collection[] = (profile?.collections ?? []).map((col) => ({
+    ...col,
+    _users: col._users ?? {
+      id: profile!.id,
+      username: profile!.username,
+      photo: profile!.photo,
+      profile_photo_url: profile!.profile_photo_url,
+      picture: profile!.picture,
+    },
+  }));
 
   return (
     <div className="bg-white min-h-screen max-w-5xl mx-auto">
