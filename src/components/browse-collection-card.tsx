@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useBackHandler } from "@/hooks/useBackHandler";
 import Link from "next/link";
 import { Heart, MessageCircle, X, Send, ChevronLeft, Trash2, MapPin, ChevronRight } from "lucide-react";
@@ -301,19 +301,22 @@ export function BrowseCollectionCard({
   const [commentCount, setCommentCount] = useState<number>(col.comments_count ?? 0);
   const [showDetail, setShowDetail] = useState(false);
   const [selectedExp, setSelectedExp] = useState<Experience | null>(null);
-  // richCollection holds a fully-loaded version of the collection (with _experiences)
-  // fetched on mount when the profile endpoint didn't populate _experiences.
+  // richCollection: loaded lazily when the detail is opened, so we get full _experiences.
   const [richCollection, setRichCollection] = useState<Collection>(collection);
+  const richLoadedRef = useRef(false);
 
+  // When detail opens, fetch the authenticated collection once to get full _experiences.
   useEffect(() => {
-    if ((collection._experiences ?? []).length > 0) return;
+    if (!showDetail || richLoadedRef.current) return;
+    if ((richCollection._experiences ?? []).length > 0) { richLoadedRef.current = true; return; }
+    richLoadedRef.current = true;
     fetch(`/api/collections/${collection.id}`)
       .then((r) => r.ok ? r.json() : null)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then((c: any) => { if ((c?._experiences ?? []).length > 0) setRichCollection(c); })
+      .then((c: any) => { if (Array.isArray(c?._experiences) && c._experiences.length > 0) setRichCollection(c); })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collection.id]);
+  }, [showDetail]);
 
   useBackHandler(showDetail, () => {
     if (selectedExp) {
@@ -410,7 +413,7 @@ export function BrowseCollectionCard({
       <div className="rounded-2xl border border-[#EAECF0] overflow-hidden bg-white shadow-sm">
         {/* Mosaic — click opens detail */}
         <div className="relative h-44 cursor-pointer" onClick={() => setShowDetail(true)}>
-          <CollectionMosaic ids={ids} allExperiences={allExperiences} resolvedExperiences={resolveExperiences(richCollection, allExperiences)} />
+          <CollectionMosaic ids={ids} allExperiences={allExperiences} resolvedExperiences={collection._experiences} />
         </div>
 
         <div className="px-4 pt-3">
