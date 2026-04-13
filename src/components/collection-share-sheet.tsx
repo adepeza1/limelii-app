@@ -230,14 +230,17 @@ interface CollectionShareSheetProps {
   collectionId: number;
   collectionName: string;
   onClose: () => void;
+  shareUrl?: string;
 }
 
-export function CollectionShareSheet({ collectionId, collectionName, onClose }: CollectionShareSheetProps) {
+export function CollectionShareSheet({ collectionId, collectionName, onClose, shareUrl }: CollectionShareSheetProps) {
   return (
     <ShareSheet
       title="Share collection"
       subtitle={collectionName}
       onClose={onClose}
+      shareUrl={shareUrl}
+      shareTitle={collectionName}
       onSend={async (userIds) => {
         await Promise.all(
           userIds.map((userId) =>
