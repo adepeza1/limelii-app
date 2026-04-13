@@ -178,16 +178,25 @@ function PlanPageInner() {
   const collectionMergedRef = useRef(false);
 
   useEffect(() => {
-    fetch(`${API_BASE}/discovery`)
-      .then((r) => r.json())
-      .then((data) => {
-        const all: Experience[] = Object.values(
+    Promise.all([
+      fetch(`${API_BASE}/discovery`)
+        .then((r) => r.json())
+        .then((data) => Object.values(
           (data as { experiences: Record<string, Experience[]> }).experiences
-        ).flat();
-        setAllExperiences(all);
-        setNeighborhoods(extractNeighborhoods(all));
-      })
-      .catch(() => {});
+        ).flat() as Experience[])
+        .catch(() => [] as Experience[]),
+      fetch("/api/user-experiences")
+        .then((r) => r.ok ? r.json() : [])
+        .then((data) => (Array.isArray(data) ? data : []) as Experience[])
+        .catch(() => [] as Experience[]),
+    ]).then(([discovery, userCreated]) => {
+      // Merge: discovery first, then append user-created entries not already in discovery
+      const discoveryIds = new Set(discovery.map((e) => e.id));
+      const extra = userCreated.filter((e) => !discoveryIds.has(e.id));
+      const all = [...discovery, ...extra];
+      setAllExperiences(all);
+      setNeighborhoods(extractNeighborhoods(all));
+    });
   }, []);
 
   // Phase 1: fetch the collection on mount, use _experiences immediately as initial pins,
