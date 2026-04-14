@@ -72,7 +72,7 @@ export function AddToCollectionSheet({
       const updated = await Promise.all(
         Array.from(selected).map((colId) => {
           const col = collections.find((c) => c.id === colId);
-          return addExperienceToCollection(colId, experienceId, col?.experience_ids);
+          return addExperienceToCollection(colId, experienceId, col?.experience_ids, col?.name);
         })
       );
       // Notify CollectionsPage to update card counts without a full refetch
