@@ -24,12 +24,14 @@ export function ExperienceCard({
   className = "",
   compact = false,
   onUnsave,
+  distanceMiles,
 }: {
   experience: Experience;
   onClick?: () => void;
   className?: string;
   compact?: boolean;
   onUnsave?: (id: number) => void;
+  distanceMiles?: number;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [visible, setVisible] = useState(false);
@@ -182,23 +184,30 @@ export function ExperienceCard({
         <h3 className="text-white text-sm font-semibold leading-tight line-clamp-2">
           {experience.title}
         </h3>
-        {location && (
-          <p className="text-white/70 text-xs flex items-center gap-1 mt-0.5 truncate">
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              className="shrink-0"
-            >
-              <path
-                d="M6 1C3.79 1 2 2.79 2 5C2 7.75 6 11 6 11C6 11 10 7.75 10 5C10 2.79 8.21 1 6 1ZM6 6.5C5.17 6.5 4.5 5.83 4.5 5C4.5 4.17 5.17 3.5 6 3.5C6.83 3.5 7.5 4.17 7.5 5C7.5 5.83 6.83 6.5 6 6.5Z"
-                fill="currentColor"
-              />
-            </svg>
-            {location}
-          </p>
-        )}
+        <div className="flex items-center gap-2 mt-0.5">
+          {location && (
+            <p className="text-white/70 text-xs flex items-center gap-1 truncate">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                className="shrink-0"
+              >
+                <path
+                  d="M6 1C3.79 1 2 2.79 2 5C2 7.75 6 11 6 11C6 11 10 7.75 10 5C10 2.79 8.21 1 6 1ZM6 6.5C5.17 6.5 4.5 5.83 4.5 5C4.5 4.17 5.17 3.5 6 3.5C6.83 3.5 7.5 4.17 7.5 5C7.5 5.83 6.83 6.5 6 6.5Z"
+                  fill="currentColor"
+                />
+              </svg>
+              {location}
+            </p>
+          )}
+          {distanceMiles !== undefined && (
+            <span className="text-white/90 text-xs font-medium bg-black/30 backdrop-blur-sm px-1.5 py-0.5 rounded-full shrink-0">
+              {distanceMiles < 0.1 ? "< 0.1 mi" : distanceMiles < 10 ? `${distanceMiles.toFixed(1)} mi` : `${Math.round(distanceMiles)} mi`}
+            </span>
+          )}
+        </div>
       </div>
 
       {showCollectionSheet && (
