@@ -185,11 +185,11 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [xanoName, setXanoName] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   // Account settings form state
-  const [displayNameInput, setDisplayNameInput] = useState("");
+  const [xanoNameInput, setXanoNameInput] = useState("");
   const [savingDisplayName, setSavingDisplayName] = useState(false);
   const [displayNameSaved, setDisplayNameSaved] = useState(false);
   const [usernameInput, setUsernameInput] = useState("");
@@ -236,7 +236,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
       .then((u) => {
         if (u?.photo?.url) setAvatarUrl(u.photo.url);
         if (u?.username) { setUsername(u.username); setUsernameInput(u.username); }
-        if (u?.name) { setDisplayName(u.name); setDisplayNameInput(u.name); }
+        if (u?.name) { setXanoName(u.name); setXanoNameInput(u.name); }
         if (u?.id) setCurrentUserId(u.id);
       })
       .catch(() => {});
@@ -350,7 +350,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   }
 
   const initials = getInitials(givenName, familyName);
-  const displayName =
+  const profileName =
     [givenName, familyName].filter(Boolean).join(" ") || email || "User";
 
   // ── If viewing a detail, take over full screen ──────────────────────────────
@@ -457,22 +457,22 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
               <div className="mb-6">
                 <label className="block text-xs font-semibold text-[#98A2B3] uppercase tracking-wide mb-2">Display Name</label>
                 <input
-                  value={displayNameInput}
-                  onChange={(e) => { setDisplayNameInput(e.target.value); setDisplayNameSaved(false); }}
+                  value={xanoNameInput}
+                  onChange={(e) => { setXanoNameInput(e.target.value); setDisplayNameSaved(false); }}
                   placeholder="Your display name"
                   className="w-full border border-[#EAECF0] rounded-xl px-4 py-3 text-sm text-[#101828] outline-none focus:border-[#FB6983] transition-colors"
                 />
                 <button
-                  disabled={savingDisplayName || !displayNameInput.trim() || displayNameInput.trim() === displayName}
+                  disabled={savingDisplayName || !xanoNameInput.trim() || xanoNameInput.trim() === xanoName}
                   onClick={async () => {
                     setSavingDisplayName(true);
                     try {
                       const res = await fetch("/api/user/me", {
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ name: displayNameInput.trim() }),
+                        body: JSON.stringify({ name: xanoNameInput.trim() }),
                       });
-                      if (res.ok) { setDisplayName(displayNameInput.trim()); setDisplayNameSaved(true); }
+                      if (res.ok) { setXanoName(xanoNameInput.trim()); setDisplayNameSaved(true); }
                     } finally { setSavingDisplayName(false); }
                   }}
                   className="mt-2.5 w-full py-2.5 rounded-xl bg-[#FB6983] text-white text-sm font-semibold disabled:opacity-40 transition-colors"
@@ -596,7 +596,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
             {/* Name, location, bio */}
             <div className="flex-1 min-w-0 pt-0.5">
               <p className="text-gray-900 font-semibold text-[17px] leading-tight truncate">
-                {displayName}
+                {profileName}
               </p>
               {username && (
                 <p className="text-[#98A2B3] text-sm leading-tight">@{username}</p>
