@@ -171,8 +171,9 @@ export default function PublicProfilePage() {
     }
   }
 
-  const initials = username ? username.slice(0, 2).toUpperCase() : "?";
+  const [photoLightboxOpen, setPhotoLightboxOpen] = useState(false);
   const isOwnProfile = currentUserId != null && profile?.id === currentUserId;
+
   // Xano's by_username endpoint doesn't join _users onto collections.
   // Inject the profile owner's info so cards show the correct username/avatar.
   const collections: Collection[] = (profile?.collections ?? []).map((col) => ({
@@ -211,45 +212,69 @@ export default function PublicProfilePage() {
         <>
           {/* Profile card */}
           <div className="px-5 pt-5 pb-4 border-b border-[#EAECF0]">
-            <div className="flex items-start justify-between gap-4">
-              {/* Avatar */}
-              {(() => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                function extractUrl(val: any): string | null {
-                  if (!val) return null;
-                  if (typeof val === "string") return val || null;
-                  if (typeof val === "object" && typeof val.url === "string") return val.url || null;
-                  return null;
-                }
-                const photoUrl =
-                  extractUrl(profile.photo) ??
-                  extractUrl(profile.profile_photo_url) ??
-                  extractUrl(profile.picture);
-                return (
-                  <div className="w-16 h-16 rounded-full bg-[#F2F4F7] flex items-center justify-center text-xl font-bold text-[#667085] shrink-0 overflow-hidden">
-                    {photoUrl
-                      // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={photoUrl} alt={profile.username || username} className="w-full h-full object-cover" />
-                      : initials}
-                  </div>
-                );
-              })()}
+            {(() => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              function extractUrl(val: any): string | null {
+                if (!val) return null;
+                if (typeof val === "string") return val || null;
+                if (typeof val === "object" && typeof val.url === "string") return val.url || null;
+                return null;
+              }
+              const photoUrl =
+                extractUrl(profile.photo) ??
+                extractUrl(profile.profile_photo_url) ??
+                extractUrl(profile.picture);
+              const initials = username ? username.slice(0, 2).toUpperCase() : "?";
 
-              {/* Follow button */}
-              {!isOwnProfile && currentUserId && (
-                <button
-                  onClick={handleFollow}
-                  disabled={followLoading}
-                  className={`shrink-0 text-sm font-medium px-5 py-1.5 rounded-full border transition-colors disabled:opacity-50 ${
-                    following
-                      ? "border-[#667085] text-[#667085] bg-[#F9FAFB]"
-                      : "border-[#101828] text-[#101828]"
-                  }`}
-                >
-                  {following ? "Following" : "+ Follow"}
-                </button>
-              )}
-            </div>
+              return (
+                <>
+                  {/* Lightbox */}
+                  {photoLightboxOpen && photoUrl && (
+                    <div
+                      className="fixed inset-0 z-[980] bg-black/90 flex items-center justify-center"
+                      onClick={() => setPhotoLightboxOpen(false)}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photoUrl}
+                        alt={profile.username || username}
+                        className="max-w-[90vw] max-h-[90vh] rounded-2xl object-contain"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-start justify-between gap-4">
+                    {/* Avatar */}
+                    <button
+                      onClick={() => photoUrl && setPhotoLightboxOpen(true)}
+                      className={`w-16 h-16 rounded-full bg-[#F2F4F7] flex items-center justify-center text-xl font-bold text-[#667085] shrink-0 overflow-hidden ${photoUrl ? "cursor-pointer" : "cursor-default"}`}
+                      aria-label={photoUrl ? "View profile photo" : undefined}
+                    >
+                      {photoUrl
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={photoUrl} alt={profile.username || username} className="w-full h-full object-cover" />
+                        : initials}
+                    </button>
+
+                    {/* Follow button */}
+                    {!isOwnProfile && currentUserId && (
+                      <button
+                        onClick={handleFollow}
+                        disabled={followLoading}
+                        className={`shrink-0 text-sm font-medium px-5 py-1.5 rounded-full border transition-colors disabled:opacity-50 ${
+                          following
+                            ? "border-[#667085] text-[#667085] bg-[#F9FAFB]"
+                            : "border-[#101828] text-[#101828]"
+                        }`}
+                      >
+                        {following ? "Following" : "+ Follow"}
+                      </button>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Name + username */}
             <div className="mt-3">
