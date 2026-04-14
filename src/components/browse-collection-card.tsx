@@ -483,7 +483,7 @@ export function BrowseCollectionCard({
       const res = await fetch(`/api/collections/${collection.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_public: !isPublic }),
+        body: JSON.stringify({ name: collection.name, is_public: !isPublic }),
       });
       if (res.ok) {
         setIsPublic((prev) => !prev);
