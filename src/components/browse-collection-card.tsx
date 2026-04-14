@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useBackHandler } from "@/hooks/useBackHandler";
 import Link from "next/link";
-import { Heart, MessageCircle, X, Send, ChevronLeft, Trash2, MapPin, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, X, Send, ChevronLeft, Trash2, MapPin, ChevronRight, MoreVertical } from "lucide-react";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import { CollectionShareSheet } from "@/components/collection-share-sheet";
@@ -258,6 +258,7 @@ export function BrowseCollectionCard({
   hideFollow,
   currentUserId,
   followedIds,
+  onDeleted,
 }: {
   collection: Collection;
   allExperiences: Experience[];
@@ -265,6 +266,7 @@ export function BrowseCollectionCard({
   hideFollow?: boolean;
   currentUserId?: number | null;
   followedIds?: number[] | null;
+  onDeleted?: () => void;
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const col = collection as any;
@@ -388,6 +390,10 @@ export function BrowseCollectionCard({
     extractUrl(collection._users?.picture);
   const initials = ownerHandle ? ownerHandle.slice(0, 2).toUpperCase() : "?";
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showKebab, setShowKebab] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleted, setDeleted] = useState(false);
   const planUrl = collection.id ? `/plan?collection_id=${collection.id}` : "/plan";
   const locationHint = getCollectionLocationHint(collection, allExperiences);
   const subtitle = locationHint ?? `${count} ${count === 1 ? "experience" : "experiences"}`;
@@ -451,9 +457,28 @@ export function BrowseCollectionCard({
     }
   }
 
+  async function handleDeleteCollection() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/collections/${collection.id}`, { method: "DELETE" });
+      if (res.ok || res.status === 204) {
+        setShowDeleteConfirm(false);
+        if (onDeleted) {
+          onDeleted();
+        } else {
+          setDeleted(true);
+        }
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  if (deleted) return null;
+
   return (
     <>
-      <div className="rounded-2xl border border-[#EAECF0] overflow-hidden bg-white shadow-sm">
+      <div className="rounded-xl border border-[#EAECF0] overflow-hidden bg-white shadow-sm">
         {/* Mosaic — click opens detail */}
         <div className="relative h-44 cursor-pointer" onClick={() => setShowDetail(true)}>
           <CollectionMosaic ids={ids} allExperiences={[...allExperiences, ...extraExperiences]} />
@@ -475,7 +500,31 @@ export function BrowseCollectionCard({
               </div>
               <span className="text-[#667085] text-sm">{ownerHandle ?? "unknown"}</span>
             </Link>
-            {!hideFollow && ownerId && currentUserId && currentUserId !== ownerId && (
+            {currentUserId && currentUserId === ownerId ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowKebab((v) => !v)}
+                  className="p-1.5 rounded-full text-[#98A2B3] hover:bg-[#F2F4F7] transition-colors"
+                  aria-label="More options"
+                >
+                  <MoreVertical size={16} />
+                </button>
+                {showKebab && (
+                  <>
+                    <div className="fixed inset-0 z-[10]" onClick={() => setShowKebab(false)} />
+                    <div className="absolute right-0 top-8 z-[20] bg-white border border-[#EAECF0] rounded-xl shadow-lg py-1 min-w-[140px]">
+                      <button
+                        onClick={() => { setShowKebab(false); setShowDeleteConfirm(true); }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-[#E8405A] flex items-center gap-2"
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : !hideFollow && ownerId && currentUserId && currentUserId !== ownerId ? (
               <button
                 onClick={handleFollow}
                 className={`text-sm font-medium px-4 py-1.5 rounded-full border transition-colors ${
@@ -486,7 +535,7 @@ export function BrowseCollectionCard({
               >
                 {following ? "Following" : "+ Follow"}
               </button>
-            )}
+            ) : null}
           </div>
 
           {/* Title */}
@@ -570,6 +619,36 @@ export function BrowseCollectionCard({
               : `${window.location.origin}/c/${collection.id}`
             : undefined}
         />
+      )}
+
+      {showDeleteConfirm && (
+        <>
+          <div className="fixed inset-0 z-[950] bg-black/40" onClick={() => { if (!deleting) setShowDeleteConfirm(false); }} />
+          <div className="fixed inset-0 z-[951] flex items-center justify-center px-6 pointer-events-none">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl pointer-events-auto">
+              <h2 className="text-[#101828] font-semibold text-base mb-1">Delete collection?</h2>
+              <p className="text-[#667085] text-sm mb-5">
+                &ldquo;{collection.name}&rdquo; will be permanently deleted. This can&apos;t be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                  className="flex-1 py-2.5 rounded-xl border border-[#D0D5DD] text-sm font-semibold text-[#344054] disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteCollection}
+                  disabled={deleting}
+                  className="flex-1 py-2.5 rounded-xl bg-[#E8405A] text-white text-sm font-semibold disabled:opacity-50"
+                >
+                  {deleting ? "Deleting…" : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {showDetail && (
