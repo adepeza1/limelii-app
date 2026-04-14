@@ -440,11 +440,11 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
       {/* ── Account Settings sheet ──────────────────────────────────────────── */}
       {showAccountSettings && (
         <div className="fixed inset-0 z-[60] bg-black/40 flex items-end" onClick={(e) => { if (e.target === e.currentTarget) setShowAccountSettings(false); }}>
-          <div className="w-full bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto">
+          <div className="w-full bg-white rounded-t-3xl shadow-2xl max-h-[92vh] overflow-y-auto">
             <div className="flex justify-center pt-3 pb-1">
               <div className="w-9 h-1 rounded-full bg-gray-200" />
             </div>
-            <div className="px-6 pt-3 pb-[max(2rem,env(safe-area-inset-bottom,0px)+2rem)]">
+            <div className="px-6 pt-3 pb-[max(3rem,env(safe-area-inset-bottom,0px)+3rem)]">
               {/* Header */}
               <div className="flex items-center gap-3 mb-6">
                 <button onClick={() => setShowAccountSettings(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
