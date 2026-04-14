@@ -444,7 +444,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
             <div className="flex justify-center pt-3 pb-1">
               <div className="w-9 h-1 rounded-full bg-gray-200" />
             </div>
-            <div className="px-6 pt-3 pb-[max(3rem,env(safe-area-inset-bottom,0px)+3rem)]">
+            <div className="px-6 pt-3 pb-24">
               {/* Header */}
               <div className="flex items-center gap-3 mb-6">
                 <button onClick={() => setShowAccountSettings(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
