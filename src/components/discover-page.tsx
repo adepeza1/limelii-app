@@ -190,7 +190,6 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!value.trim()) {
       setSearchResults(null);
-      setSearchLoading(false);
       return;
     }
     setSearchResults(searchExperiences(value));
