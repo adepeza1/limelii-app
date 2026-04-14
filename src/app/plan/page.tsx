@@ -128,6 +128,27 @@ function toggleItem(list: string[], setList: (v: string[]) => void, item: string
   setList(list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
 }
 
+function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 3958.8;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLng = (lng2 - lng1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function minDistanceToExp(exp: Experience, lat: number, lng: number): number | null {
+  let min: number | null = null;
+  for (const p of exp.places_id ?? []) {
+    const ll = p.latlong?.data;
+    if (!ll) continue;
+    const d = haversineMiles(lat, lng, ll.lat, ll.lng);
+    if (min === null || d < min) min = d;
+  }
+  return min;
+}
+
 function getExpImage(exp: Experience): string | null {
   for (const p of exp.places_id ?? []) {
     const url =
@@ -165,7 +186,7 @@ function PlanPageInner() {
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [previewExperience, setPreviewExperience] = useState<Experience | null>(null);
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
-  const currentCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   // Filters drawer drag-to-dismiss
   const filtersDragStartY = useRef<number | null>(null);
   const [filtersDragY, setFiltersDragY] = useState(0);
@@ -254,8 +275,8 @@ function PlanPageInner() {
         (pos) => {
           const { latitude: lat, longitude: lng } = pos.coords;
           const inNYC = lat >= 40.4774 && lat <= 40.9176 && lng >= -74.2591 && lng <= -73.7004;
-          if (inNYC) { currentCoordsRef.current = { lat, lng }; }
-          else { setOutsideNYC(true); setLocation("All NYC"); }
+          if (inNYC) { setUserCoords({ lat, lng }); }
+          else { setOutsideNYC(true); setLocation("All NYC"); setUserCoords(null); }
         },
         () => {},
         { timeout: 10000 }
@@ -267,6 +288,7 @@ function PlanPageInner() {
     setLocation(location === loc ? "All NYC" : loc);
     setSelectedNeighborhoods([]);
     setOutsideNYC(false);
+    setUserCoords(null);
   }
 
   function handleQuickVibe(types: string[]) {
@@ -331,6 +353,7 @@ function PlanPageInner() {
     setResultsOpen(false);
     setPreviewExperience(null);
     setFallbackMessage(null);
+    setUserCoords(null);
   }
 
   // Keep ref current so the event listener always calls the latest version
@@ -363,6 +386,7 @@ function PlanPageInner() {
         <PlanBackgroundMap
           experiences={results ? results : matchedExperiences}
           onExperienceClick={handlePinClick}
+          userLocation={userCoords}
         />
       </div>
 
@@ -614,28 +638,37 @@ function PlanPageInner() {
           )}
           <div className="flex-1 overflow-y-auto px-4 pt-4"
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)" }}>
-            {results && results.length > 0 ? (
-              // Two independent flex columns so cards flow without row-aligned gaps
-              <div className="flex gap-1 items-start">
-                {[results.filter((_, i) => i % 2 === 0), results.filter((_, i) => i % 2 === 1)].map((col, colIdx) => (
-                  <div key={colIdx} className="flex-1 flex flex-col gap-1">
-                    {col.map((exp, rowIdx) => {
-                      // Left col: tall/short/tall… Right col: short/tall/short…
-                      const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
-                      return (
-                        <ExperienceCard
-                          key={exp.id}
-                          experience={exp}
-                          onClick={() => setSelectedExperience(exp)}
-                          compact
-                          className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
-                        />
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            ) : (
+            {results && results.length > 0 ? (() => {
+              // Sort by distance when user location is available
+              const withDist = results.map((exp) => ({
+                exp,
+                miles: userCoords ? minDistanceToExp(exp, userCoords.lat, userCoords.lng) : null,
+              }));
+              if (userCoords) withDist.sort((a, b) => (a.miles ?? Infinity) - (b.miles ?? Infinity));
+              return (
+                // Two independent flex columns so cards flow without row-aligned gaps
+                <div className="flex gap-1 items-start">
+                  {[withDist.filter((_, i) => i % 2 === 0), withDist.filter((_, i) => i % 2 === 1)].map((col, colIdx) => (
+                    <div key={colIdx} className="flex-1 flex flex-col gap-1">
+                      {col.map(({ exp, miles }, rowIdx) => {
+                        // Left col: tall/short/tall… Right col: short/tall/short…
+                        const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
+                        return (
+                          <ExperienceCard
+                            key={exp.id}
+                            experience={exp}
+                            onClick={() => setSelectedExperience(exp)}
+                            compact
+                            className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                            distanceMiles={miles ?? undefined}
+                          />
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              );
+            })() : (
               <div className="py-16 text-center">
                 <p className="text-gray-500 text-sm">No experiences found. Try adjusting your filters.</p>
               </div>

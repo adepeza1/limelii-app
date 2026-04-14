@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Search, ArrowLeft, X, MapPin, Navigation } from "lucide-react";
+import { Search, ArrowLeft, X } from "lucide-react";
 import Image from "next/image";
 import type {
   DiscoveryResponse,
@@ -11,7 +11,6 @@ import type {
 } from "@/app/page";
 import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
-import { useUserLocation } from "@/hooks/useUserLocation";
 
 
 // ─── Suggestion logic ─────────────────────────────────────────────────────────
@@ -76,38 +75,6 @@ function formatSectionTitle(key: string): string {
     .join(" ");
 }
 
-/** Haversine distance in miles between two lat/lng points */
-function distanceMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 3958.8;
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLng = (lng2 - lng1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-/** Minimum distance (miles) from a user point to any geolocated place in an experience */
-function experienceDistance(exp: Experience, userLat: number, userLng: number): number | null {
-  let min: number | null = null;
-  for (const place of exp.places_id ?? []) {
-    const ll = place.latlong?.data;
-    if (!ll) continue;
-    const d = distanceMiles(userLat, userLng, ll.lat, ll.lng);
-    if (min === null || d < min) min = d;
-  }
-  return min;
-}
-
-function formatDistance(miles: number): string {
-  if (miles < 0.1) return "< 0.1 mi";
-  if (miles < 10) return `${miles.toFixed(1)} mi`;
-  return `${Math.round(miles)} mi`;
-}
-
 export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const [activeCategory, setActiveCategory] = useState<number>(0);
   const [sections, setSections] = useState<Record<string, Experience[]>>(
@@ -115,9 +82,6 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   );
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const savedScrollY = useRef(0);
-
-  // ── User location ────────────────────────────────────────────────────────
-  const [locationState, requestLocation] = useUserLocation();
 
   function openExperience(exp: Experience) {
     savedScrollY.current = window.scrollY;
@@ -137,17 +101,6 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const allExperiences = useMemo(() => Object.values(data.experiences).flat(), [data.experiences]);
-
-  // ── Near You ────────────────────────────────────────────────────────────────
-  const nearbyExperiences = useMemo<Array<{ exp: Experience; miles: number }>>(() => {
-    if (locationState.status !== "granted") return [];
-    const { lat, lng } = locationState;
-    return allExperiences
-      .map((exp) => ({ exp, miles: experienceDistance(exp, lat, lng) }))
-      .filter((item): item is { exp: Experience; miles: number } => item.miles !== null)
-      .sort((a, b) => a.miles - b.miles)
-      .slice(0, 12);
-  }, [locationState, allExperiences]);
 
   // ── Suggested for you ───────────────────────────────────────────────────────
   const [suggestions, setSuggestions] = useState<Experience[]>([]);
@@ -361,73 +314,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
 
           {/* Content Sections */}
           <main className="pb-8">
-            {/* Near You */}
-            {activeCategory === 0 && !searchOpen && (
-              <section className="mb-8">
-                <div className="flex items-center justify-between px-4 mb-4">
-                  <h2 className="text-base font-medium text-black flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4 text-[#416f7b]" strokeWidth={2} />
-                    Near you
-                  </h2>
-                  {locationState.status === "granted" && (
-                    <span className="text-xs text-[#416f7b] flex items-center gap-1">
-                      <Navigation className="w-3 h-3" strokeWidth={2} />
-                      Location on
-                    </span>
-                  )}
-                </div>
-
-                {locationState.status === "idle" && (
-                  <div className="mx-4 px-4 py-5 rounded-2xl bg-[#F0F8FA] border border-[#416f7b]/20 flex items-center justify-between gap-3">
-                    <p className="text-sm text-gray-500 leading-snug">
-                      Enable location to see experiences near you
-                    </p>
-                    <button
-                      onClick={requestLocation}
-                      className="shrink-0 text-xs font-semibold text-white bg-[#416f7b] px-3 py-2 rounded-full"
-                    >
-                      Enable
-                    </button>
-                  </div>
-                )}
-
-                {locationState.status === "loading" && (
-                  <div className="flex gap-4 pl-[22px] pr-4">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="shrink-0 w-[280px] sm:w-[330px] aspect-[33/38] rounded-[20px] bg-gray-100 animate-pulse" />
-                    ))}
-                  </div>
-                )}
-
-                {locationState.status === "denied" && (
-                  <div className="mx-4 px-4 py-5 rounded-2xl bg-gray-50 border border-gray-200 flex items-center gap-3">
-                    <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
-                    <p className="text-sm text-gray-500 leading-snug">
-                      Location access denied. Enable it in your browser settings to see nearby experiences.
-                    </p>
-                  </div>
-                )}
-
-                {locationState.status === "granted" && nearbyExperiences.length === 0 && (
-                  <p className="px-4 text-sm text-gray-500">No nearby experiences found.</p>
-                )}
-
-                {locationState.status === "granted" && nearbyExperiences.length > 0 && (
-                  <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4">
-                    {nearbyExperiences.map(({ exp, miles }) => (
-                      <ExperienceCard
-                        key={exp.id}
-                        experience={exp}
-                        onClick={() => openExperience(exp)}
-                        distanceMiles={miles}
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
-            )}
-
-          {/* Suggested for you */}
+            {/* Suggested for you */}
             {activeCategory === 0 && !searchOpen && prefsChecked && (
               <section className="mb-8">
                 <h2 className="text-base font-medium text-black px-4 mb-4">✦ Suggested for you</h2>
