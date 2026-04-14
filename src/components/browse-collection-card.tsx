@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useBackHandler } from "@/hooks/useBackHandler";
 import Link from "next/link";
-import { Heart, MessageCircle, X, Send, ChevronLeft, Trash2, MapPin, ChevronRight, MoreVertical } from "lucide-react";
+import { Heart, MessageCircle, X, Send, ChevronLeft, Trash2, MapPin, ChevronRight, MoreVertical, Lock, Globe } from "lucide-react";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import { CollectionShareSheet } from "@/components/collection-share-sheet";
@@ -389,11 +389,14 @@ export function BrowseCollectionCard({
     extractUrl(collection._users?.profile_photo_url) ??
     extractUrl(collection._users?.picture);
   const initials = ownerHandle ? ownerHandle.slice(0, 2).toUpperCase() : "?";
+  const [isPublic, setIsPublic] = useState(collection.is_public);
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [showKebab, setShowKebab] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleted, setDeleted] = useState(false);
+  const [showPrivacyConfirm, setShowPrivacyConfirm] = useState(false);
+  const [togglingPrivacy, setTogglingPrivacy] = useState(false);
   const planUrl = collection.id ? `/plan?collection_id=${collection.id}` : "/plan";
   const locationHint = getCollectionLocationHint(collection, allExperiences);
   const subtitle = locationHint ?? `${count} ${count === 1 ? "experience" : "experiences"}`;
@@ -474,6 +477,23 @@ export function BrowseCollectionCard({
     }
   }
 
+  async function handleTogglePrivacy() {
+    setTogglingPrivacy(true);
+    try {
+      const res = await fetch(`/api/collections/${collection.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_public: !isPublic }),
+      });
+      if (res.ok) {
+        setIsPublic((prev) => !prev);
+        setShowPrivacyConfirm(false);
+      }
+    } finally {
+      setTogglingPrivacy(false);
+    }
+  }
+
   if (deleted) return null;
 
   return (
@@ -512,7 +532,15 @@ export function BrowseCollectionCard({
                 {showKebab && (
                   <>
                     <div className="fixed inset-0 z-[10]" onClick={() => setShowKebab(false)} />
-                    <div className="absolute right-0 top-8 z-[20] bg-white border border-[#EAECF0] rounded-xl shadow-lg py-1 min-w-[140px]">
+                    <div className="absolute right-0 top-8 z-[20] bg-white border border-[#EAECF0] rounded-xl shadow-lg py-1 min-w-[160px]">
+                      <button
+                        onClick={() => { setShowKebab(false); setShowPrivacyConfirm(true); }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-[#344054] flex items-center gap-2"
+                      >
+                        {isPublic ? <Lock size={14} /> : <Globe size={14} />}
+                        {isPublic ? "Make private" : "Make public"}
+                      </button>
+                      <div className="h-px bg-[#F2F4F7] mx-2" />
                       <button
                         onClick={() => { setShowKebab(false); setShowDeleteConfirm(true); }}
                         className="w-full text-left px-4 py-2.5 text-sm text-[#E8405A] flex items-center gap-2"
@@ -619,6 +647,43 @@ export function BrowseCollectionCard({
               : `${window.location.origin}/c/${collection.id}`
             : undefined}
         />
+      )}
+
+      {showPrivacyConfirm && (
+        <>
+          <div className="fixed inset-0 z-[950] bg-black/40" onClick={() => { if (!togglingPrivacy) setShowPrivacyConfirm(false); }} />
+          <div className="fixed inset-0 z-[951] flex items-center justify-center px-6 pointer-events-none">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl pointer-events-auto">
+              <div className="w-10 h-10 rounded-full bg-[#F2F4F7] flex items-center justify-center mb-4">
+                {isPublic ? <Lock size={18} className="text-[#344054]" /> : <Globe size={18} className="text-[#344054]" />}
+              </div>
+              <h2 className="text-[#101828] font-semibold text-base mb-1">
+                {isPublic ? "Make collection private?" : "Make collection public?"}
+              </h2>
+              <p className="text-[#667085] text-sm mb-5">
+                {isPublic
+                  ? "Only you will be able to see this collection. It will no longer appear in Browse."
+                  : "This collection will be visible to everyone and appear in Browse."}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPrivacyConfirm(false)}
+                  disabled={togglingPrivacy}
+                  className="flex-1 py-2.5 rounded-xl border border-[#D0D5DD] text-sm font-semibold text-[#344054] disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleTogglePrivacy}
+                  disabled={togglingPrivacy}
+                  className="flex-1 py-2.5 rounded-xl bg-[#101828] text-white text-sm font-semibold disabled:opacity-50"
+                >
+                  {togglingPrivacy ? "Saving…" : isPublic ? "Make private" : "Make public"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {showDeleteConfirm && (
