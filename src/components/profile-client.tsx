@@ -185,7 +185,18 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
+  // Account settings form state
+  const [displayNameInput, setDisplayNameInput] = useState("");
+  const [savingDisplayName, setSavingDisplayName] = useState(false);
+  const [displayNameSaved, setDisplayNameSaved] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
+  const [usernameAvailability, setUsernameAvailability] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [savingUsername, setSavingUsername] = useState(false);
+  const [usernameSaved, setUsernameSaved] = useState(false);
+  const usernameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [myCollections, setMyCollections] = useState<Collection[]>([]);
   const [savedCollections, setSavedCollections] = useState<SavedCollection[]>([]);
@@ -224,7 +235,8 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
       .then((r) => r.ok ? r.json() : null)
       .then((u) => {
         if (u?.photo?.url) setAvatarUrl(u.photo.url);
-        if (u?.username) setUsername(u.username);
+        if (u?.username) { setUsername(u.username); setUsernameInput(u.username); }
+        if (u?.name) { setDisplayName(u.name); setDisplayNameInput(u.name); }
         if (u?.id) setCurrentUserId(u.id);
       })
       .catch(() => {});
@@ -383,8 +395,22 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
               </div>
 
               <div className="space-y-1">
+                <button
+                  onClick={() => {
+                    setShowAccountSettings(true);
+                    setDisplayNameSaved(false);
+                    setUsernameSaved(false);
+                    setUsernameAvailability("idle");
+                  }}
+                  className="w-full flex items-center justify-between py-3.5 px-4 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <UserCircle className="w-4.5 h-4.5 text-gray-400" strokeWidth={1.7} />
+                    <span className="text-sm font-medium text-gray-800">Account Settings</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-300" />
+                </button>
                 {[
-                  { icon: UserCircle, label: "Account Settings" },
                   { icon: Bell, label: "Notifications" },
                   { icon: Lock, label: "Privacy" },
                 ].map(({ icon: Icon, label }) => (
@@ -405,6 +431,108 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                     <span className="text-sm font-medium text-[#FB6983]">Log Out</span>
                   </LogoutLink>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Account Settings sheet ──────────────────────────────────────────── */}
+      {showAccountSettings && (
+        <div className="fixed inset-0 z-[60] bg-black/40 flex items-end" onClick={(e) => { if (e.target === e.currentTarget) setShowAccountSettings(false); }}>
+          <div className="w-full bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-9 h-1 rounded-full bg-gray-200" />
+            </div>
+            <div className="px-6 pt-3 pb-[max(2rem,env(safe-area-inset-bottom,0px)+2rem)]">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-6">
+                <button onClick={() => setShowAccountSettings(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                  <ChevronRight className="w-4 h-4 rotate-180" />
+                </button>
+                <h2 className="text-base font-semibold text-gray-900">Account Settings</h2>
+              </div>
+
+              {/* Display name */}
+              <div className="mb-6">
+                <label className="block text-xs font-semibold text-[#98A2B3] uppercase tracking-wide mb-2">Display Name</label>
+                <input
+                  value={displayNameInput}
+                  onChange={(e) => { setDisplayNameInput(e.target.value); setDisplayNameSaved(false); }}
+                  placeholder="Your display name"
+                  className="w-full border border-[#EAECF0] rounded-xl px-4 py-3 text-sm text-[#101828] outline-none focus:border-[#FB6983] transition-colors"
+                />
+                <button
+                  disabled={savingDisplayName || !displayNameInput.trim() || displayNameInput.trim() === displayName}
+                  onClick={async () => {
+                    setSavingDisplayName(true);
+                    try {
+                      const res = await fetch("/api/user/me", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: displayNameInput.trim() }),
+                      });
+                      if (res.ok) { setDisplayName(displayNameInput.trim()); setDisplayNameSaved(true); }
+                    } finally { setSavingDisplayName(false); }
+                  }}
+                  className="mt-2.5 w-full py-2.5 rounded-xl bg-[#FB6983] text-white text-sm font-semibold disabled:opacity-40 transition-colors"
+                >
+                  {savingDisplayName ? "Saving…" : displayNameSaved ? "Saved!" : "Save Display Name"}
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="h-px bg-[#F2F4F7] mb-6" />
+
+              {/* Username */}
+              <div>
+                <label className="block text-xs font-semibold text-[#98A2B3] uppercase tracking-wide mb-2">Username</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[#98A2B3]">@</span>
+                  <input
+                    value={usernameInput}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\s/g, "").toLowerCase();
+                      setUsernameInput(val);
+                      setUsernameSaved(false);
+                      if (usernameDebounceRef.current) clearTimeout(usernameDebounceRef.current);
+                      if (!val || val === username) { setUsernameAvailability("idle"); return; }
+                      setUsernameAvailability("checking");
+                      usernameDebounceRef.current = setTimeout(async () => {
+                        const res = await fetch(`/api/user/check_username?username=${encodeURIComponent(val)}`).catch(() => null);
+                        if (!res) { setUsernameAvailability("idle"); return; }
+                        const data = await res.json();
+                        setUsernameAvailability(data.available ? "available" : "taken");
+                      }, 500);
+                    }}
+                    placeholder={username ?? "username"}
+                    className={`w-full border rounded-xl pl-8 pr-4 py-3 text-sm text-[#101828] outline-none transition-colors ${
+                      usernameAvailability === "taken" ? "border-[#E8405A] focus:border-[#E8405A]"
+                      : usernameAvailability === "available" ? "border-[#12B76A] focus:border-[#12B76A]"
+                      : "border-[#EAECF0] focus:border-[#FB6983]"
+                    }`}
+                  />
+                </div>
+                {usernameAvailability === "checking" && <p className="text-xs text-[#98A2B3] mt-1.5">Checking availability…</p>}
+                {usernameAvailability === "available" && <p className="text-xs text-[#12B76A] mt-1.5">@{usernameInput} is available</p>}
+                {usernameAvailability === "taken" && <p className="text-xs text-[#E8405A] mt-1.5">@{usernameInput} is already taken</p>}
+                <button
+                  disabled={savingUsername || !usernameInput.trim() || usernameInput === username || usernameAvailability === "taken" || usernameAvailability === "checking"}
+                  onClick={async () => {
+                    setSavingUsername(true);
+                    try {
+                      const res = await fetch("/api/user/username", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ username: usernameInput.trim() }),
+                      });
+                      if (res.ok) { setUsername(usernameInput.trim()); setUsernameSaved(true); setUsernameAvailability("idle"); }
+                    } finally { setSavingUsername(false); }
+                  }}
+                  className="mt-2.5 w-full py-2.5 rounded-xl bg-[#101828] text-white text-sm font-semibold disabled:opacity-40 transition-colors"
+                >
+                  {savingUsername ? "Saving…" : usernameSaved ? "Saved!" : "Save Username"}
+                </button>
               </div>
             </div>
           </div>
