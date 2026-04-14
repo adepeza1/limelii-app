@@ -185,6 +185,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [myCollections, setMyCollections] = useState<Collection[]>([]);
   const [savedCollections, setSavedCollections] = useState<SavedCollection[]>([]);
@@ -224,6 +225,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
       .then((u) => {
         if (u?.photo?.url) setAvatarUrl(u.photo.url);
         if (u?.username) setUsername(u.username);
+        if (u?.id) setCurrentUserId(u.id);
       })
       .catch(() => {});
     listCollections()
@@ -631,6 +633,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
               onMyCollectionsChange={setMyCollections}
               onSavedCollectionsChange={setSavedCollections}
               mode="mine"
+              currentUserId={currentUserId}
             />
           )}
 

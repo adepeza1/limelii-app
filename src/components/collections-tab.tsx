@@ -21,6 +21,7 @@ interface CollectionsTabProps {
   onSavedCollectionsChange: (cols: SavedCollection[]) => void;
   /** "mine" = only user's collections; "browse" = only saved-from-others; omit = both */
   mode?: "mine" | "browse";
+  currentUserId?: number | null;
 }
 
 export function CollectionsTab({
@@ -31,6 +32,7 @@ export function CollectionsTab({
   onMyCollectionsChange,
   onSavedCollectionsChange,
   mode,
+  currentUserId,
 }: CollectionsTabProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<{ collection: Collection; isOwner: boolean } | null>(null);
@@ -196,6 +198,8 @@ export function CollectionsTab({
                 allExperiences={allExperiences}
                 tags={getBrowseTags(col, allExperiences)}
                 hideFollow
+                currentUserId={currentUserId}
+                onDeleted={() => onMyCollectionsChange(myCollections.filter((c) => c.id !== col.id))}
               />
             ))}
           </div>
