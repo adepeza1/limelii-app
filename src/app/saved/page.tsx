@@ -322,6 +322,7 @@ function collectionMatchesQuery(col: Collection, query: string, allExperiences: 
 }
 
 export default function CollectionsPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<CollectionsPageTab>("browse");
   const [activeFilters, setActiveFilters] = useState<string[]>(["All"]);
   const [allExperiences, setAllExperiences] = useState<Experience[]>([]);
