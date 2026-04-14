@@ -12,7 +12,6 @@ import type {
 import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
 
-import { API_BASE } from "@/lib/xano";
 
 // ─── Suggestion logic ─────────────────────────────────────────────────────────
 
@@ -98,7 +97,6 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Experience[] | null>(null);
-  const [searchLoading, setSearchLoading] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -162,31 +160,39 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
   }
 
+  function searchExperiences(query: string): Experience[] {
+    const q = query.toLowerCase().trim();
+    if (!q) return [];
+    return allExperiences.filter((exp) => {
+      if (exp.title?.toLowerCase().includes(q)) return true;
+      if (exp.description?.toLowerCase().includes(q)) return true;
+      for (const act of exp.activities ?? []) {
+        if (act.toLowerCase().includes(q)) return true;
+      }
+      for (const n of exp.neighborhoods ?? []) {
+        if (n.toLowerCase().includes(q)) return true;
+      }
+      for (const place of exp.places_id ?? []) {
+        if (place.name?.toLowerCase().includes(q)) return true;
+        if (place.neighborhood?.toLowerCase().includes(q)) return true;
+        if (place.borough?.toLowerCase().includes(q)) return true;
+        for (const t of place._location_details?.location_type ?? []) {
+          if (t.toLowerCase().includes(q)) return true;
+        }
+        if (place._location_details?.Description?.toLowerCase().includes(q)) return true;
+      }
+      return false;
+    });
+  }
+
   function handleSearchInput(value: string) {
     setSearchQuery(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    if (value.trim().length === 0) {
+    if (!value.trim()) {
       setSearchResults(null);
-      setSearchLoading(false);
       return;
     }
-
-    setSearchLoading(true);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(
-          `${API_BASE}/search_keyword?search_term=${encodeURIComponent(value.trim())}`
-        );
-        if (!res.ok) throw new Error("Search failed");
-        const data: { experiences: Experience[] } = await res.json();
-        setSearchResults(data.experiences);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
-      }
-    }, 400);
+    setSearchResults(searchExperiences(value));
   }
 
   // Cleanup debounce on unmount
@@ -254,24 +260,13 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
       {searchOpen ? (
         /* Search Results */
         <main className="pb-8">
-          {searchLoading && (
-            <div className="px-4 pt-4 flex flex-col gap-4">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="w-full aspect-[33/38] rounded-[20px] bg-gray-100 animate-pulse"
-                />
-              ))}
-            </div>
-          )}
-
-          {!searchLoading && searchQuery.trim() && searchResults && searchResults.length === 0 && (
+          {searchQuery.trim() && searchResults && searchResults.length === 0 && (
             <p className="text-center text-gray-500 py-12 text-sm">
               No experiences found for &ldquo;{searchQuery}&rdquo;
             </p>
           )}
 
-          {!searchLoading && searchResults && searchResults.length > 0 && (
+          {searchResults && searchResults.length > 0 && (
             <div className="px-4 pt-4 flex flex-col gap-4">
               {searchResults.map((exp) => (
                 <ExperienceCard
@@ -283,7 +278,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
             </div>
           )}
 
-          {!searchLoading && !searchQuery.trim() && (
+          {!searchQuery.trim() && (
             <p className="text-center text-gray-400 py-12 text-sm">
               Type to search experiences
             </p>
