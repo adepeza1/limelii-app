@@ -12,7 +12,7 @@ export async function POST(
   }
 
   const { id } = await params;
-  const { experience_id, current_experience_ids } = await request.json();
+  const { experience_id, current_experience_ids, collection_name } = await request.json();
 
   // Parse current experience_ids sent from client (avoids a GET round-trip)
   let ids: number[] = [];
@@ -27,10 +27,20 @@ export async function POST(
     ids = [...ids, experience_id];
   }
 
+  // Xano PATCH requires name alongside any update — fetch it if not supplied by client
+  let name: string = collection_name ?? "";
+  if (!name) {
+    const getRes = await apiFetch(`/collections/${id}`);
+    if (getRes.ok) {
+      const col = await getRes.json();
+      name = col.name ?? "";
+    }
+  }
+
   // PATCH the collection with the updated experience_ids string
   const patchRes = await apiFetch(`/collections/${id}`, {
     method: "PATCH",
-    body: JSON.stringify({ experience_ids: JSON.stringify(ids) }),
+    body: JSON.stringify({ name, experience_ids: JSON.stringify(ids) }),
   });
 
   if (!patchRes.ok) {
