@@ -8,6 +8,18 @@ import { listPublicCollections, listSharedCollections } from "@/lib/collections"
 import { API_BASE } from "@/lib/xano";
 import { Lock, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+interface UserResult {
+  id: number;
+  username: string;
+  name?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  photo?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  profile_photo_url?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  picture?: any;
+}
 import {
   BrowseCollectionCard,
   getTagsForCollection,
@@ -323,6 +335,9 @@ export default function CollectionsPage() {
   const [publicCollections, setPublicCollections] = useState<Collection[]>([]);
   const [browseLoading, setBrowseLoading] = useState(false);
   const [browseLoaded, setBrowseLoaded] = useState(false);
+  const [userResults, setUserResults] = useState<UserResult[]>([]);
+  const [userSearchLoading, setUserSearchLoading] = useState(false);
+  const userDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetch("/api/user/me")
@@ -421,19 +436,32 @@ export default function CollectionsPage() {
               <input
                 ref={searchInputRef}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name, place, type…"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSearchQuery(val);
+                  if (userDebounceRef.current) clearTimeout(userDebounceRef.current);
+                  if (!val.trim()) { setUserResults([]); setUserSearchLoading(false); return; }
+                  setUserSearchLoading(true);
+                  userDebounceRef.current = setTimeout(() => {
+                    fetch(`/api/users/search?q=${encodeURIComponent(val.trim())}`)
+                      .then((r) => r.ok ? r.json() : [])
+                      .then((data) => setUserResults(Array.isArray(data) ? data : []))
+                      .catch(() => setUserResults([]))
+                      .finally(() => setUserSearchLoading(false));
+                  }, 350);
+                }}
+                placeholder="Search collections, places, people…"
                 className="flex-1 text-sm text-[#101828] placeholder:text-[#98A2B3] bg-transparent outline-none"
                 autoFocus
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery("")}>
+                <button onClick={() => { setSearchQuery(""); setUserResults([]); if (userDebounceRef.current) clearTimeout(userDebounceRef.current); }}>
                   <X size={14} className="text-[#98A2B3]" />
                 </button>
               )}
             </div>
             <button
-              onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
+              onClick={() => { setSearchOpen(false); setSearchQuery(""); setUserResults([]); if (userDebounceRef.current) clearTimeout(userDebounceRef.current); }}
               className="text-sm font-medium text-[#667085] shrink-0"
             >
               Cancel
@@ -457,39 +485,116 @@ export default function CollectionsPage() {
         )}
       </div>
 
-      {/* Tab bar */}
-      <div className="flex px-5 border-b border-[#EAECF0]">
-        {TAB_LABELS.map(({ id, label }) => (
-          <button
-            key={id}
-            onClick={() => { setActiveTab(id); if (id === "following") setFollowingTabKey((k) => k + 1); }}
-            className={`mr-6 pb-3 text-sm font-semibold transition-colors ${
-              activeTab === id
-                ? "text-[#FF9A56] border-b-2 border-[#FF9A56]"
-                : "text-[#667085]"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* Tab bar — hidden while searching */}
+      {!searchQuery.trim() && (
+        <div className="flex px-5 border-b border-[#EAECF0]">
+          {TAB_LABELS.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => { setActiveTab(id); if (id === "following") setFollowingTabKey((k) => k + 1); }}
+              className={`mr-6 pb-3 text-sm font-semibold transition-colors ${
+                activeTab === id
+                  ? "text-[#FF9A56] border-b-2 border-[#FF9A56]"
+                  : "text-[#667085]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* Content */}
-      {activeTab === "browse" ? (
-        <BrowseTab
-          collections={filteredPublic}
-          allExperiences={allExperiences}
-          loading={browseLoading && !browseLoaded}
-          filterPills={filterPills}
-          activeFilters={activeFilters}
-          onFilterChange={handleFilterChange}
-          currentUserId={currentUserId}
-          followedIds={followedIds}
-        />
-      ) : activeTab === "following" ? (
-        <FollowingTab key={followingTabKey} allExperiences={allExperiences} currentUserId={currentUserId} followedIds={followedIds} />
+      {/* Search results */}
+      {searchQuery.trim() ? (
+        <div className="px-5 pb-28 pt-4 flex flex-col gap-6">
+          {/* People */}
+          <section>
+            <p className="text-[10px] font-semibold text-[#98A2B3] uppercase tracking-wider mb-3">People</p>
+            {userSearchLoading ? (
+              <p className="text-sm text-[#667085]">Searching…</p>
+            ) : userResults.length === 0 ? (
+              <p className="text-sm text-[#98A2B3]">No users found</p>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {userResults.map((user) => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  function extractUrl(val: any): string | null {
+                    if (!val) return null;
+                    if (typeof val === "string") return val || null;
+                    if (typeof val === "object" && typeof val.url === "string") return val.url || null;
+                    return null;
+                  }
+                  const photoUrl = extractUrl(user.photo) ?? extractUrl(user.profile_photo_url) ?? extractUrl(user.picture);
+                  const initials = user.username.slice(0, 2).toUpperCase();
+                  return (
+                    <button
+                      key={user.id}
+                      onClick={() => router.push(`/u/${encodeURIComponent(user.username)}`)}
+                      className="flex items-center gap-3 py-2.5 w-full text-left"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-[#F2F4F7] flex items-center justify-center text-sm font-bold text-[#667085] shrink-0 overflow-hidden">
+                        {photoUrl
+                          // eslint-disable-next-line @next/next/no-img-element
+                          ? <img src={photoUrl} alt={user.username} className="w-full h-full object-cover" />
+                          : initials}
+                      </div>
+                      <div className="min-w-0">
+                        {user.name && <p className="text-sm font-semibold text-[#101828] leading-tight truncate">{user.name}</p>}
+                        <p className="text-sm text-[#667085]">@{user.username}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* Collections */}
+          <section>
+            <p className="text-[10px] font-semibold text-[#98A2B3] uppercase tracking-wider mb-3">Collections</p>
+            {(() => {
+              const results = publicCollections.filter((col) => collectionMatchesQuery(col, searchQuery.trim(), allExperiences));
+              if (results.length === 0) return <p className="text-sm text-[#98A2B3]">No collections found</p>;
+              return (
+                <div className="flex flex-col gap-4">
+                  {results.map((col) => {
+                    const tags = getTagsForCollection(col, allExperiences);
+                    return (
+                      <BrowseCollectionCard
+                        key={col.id}
+                        collection={col}
+                        allExperiences={allExperiences}
+                        tags={tags}
+                        currentUserId={currentUserId}
+                        followedIds={followedIds}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </section>
+        </div>
       ) : (
-        <SharedTab allExperiences={allExperiences} currentUserId={currentUserId} />
+        /* Normal tab content */
+        <>
+          {activeTab === "browse" ? (
+            <BrowseTab
+              collections={filteredPublic}
+              allExperiences={allExperiences}
+              loading={browseLoading && !browseLoaded}
+              filterPills={filterPills}
+              activeFilters={activeFilters}
+              onFilterChange={handleFilterChange}
+              currentUserId={currentUserId}
+              followedIds={followedIds}
+            />
+          ) : activeTab === "following" ? (
+            <FollowingTab key={followingTabKey} allExperiences={allExperiences} currentUserId={currentUserId} followedIds={followedIds} />
+          ) : (
+            <SharedTab allExperiences={allExperiences} currentUserId={currentUserId} />
+          )}
+        </>
       )}
     </div>
   );
