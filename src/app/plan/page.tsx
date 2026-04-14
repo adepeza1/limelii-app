@@ -278,11 +278,18 @@ function PlanPageInner() {
           if (inNYC) { setUserCoords({ lat, lng }); }
           else { setOutsideNYC(true); setLocation("All NYC"); setUserCoords(null); }
         },
-        () => {},
+        () => { setLocation("All NYC"); setUserCoords(null); },
         { timeout: 10000 }
       );
+    } else {
+      setLocation("All NYC");
     }
   }
+
+  // Auto-select Current Location on initial load
+  const handleCurrentLocationRef = useRef(handleCurrentLocation);
+  handleCurrentLocationRef.current = handleCurrentLocation;
+  useEffect(() => { handleCurrentLocationRef.current(); }, []);
 
   function handleSelectLocation(loc: string) {
     setLocation(location === loc ? "All NYC" : loc);
@@ -359,9 +366,9 @@ function PlanPageInner() {
   // Keep ref current so the event listener always calls the latest version
   resetExploreRef.current = resetExplore;
 
-  // Listen for bottom-nav Explore tab taps to reset page state
+  // Listen for bottom-nav Explore tab taps to reset page state then re-select current location
   useEffect(() => {
-    const handler = () => resetExploreRef.current();
+    const handler = () => { resetExploreRef.current(); handleCurrentLocationRef.current(); };
     window.addEventListener("explore-tab-clicked", handler);
     return () => window.removeEventListener("explore-tab-clicked", handler);
   }, []);
