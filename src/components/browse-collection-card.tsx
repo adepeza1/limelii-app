@@ -508,7 +508,7 @@ export function BrowseCollectionCard({
           {/* Author + follow */}
           <div className="flex items-center justify-between mb-2.5">
             <Link
-              href={ownerHandle ? `/u/${encodeURIComponent(ownerHandle)}` : "#"}
+              href={currentUserId && currentUserId === ownerId ? "/profile" : ownerHandle ? `/u/${encodeURIComponent(ownerHandle)}` : "#"}
               className="flex items-center gap-2"
               onClick={(e) => e.stopPropagation()}
             >
