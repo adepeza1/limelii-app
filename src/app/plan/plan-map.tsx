@@ -128,18 +128,50 @@ function redrawMarkers(
   }
 }
 
+function userLocationHtml(): string {
+  return `
+    <div style="transform:translate(-50%,-50%);position:relative;width:20px;height:20px;">
+      <div style="
+        position:absolute;inset:0;
+        border-radius:50%;
+        background:rgba(66,133,244,0.25);
+        animation:pulse-ring 2s ease-out infinite;
+      "></div>
+      <div style="
+        position:absolute;top:50%;left:50%;
+        transform:translate(-50%,-50%);
+        width:14px;height:14px;
+        border-radius:50%;
+        background:#4285F4;
+        border:2.5px solid #fff;
+        box-shadow:0 1px 4px rgba(0,0,0,0.35);
+      "></div>
+    </div>
+    <style>
+      @keyframes pulse-ring {
+        0%   { transform:scale(0.8); opacity:0.8; }
+        100% { transform:scale(2.4); opacity:0; }
+      }
+    </style>
+  `;
+}
+
 export function PlanMap({
   experiences,
   onExperienceClick,
+  userLocation,
 }: {
   experiences: Experience[];
   onExperienceClick: (exp: Experience) => void;
+  userLocation?: { lat: number; lng: number } | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Layer[]>([]);
+  const userMarkerRef = useRef<L.Layer | null>(null);
   const expRef = useRef(experiences);
   const clickRef = useRef(onExperienceClick);
+  const hasFlownToUser = useRef(false);
 
   useEffect(() => { expRef.current = experiences; }, [experiences]);
   useEffect(() => { clickRef.current = onExperienceClick; }, [onExperienceClick]);
@@ -173,6 +205,38 @@ export function PlanMap({
     if (!map) return;
     redrawMarkers(map, experiences, markersRef, onExperienceClick);
   }, [experiences, onExperienceClick]);
+
+  // Update user location marker and pan to it when first received
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Remove old marker
+    if (userMarkerRef.current) {
+      map.removeLayer(userMarkerRef.current);
+      userMarkerRef.current = null;
+    }
+
+    if (!userLocation) {
+      hasFlownToUser.current = false;
+      return;
+    }
+
+    const icon = L.divIcon({
+      className: "",
+      html: userLocationHtml(),
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+    });
+    const marker = L.marker([userLocation.lat, userLocation.lng], { icon, zIndexOffset: 1000 }).addTo(map);
+    userMarkerRef.current = marker;
+
+    // Pan to user location the first time we get coords
+    if (!hasFlownToUser.current) {
+      hasFlownToUser.current = true;
+      map.flyTo([userLocation.lat, userLocation.lng], 13, { duration: 1.2 });
+    }
+  }, [userLocation]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 }
