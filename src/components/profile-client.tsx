@@ -455,30 +455,34 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
 
               {/* Display name */}
               <div className="mb-6">
-                <label className="block text-xs font-semibold text-[#98A2B3] uppercase tracking-wide mb-2">Display Name</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold text-[#98A2B3] uppercase tracking-wide">Display Name</label>
+                  {xanoNameInput.trim() && xanoNameInput.trim() !== xanoName && (
+                    <button
+                      disabled={savingDisplayName}
+                      onClick={async () => {
+                        setSavingDisplayName(true);
+                        try {
+                          const res = await fetch("/api/user/me", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ name: xanoNameInput.trim() }),
+                          });
+                          if (res.ok) { setXanoName(xanoNameInput.trim()); setDisplayNameSaved(true); }
+                        } finally { setSavingDisplayName(false); }
+                      }}
+                      className="text-xs font-semibold text-white bg-[#FB6983] px-3 py-1 rounded-full disabled:opacity-50 transition-opacity"
+                    >
+                      {savingDisplayName ? "Saving…" : displayNameSaved ? "Saved!" : "Save"}
+                    </button>
+                  )}
+                </div>
                 <input
                   value={xanoNameInput}
                   onChange={(e) => { setXanoNameInput(e.target.value); setDisplayNameSaved(false); }}
                   placeholder="Your display name"
                   className="w-full border border-[#EAECF0] rounded-xl px-4 py-3 text-sm text-[#101828] outline-none focus:border-[#FB6983] transition-colors"
                 />
-                <button
-                  disabled={savingDisplayName || !xanoNameInput.trim() || xanoNameInput.trim() === xanoName}
-                  onClick={async () => {
-                    setSavingDisplayName(true);
-                    try {
-                      const res = await fetch("/api/user/me", {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ name: xanoNameInput.trim() }),
-                      });
-                      if (res.ok) { setXanoName(xanoNameInput.trim()); setDisplayNameSaved(true); }
-                    } finally { setSavingDisplayName(false); }
-                  }}
-                  className="mt-2.5 w-full py-2.5 rounded-xl bg-[#FB6983] text-white text-sm font-semibold disabled:opacity-40 transition-colors"
-                >
-                  {savingDisplayName ? "Saving…" : displayNameSaved ? "Saved!" : "Save Display Name"}
-                </button>
               </div>
 
               {/* Divider */}
@@ -486,7 +490,28 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
 
               {/* Username */}
               <div>
-                <label className="block text-xs font-semibold text-[#98A2B3] uppercase tracking-wide mb-2">Username</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold text-[#98A2B3] uppercase tracking-wide">Username</label>
+                  {usernameInput.trim() && usernameInput !== username && usernameAvailability !== "taken" && usernameAvailability !== "checking" && (
+                    <button
+                      disabled={savingUsername}
+                      onClick={async () => {
+                        setSavingUsername(true);
+                        try {
+                          const res = await fetch("/api/user/username", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ username: usernameInput.trim() }),
+                          });
+                          if (res.ok) { setUsername(usernameInput.trim()); setUsernameSaved(true); setUsernameAvailability("idle"); }
+                        } finally { setSavingUsername(false); }
+                      }}
+                      className="text-xs font-semibold text-white bg-[#101828] px-3 py-1 rounded-full disabled:opacity-50 transition-opacity"
+                    >
+                      {savingUsername ? "Saving…" : usernameSaved ? "Saved!" : "Save"}
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[#98A2B3]">@</span>
                   <input
@@ -516,23 +541,6 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                 {usernameAvailability === "checking" && <p className="text-xs text-[#98A2B3] mt-1.5">Checking availability…</p>}
                 {usernameAvailability === "available" && <p className="text-xs text-[#12B76A] mt-1.5">@{usernameInput} is available</p>}
                 {usernameAvailability === "taken" && <p className="text-xs text-[#E8405A] mt-1.5">@{usernameInput} is already taken</p>}
-                <button
-                  disabled={savingUsername || !usernameInput.trim() || usernameInput === username || usernameAvailability === "taken" || usernameAvailability === "checking"}
-                  onClick={async () => {
-                    setSavingUsername(true);
-                    try {
-                      const res = await fetch("/api/user/username", {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ username: usernameInput.trim() }),
-                      });
-                      if (res.ok) { setUsername(usernameInput.trim()); setUsernameSaved(true); setUsernameAvailability("idle"); }
-                    } finally { setSavingUsername(false); }
-                  }}
-                  className="mt-2.5 w-full py-2.5 rounded-xl bg-[#101828] text-white text-sm font-semibold disabled:opacity-40 transition-colors"
-                >
-                  {savingUsername ? "Saving…" : usernameSaved ? "Saved!" : "Save Username"}
-                </button>
               </div>
             </div>
           </div>
