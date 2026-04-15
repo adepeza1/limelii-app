@@ -471,7 +471,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                           if (res.ok) { setXanoName(xanoNameInput.trim()); setDisplayNameSaved(true); }
                         } finally { setSavingDisplayName(false); }
                       }}
-                      className="text-xs font-semibold text-white bg-[#FB6983] px-3 py-1 rounded-full disabled:opacity-50 transition-opacity"
+                      className="text-xs font-semibold text-[#FB6983] disabled:opacity-50"
                     >
                       {savingDisplayName ? "Saving…" : displayNameSaved ? "Saved!" : "Save"}
                     </button>
@@ -506,7 +506,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                           if (res.ok) { setUsername(usernameInput.trim()); setUsernameSaved(true); setUsernameAvailability("idle"); }
                         } finally { setSavingUsername(false); }
                       }}
-                      className="text-xs font-semibold text-white bg-[#101828] px-3 py-1 rounded-full disabled:opacity-50 transition-opacity"
+                      className="text-xs font-semibold text-[#FB6983] disabled:opacity-50"
                     >
                       {savingUsername ? "Saving…" : usernameSaved ? "Saved!" : "Save"}
                     </button>
