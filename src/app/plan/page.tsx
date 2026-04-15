@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import {
-  MapPin, SlidersHorizontal, X,
+  MapPin, SlidersHorizontal, X, LocateFixed,
   UtensilsCrossed, Coffee, Wine, Building2, Music, Palette, Zap, Leaf, TreePine,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -187,6 +187,7 @@ function PlanPageInner() {
   const [previewExperience, setPreviewExperience] = useState<Experience | null>(null);
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locateTrigger, setLocateTrigger] = useState(0);
   // Filters drawer drag-to-dismiss
   const filtersDragStartY = useRef<number | null>(null);
   const [filtersDragY, setFiltersDragY] = useState(0);
@@ -394,6 +395,7 @@ function PlanPageInner() {
           experiences={results ? results : matchedExperiences}
           onExperienceClick={handlePinClick}
           userLocation={userCoords}
+          locateTrigger={locateTrigger}
         />
       </div>
 
@@ -405,6 +407,19 @@ function PlanPageInner() {
         <h1 className="text-2xl font-bold text-gray-900" style={{ textShadow: "0 1px 6px rgba(255,255,255,0.9)" }}>Explore</h1>
         <p className="text-sm text-gray-600 mt-0.5" style={{ textShadow: "0 1px 4px rgba(255,255,255,0.9)" }}>Find the perfect match</p>
       </div>
+
+      {/* ── Locate Me button ── */}
+      {userCoords && (
+        <button
+          type="button"
+          onClick={() => setLocateTrigger((n) => n + 1)}
+          aria-label="Go to my location"
+          className="fixed z-20 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-lg active:opacity-70 transition-opacity"
+          style={{ top: "calc(env(safe-area-inset-top, 44px) + 10px)", right: "16px" }}
+        >
+          <LocateFixed className="w-5 h-5 text-[#4285F4]" strokeWidth={2} />
+        </button>
+      )}
 
       {/* ── Content overlay — bottom half ── */}
       <div
