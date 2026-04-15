@@ -276,18 +276,15 @@ export default function PublicProfilePage() {
               );
             })()}
 
-            {/* Name + username */}
+            {/* Name + bio */}
             <div className="mt-3">
               {profile.name && (
                 <p className="font-semibold text-[#101828] text-base leading-tight">{profile.name}</p>
               )}
-              <p className="text-sm text-[#667085]">@{profile.username || username}</p>
+              {profile.bio && (
+                <p className="mt-1 text-sm text-[#344054] leading-snug">{profile.bio}</p>
+              )}
             </div>
-
-            {/* Bio */}
-            {profile.bio && (
-              <p className="mt-2 text-sm text-[#344054] leading-snug">{profile.bio}</p>
-            )}
 
             {/* Neighborhood */}
             {profile.neighborhood && (
