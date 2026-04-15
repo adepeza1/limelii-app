@@ -123,7 +123,7 @@ export function BottomNav() {
                       backgroundSize: "100%",
                       backgroundPosition: "center",
                       backgroundRepeat: "no-repeat",
-                      filter: isActive ? "hue-rotate(20deg) saturate(0.85)" : "none",
+                      filter: isActive ? "brightness(1.4) saturate(2) hue-rotate(0deg)" : "none",
                     }}
                   />
                 </div>
