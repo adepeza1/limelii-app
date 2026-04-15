@@ -160,10 +160,12 @@ export function PlanMap({
   experiences,
   onExperienceClick,
   userLocation,
+  locateTrigger,
 }: {
   experiences: Experience[];
   onExperienceClick: (exp: Experience) => void;
   userLocation?: { lat: number; lng: number } | null;
+  locateTrigger?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -237,6 +239,16 @@ export function PlanMap({
       map.flyTo([userLocation.lat, userLocation.lng], 13, { duration: 1.2 });
     }
   }, [userLocation]);
+
+  // Re-fly to user location when the locate button is tapped
+  useEffect(() => {
+    if (!locateTrigger || !userLocation) return;
+    const map = mapRef.current;
+    if (!map) return;
+    map.flyTo([userLocation.lat, userLocation.lng], 13, { duration: 1.0 });
+  // userLocation is intentionally excluded — we only want to re-fly on explicit button tap
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locateTrigger]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 }
