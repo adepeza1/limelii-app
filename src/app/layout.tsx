@@ -5,6 +5,7 @@ import { KindeProvider } from "@kinde-oss/kinde-auth-nextjs";
 import { BottomNav } from "@/components/bottom-nav";
 import { SplashScreen } from "@/components/splash-screen";
 import { ToastProvider } from "@/components/toast";
+import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import "@fontsource/mona-sans/400.css";
 import "@fontsource/mona-sans/500.css";
 import "@fontsource/mona-sans/600.css";
@@ -49,6 +50,7 @@ export default function RootLayout({
               {children}
               <BottomNav />
             </SplashScreen>
+            <OnboardingWalkthrough />
           </ToastProvider>
         </body>
       </html>
