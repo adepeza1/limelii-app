@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useBackHandler } from "@/hooks/useBackHandler";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Collection, SavedCollection } from "@/lib/collections";
 import { createCollection, getCollection } from "@/lib/collections";
 import { CollectionCard, SavedCollectionCard } from "./collection-card";
@@ -34,6 +35,7 @@ export function CollectionsTab({
   mode,
   currentUserId,
 }: CollectionsTabProps) {
+  const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<{ collection: Collection; isOwner: boolean } | null>(null);
   const [loadingCollection, setLoadingCollection] = useState(false);
@@ -168,6 +170,12 @@ export function CollectionsTab({
               <p className="text-[#667085] text-sm max-w-[240px]">
                 Collections you save from others will appear here.
               </p>
+              <button
+                onClick={() => router.push("/saved")}
+                className="mt-1 bg-[#FB6983] text-white font-semibold rounded-2xl px-6 py-2.5 text-sm"
+              >
+                Browse Collections
+              </button>
             </>
           ) : (
             <>

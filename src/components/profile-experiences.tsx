@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2, ClipboardList } from "lucide-react";
 import type { Experience } from "@/app/page";
 import { ExperienceCard } from "./experience-card";
@@ -68,6 +69,7 @@ function DeleteConfirmModal({
 }
 
 export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: ProfileExperiencesProps) {
+  const router = useRouter();
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -168,8 +170,14 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
         </div>
         <p className="text-[#101828] font-semibold text-base">Nothing created yet</p>
         <p className="text-[#667085] text-sm max-w-[240px]">
-          Head to the create tab to create experiences.
+          Use AI to build your first experience in seconds.
         </p>
+        <button
+          onClick={() => router.push("/create")}
+          className="mt-1 bg-[#FB6983] text-white font-semibold rounded-2xl px-6 py-2.5 text-sm"
+        >
+          Create an Experience
+        </button>
       </div>
     );
   }

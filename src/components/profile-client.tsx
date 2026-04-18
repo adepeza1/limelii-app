@@ -173,6 +173,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   const [collectionsCount, setCollectionsCount] = useState<number | null>(null);
   const [createdCount, setCreatedCount] = useState<number | null>(null);
   const [savedExperiences, setSavedExperiences] = useState<Experience[]>([]);
+  const [savedLoading, setSavedLoading] = useState(true);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const savedScrollY = useRef(0);
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFS);
@@ -260,7 +261,8 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
         localStorage.setItem(SAVED_ITEMS_KEY, JSON.stringify(itemsMap));
         localStorage.removeItem(MIGRATION_KEY);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setSavedLoading(false));
   }, []);
 
   useEffect(() => {
@@ -722,7 +724,20 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
           {/* Saved */}
           {activeTab === "saved" && (
             <div className="pt-2">
-              {savedExperiences.length === 0 ? (
+              {savedLoading ? (
+                <div className="px-4 flex gap-1 items-start pb-4">
+                  {[0, 1].map((col) => (
+                    <div key={col} className="flex-1 flex flex-col gap-1">
+                      {[0, 1].map((row) => (
+                        <div
+                          key={row}
+                          className={`w-full rounded-xl bg-gray-100 animate-pulse ${(col === 0 ? row % 2 === 0 : row % 2 === 1) ? "h-[220px]" : "h-[188px]"}`}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ) : savedExperiences.length === 0 ? (
                 <div className="px-5 py-16 flex flex-col items-center gap-3 text-center">
                   <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
                     <Heart className="w-6 h-6 text-gray-400" strokeWidth={1.5} />
@@ -731,6 +746,12 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                   <p className="text-gray-500 text-sm max-w-[220px] leading-relaxed">
                     Tap the heart on any experience to find it here.
                   </p>
+                  <button
+                    onClick={() => router.push("/")}
+                    className="mt-1 bg-[#FF9A56] text-white font-semibold rounded-2xl px-6 py-2.5 text-sm"
+                  >
+                    Discover Experiences
+                  </button>
                 </div>
               ) : (
                 <div className="px-4 pt-2 flex gap-1 items-start">
