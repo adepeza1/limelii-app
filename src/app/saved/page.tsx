@@ -354,6 +354,15 @@ export default function CollectionsPage() {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [followedIds, setFollowedIds] = useState<number[] | null>(null);
   const [followingTabKey, setFollowingTabKey] = useState(0);
+  const [sharedTabKey, setSharedTabKey] = useState(0);
+
+  const [pullY, setPullY] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const ptrStartY = useRef(0);
+  const ptrStartX = useRef(0);
+  const ptrActive = useRef(false);
+  const PULL_THRESHOLD = 65;
+  const PULL_MAX = 80;
 
   const [publicCollections, setPublicCollections] = useState<Collection[]>([]);
   const [browseLoading, setBrowseLoading] = useState(false);
@@ -401,6 +410,47 @@ export default function CollectionsPage() {
     if (!browseLoaded) loadPublicCollections();
   }, [browseLoaded, loadPublicCollections]);
 
+  function doRefresh() {
+    if (activeTab === "browse") {
+      setBrowseLoaded(false);
+      loadPublicCollections();
+    } else if (activeTab === "following") {
+      setFollowingTabKey((k) => k + 1);
+    } else if (activeTab === "shared") {
+      setSharedTabKey((k) => k + 1);
+    }
+    setTimeout(() => setRefreshing(false), 800);
+  }
+
+  function onPTRTouchStart(e: React.TouchEvent) {
+    if (window.scrollY > 0 || refreshing) return;
+    ptrStartY.current = e.touches[0].clientY;
+    ptrStartX.current = e.touches[0].clientX;
+    ptrActive.current = false;
+  }
+
+  function onPTRTouchMove(e: React.TouchEvent) {
+    if (refreshing || window.scrollY > 0) return;
+    const dy = e.touches[0].clientY - ptrStartY.current;
+    const dx = Math.abs(e.touches[0].clientX - ptrStartX.current);
+    if (!ptrActive.current) {
+      if (dy > 8 && dy > dx * 1.5) ptrActive.current = true;
+      else return;
+    }
+    if (dy > 0) setPullY(Math.min(dy * 0.45, PULL_MAX));
+  }
+
+  function onPTRTouchEnd() {
+    ptrActive.current = false;
+    if (pullY >= PULL_THRESHOLD) {
+      setRefreshing(true);
+      setPullY(0);
+      doRefresh();
+    } else {
+      setPullY(0);
+    }
+  }
+
   const filterPills = useMemo(() => {
     const tagSet = new Set<string>();
     for (const col of publicCollections) {
@@ -447,8 +497,33 @@ export default function CollectionsPage() {
   ];
 
   return (
-    <div className="bg-white min-h-screen max-w-5xl mx-auto">
+    <div
+      className="bg-white min-h-screen max-w-5xl mx-auto"
+      onTouchStart={onPTRTouchStart}
+      onTouchMove={onPTRTouchMove}
+      onTouchEnd={onPTRTouchEnd}
+    >
       <div className="h-[env(safe-area-inset-top,44px)]" />
+
+      {/* Pull-to-refresh indicator */}
+      <div
+        className="overflow-hidden flex items-center justify-center gap-2"
+        style={{
+          height: refreshing ? 52 : pullY,
+          transition: pullY === 0 ? "height 0.2s ease-out" : "none",
+        }}
+      >
+        <div
+          className="w-4 h-4 rounded-full border-2 border-[#FB6983]/30"
+          style={{
+            borderTopColor: "#FB6983",
+            animation: refreshing || pullY >= PULL_THRESHOLD ? "spin 0.75s linear infinite" : "none",
+          }}
+        />
+        <span className="text-xs text-[#98A2B3]">
+          {refreshing ? "Refreshing…" : pullY >= PULL_THRESHOLD ? "Release to refresh" : "Pull to refresh"}
+        </span>
+      </div>
 
       {/* Header */}
       <div className="px-5 pt-2 pb-3">
@@ -615,7 +690,7 @@ export default function CollectionsPage() {
           ) : activeTab === "following" ? (
             <FollowingTab key={followingTabKey} allExperiences={allExperiences} currentUserId={currentUserId} followedIds={followedIds} onSwitchToBrowse={() => setActiveTab("browse")} />
           ) : (
-            <SharedTab allExperiences={allExperiences} currentUserId={currentUserId} />
+            <SharedTab key={sharedTabKey} allExperiences={allExperiences} currentUserId={currentUserId} />
           )}
         </>
       )}

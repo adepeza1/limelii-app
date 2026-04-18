@@ -207,7 +207,71 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   const [collectionsLoading, setCollectionsLoading] = useState(false);
   const [allExperiences, setAllExperiences] = useState<Experience[]>([]);
 
+  // Pull-to-refresh
+  const [pullY, setPullY] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const ptrStartY = useRef(0);
+  const ptrStartX = useRef(0);
+  const ptrActive = useRef(false);
+  const PULL_THRESHOLD = 65;
+  const PULL_MAX = 80;
+
   useBackHandler(!!selectedExperience, handleBack);
+
+  async function fetchSaved() {
+    setSavedLoading(true);
+    try {
+      const records = await listSavedExperiences();
+      const res = await fetch(`${API_BASE}/discovery`);
+      const data: DiscoveryResponse = await res.json();
+      const all = Object.values(data.experiences ?? {}).flat();
+      const savedIds = new Set(records.map((r) => r.experiences_id));
+      const matched = all.filter((e) => savedIds.has(e.id));
+      setSavedCount(matched.length);
+      setSavedExperiences(matched);
+      localStorage.setItem(SAVED_KEY, JSON.stringify(matched.map((e) => e.id)));
+      const itemsMap: Record<string, Experience> = {};
+      matched.forEach((e) => { itemsMap[String(e.id)] = e; });
+      localStorage.setItem(SAVED_ITEMS_KEY, JSON.stringify(itemsMap));
+      localStorage.removeItem(MIGRATION_KEY);
+    } catch { /* ignore */ }
+    finally { setSavedLoading(false); }
+  }
+
+  function onPTRTouchStart(e: React.TouchEvent) {
+    if (window.scrollY > 0 || refreshing || showSettings || showAccountSettings) return;
+    ptrStartY.current = e.touches[0].clientY;
+    ptrStartX.current = e.touches[0].clientX;
+    ptrActive.current = false;
+  }
+
+  function onPTRTouchMove(e: React.TouchEvent) {
+    if (refreshing || window.scrollY > 0) return;
+    const dy = e.touches[0].clientY - ptrStartY.current;
+    const dx = Math.abs(e.touches[0].clientX - ptrStartX.current);
+    if (!ptrActive.current) {
+      if (dy > 8 && dy > dx * 1.5) ptrActive.current = true;
+      else return;
+    }
+    if (dy > 0) setPullY(Math.min(dy * 0.45, PULL_MAX));
+  }
+
+  function onPTRTouchEnd() {
+    ptrActive.current = false;
+    if (pullY >= PULL_THRESHOLD) {
+      setRefreshing(true);
+      setPullY(0);
+      if (activeTab === "saved") {
+        fetchSaved();
+      } else if (activeTab === "collections") {
+        setCollectionsLoaded(false);
+        setCollectionsLoading(false);
+      }
+      setTimeout(() => setRefreshing(false), 800);
+    } else {
+      setPullY(0);
+    }
+  }
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -250,25 +314,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
     listCollections()
       .then((data) => setCollectionsCount((data.my_collections?.length ?? 0) + (data.saved_collections?.length ?? 0)))
       .catch(() => setCollectionsCount(0));
-    // Fetch saved list from Xano and sync to localStorage
-    listSavedExperiences()
-      .then(async (records) => {
-        const res = await fetch(`${API_BASE}/discovery`);
-        const data: DiscoveryResponse = await res.json();
-        const all = Object.values(data.experiences ?? {}).flat();
-        const savedIds = new Set(records.map((r) => r.experiences_id));
-        const matched = all.filter((e) => savedIds.has(e.id));
-        setSavedCount(matched.length);
-        setSavedExperiences(matched);
-        // Overwrite localStorage with authoritative Xano data so ExperienceDetail hearts are correct
-        localStorage.setItem(SAVED_KEY, JSON.stringify(matched.map((e) => e.id)));
-        const itemsMap: Record<string, Experience> = {};
-        matched.forEach((e) => { itemsMap[String(e.id)] = e; });
-        localStorage.setItem(SAVED_ITEMS_KEY, JSON.stringify(itemsMap));
-        localStorage.removeItem(MIGRATION_KEY);
-      })
-      .catch(() => {})
-      .finally(() => setSavedLoading(false));
+    fetchSaved();
   }, []);
 
   useEffect(() => {
@@ -367,9 +413,34 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main
+      className="min-h-screen bg-white"
+      onTouchStart={onPTRTouchStart}
+      onTouchMove={onPTRTouchMove}
+      onTouchEnd={onPTRTouchEnd}
+    >
       {/* Safe-area spacer */}
       <div className="h-[env(safe-area-inset-top,44px)]" />
+
+      {/* Pull-to-refresh indicator */}
+      <div
+        className="overflow-hidden flex items-center justify-center gap-2"
+        style={{
+          height: refreshing ? 52 : pullY,
+          transition: pullY === 0 ? "height 0.2s ease-out" : "none",
+        }}
+      >
+        <div
+          className="w-4 h-4 rounded-full border-2 border-[#FB6983]/30"
+          style={{
+            borderTopColor: "#FB6983",
+            animation: refreshing || pullY >= PULL_THRESHOLD ? "spin 0.75s linear infinite" : "none",
+          }}
+        />
+        <span className="text-xs text-[#98A2B3]">
+          {refreshing ? "Refreshing…" : pullY >= PULL_THRESHOLD ? "Release to refresh" : "Pull to refresh"}
+        </span>
+      </div>
 
       {/* ── Settings drawer ─────────────────────────────────────────────────── */}
       {showSettings && (
