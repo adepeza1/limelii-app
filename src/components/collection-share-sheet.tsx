@@ -57,6 +57,14 @@ export function ShareSheet({ title, subtitle, onSend, onClose, shareUrl, shareTi
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   // Filter following list; supplement with search API for non-followers
   useEffect(() => {
     if (!searchQuery.trim()) { setSearchResults([]); return; }

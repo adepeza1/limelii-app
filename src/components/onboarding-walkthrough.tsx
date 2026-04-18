@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { MapPin, Sparkles, ChevronRight } from "lucide-react";
+import { haptic } from "@/lib/haptics";
 
 const KEY = "limelii_walkthrough_v1";
 
@@ -50,17 +51,20 @@ export function OnboardingWalkthrough() {
   }, []);
 
   function dismiss() {
+    haptic("light");
     setLeaving(true);
     if (userId) localStorage.setItem(`${KEY}_${userId}`, "1");
     setTimeout(() => setMounted(false), 350);
   }
 
   function next() {
+    haptic(step === SLIDES.length - 1 ? "success" : "light");
     if (step < SLIDES.length - 1) setStep((s) => s + 1);
     else dismiss();
   }
 
   function prev() {
+    haptic("light");
     if (step > 0) setStep((s) => s - 1);
   }
 

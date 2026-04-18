@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { haptic } from "@/lib/haptics";
 import Link from "next/link";
 import { Search, ArrowLeft, X } from "lucide-react";
 import Image from "next/image";
@@ -99,6 +100,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const ptrStartY = useRef(0);
   const ptrStartX = useRef(0);
   const ptrActive = useRef(false);
+  const ptrHapticFired = useRef(false);
 
   function openExperience(exp: Experience) {
     savedScrollY.current = window.scrollY;
@@ -179,6 +181,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
     ptrStartY.current = e.touches[0].clientY;
     ptrStartX.current = e.touches[0].clientX;
     ptrActive.current = false;
+    ptrHapticFired.current = false;
   }
 
   function onPTRTouchMove(e: React.TouchEvent) {
@@ -189,7 +192,14 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
       if (dy > 8 && dy > dx * 1.5) ptrActive.current = true;
       else return;
     }
-    if (dy > 0) setPullY(Math.min(dy * 0.45, PULL_MAX));
+    if (dy > 0) {
+      const next = Math.min(dy * 0.45, PULL_MAX);
+      if (!ptrHapticFired.current && next >= PULL_THRESHOLD) {
+        haptic("medium");
+        ptrHapticFired.current = true;
+      }
+      setPullY(next);
+    }
   }
 
   function onPTRTouchEnd() {
@@ -309,6 +319,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
               <input
                 ref={searchInputRef}
                 type="text"
+                aria-label="Search experiences"
                 value={searchQuery}
                 onChange={(e) => handleSearchInput(e.target.value)}
                 placeholder="Search experiences..."

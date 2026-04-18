@@ -32,6 +32,14 @@ export function AddToCollectionSheet({
   }, []);
 
   useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
+  useEffect(() => {
     listCollections()
       .then((data) => {
         const cols = data.my_collections ?? [];

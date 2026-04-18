@@ -6,6 +6,7 @@ import type { Experience, Place } from "@/app/page";
 import { AddToCollectionSheet } from "./add-to-collection-sheet";
 import { saveExperience, unsaveExperience } from "@/lib/saved";
 import { useToast } from "@/components/toast";
+import { haptic } from "@/lib/haptics";
 
 function getPlaceImage(place: Place): string | null {
   return (place.display_images ?? []).find((img) => img.url)?.url
@@ -75,6 +76,7 @@ export function ExperienceCard({
 
   async function toggleSave(e: React.MouseEvent) {
     e.stopPropagation();
+    haptic("light");
     if (saved) {
       // Optimistic unsave
       try {
@@ -212,6 +214,7 @@ export function ExperienceCard({
           {location && (
             <p className="text-white/70 text-xs flex items-center gap-1 truncate">
               <svg
+                aria-hidden="true"
                 width="12"
                 height="12"
                 viewBox="0 0 12 12"
