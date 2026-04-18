@@ -16,5 +16,7 @@ export default withAuth(async function middleware(req: NextRequest) {
 });
 
 export const config = {
-  matcher: ["/create/:path*", "/profile/:path*"],
+  matcher: [
+    "/((?!api/auth|auth/callback|_next/static|_next/image|favicon\\.ico).*)",
+  ],
 };
