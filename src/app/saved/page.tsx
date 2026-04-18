@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { haptic } from "@/lib/haptics";
 import { Search, X, SlidersHorizontal } from "lucide-react";
 import type { Experience, DiscoveryResponse } from "@/app/page";
 import type { Collection, SharedCollection, SharedExperience } from "@/lib/collections";
@@ -361,6 +362,7 @@ export default function CollectionsPage() {
   const ptrStartY = useRef(0);
   const ptrStartX = useRef(0);
   const ptrActive = useRef(false);
+  const ptrHapticFired = useRef(false);
   const PULL_THRESHOLD = 65;
   const PULL_MAX = 80;
 
@@ -427,6 +429,7 @@ export default function CollectionsPage() {
     ptrStartY.current = e.touches[0].clientY;
     ptrStartX.current = e.touches[0].clientX;
     ptrActive.current = false;
+    ptrHapticFired.current = false;
   }
 
   function onPTRTouchMove(e: React.TouchEvent) {
@@ -437,7 +440,14 @@ export default function CollectionsPage() {
       if (dy > 8 && dy > dx * 1.5) ptrActive.current = true;
       else return;
     }
-    if (dy > 0) setPullY(Math.min(dy * 0.45, PULL_MAX));
+    if (dy > 0) {
+      const next = Math.min(dy * 0.45, PULL_MAX);
+      if (!ptrHapticFired.current && next >= PULL_THRESHOLD) {
+        haptic("medium");
+        ptrHapticFired.current = true;
+      }
+      setPullY(next);
+    }
   }
 
   function onPTRTouchEnd() {
