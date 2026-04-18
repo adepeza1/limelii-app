@@ -220,6 +220,18 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
 
   useBackHandler(!!selectedExperience, handleBack);
 
+  useEffect(() => {
+    if (!showSettings && !showAccountSettings) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        if (showAccountSettings) setShowAccountSettings(false);
+        else setShowSettings(false);
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [showSettings, showAccountSettings]);
+
   async function fetchSaved() {
     setSavedLoading(true);
     try {
@@ -476,6 +488,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-base font-semibold text-gray-900">Settings</h2>
                 <button
+                  autoFocus
                   onClick={() => { setShowSettings(false); setDragY(0); }}
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
                 >
@@ -545,7 +558,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
               {/* Display name */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-[#98A2B3] uppercase tracking-wide">Display Name</label>
+                  <label htmlFor="display-name" className="text-xs font-semibold text-[#98A2B3] uppercase tracking-wide">Display Name</label>
                   {xanoNameInput.trim() && xanoNameInput.trim() !== xanoName && (
                     <button
                       disabled={savingDisplayName}
@@ -574,6 +587,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                   )}
                 </div>
                 <input
+                  id="display-name"
                   value={xanoNameInput}
                   onChange={(e) => { setXanoNameInput(e.target.value); setDisplayNameSaved(false); }}
                   placeholder="Your display name"
@@ -587,7 +601,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
               {/* Username */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-[#98A2B3] uppercase tracking-wide">Username</label>
+                  <label htmlFor="username" className="text-xs font-semibold text-[#98A2B3] uppercase tracking-wide">Username</label>
                   {usernameInput.trim() && usernameInput !== username && usernameAvailability !== "taken" && usernameAvailability !== "checking" && (
                     <button
                       disabled={savingUsername}
@@ -619,6 +633,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[#98A2B3]">@</span>
                   <input
+                    id="username"
                     value={usernameInput}
                     onChange={(e) => {
                       const val = e.target.value.replace(/\s/g, "").toLowerCase();

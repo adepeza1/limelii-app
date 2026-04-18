@@ -319,6 +319,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
               <input
                 ref={searchInputRef}
                 type="text"
+                aria-label="Search experiences"
                 value={searchQuery}
                 onChange={(e) => handleSearchInput(e.target.value)}
                 placeholder="Search experiences..."

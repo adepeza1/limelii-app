@@ -214,6 +214,7 @@ export function ExperienceCard({
           {location && (
             <p className="text-white/70 text-xs flex items-center gap-1 truncate">
               <svg
+                aria-hidden="true"
                 width="12"
                 height="12"
                 viewBox="0 0 12 12"

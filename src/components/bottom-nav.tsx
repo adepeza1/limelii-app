@@ -38,7 +38,7 @@ const tabs: Tab[] = [
 
 function DiscoverIcon({ color }: { color: string }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M9.34706 16.2668V6.41979C9.34706 5.08779 8.26806 4.00879 6.93606 4.00879C5.83706 4.00879 4.87806 4.75179 4.60206 5.81479L2.11206 15.4248" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M8.27191 13.7284C9.7067 15.1632 9.7067 17.4895 8.27191 18.9243C6.83712 20.359 4.51088 20.359 3.07609 18.9243C1.6413 17.4895 1.6413 15.1632 3.07609 13.7284C4.51088 12.2936 6.83712 12.2936 8.27191 13.7284" stroke={color} strokeWidth="1.5"/>
       <path d="M14.6528 16.2668V6.41979C14.6528 5.08779 15.7318 4.00879 17.0638 4.00879C18.1628 4.00879 19.1218 4.75179 19.3978 5.81479L21.8878 15.4248" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -51,7 +51,7 @@ function DiscoverIcon({ color }: { color: string }) {
 
 function FolderIcon({ color }: { color: string }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
@@ -69,7 +69,7 @@ export function BottomNav() {
   if (pathname === "/onboarding") return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[750] bg-white border-t border-gray-100" style={{ touchAction: "manipulation" }}>
+    <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-[750] bg-white border-t border-gray-100" style={{ touchAction: "manipulation" }}>
       <div className="max-w-5xl mx-auto flex items-end justify-around px-4" style={{ paddingTop: 4, paddingBottom: "calc(env(safe-area-inset-bottom) + 2px)" }}>
         {tabs.map((tab) => {
           const isActive =
@@ -99,6 +99,7 @@ export function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
+              aria-current={isActive ? "page" : undefined}
               className="flex flex-col items-center gap-1 min-w-[56px] cursor-pointer"
               style={{ touchAction: "manipulation" }}
               onClick={tab.href === "/plan" && pathname.startsWith("/plan") ? () => window.dispatchEvent(new CustomEvent("explore-tab-clicked")) : undefined}
