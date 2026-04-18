@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { ProfileExperiences } from "@/components/profile-experiences";
 import { CollectionsTab } from "@/components/collections-tab";
+import { useToast } from "@/components/toast";
 import type { Experience } from "@/app/page";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
@@ -167,6 +168,7 @@ function loadPreferences(): UserPreferences {
 // ─── Component ────────────────────────────────────────────────────────────────
 export function ProfileClient({ givenName, familyName, email, initialTab = "created", initialCreating = false }: ProfileClientProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [creating, setCreating] = useState(initialCreating);
   const [savedCount, setSavedCount] = useState(0);
@@ -219,7 +221,11 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
         const data = await res.json();
         const url = data?.photo?.url ?? null;
         if (url) setAvatarUrl(url);
+      } else {
+        toast("Couldn't upload photo", "error");
       }
+    } catch {
+      toast("Couldn't upload photo", "error");
     } finally {
       setUploadingAvatar(false);
       // Reset so the same file can be re-selected
@@ -470,7 +476,14 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ name: xanoNameInput.trim() }),
                           });
-                          if (res.ok) { setXanoName(xanoNameInput.trim()); setDisplayNameSaved(true); }
+                          if (res.ok) {
+                            setXanoName(xanoNameInput.trim());
+                            setDisplayNameSaved(true);
+                          } else {
+                            toast("Couldn't save display name", "error");
+                          }
+                        } catch {
+                          toast("Couldn't save display name", "error");
                         } finally { setSavingDisplayName(false); }
                       }}
                       className="text-xs font-semibold text-[#FB6983] disabled:opacity-50"
@@ -505,7 +518,15 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ username: usernameInput.trim() }),
                           });
-                          if (res.ok) { setUsername(usernameInput.trim()); setUsernameSaved(true); setUsernameAvailability("idle"); }
+                          if (res.ok) {
+                            setUsername(usernameInput.trim());
+                            setUsernameSaved(true);
+                            setUsernameAvailability("idle");
+                          } else {
+                            toast("Couldn't save username", "error");
+                          }
+                        } catch {
+                          toast("Couldn't save username", "error");
                         } finally { setSavingUsername(false); }
                       }}
                       className="text-xs font-semibold text-[#FB6983] disabled:opacity-50"

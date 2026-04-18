@@ -278,15 +278,17 @@ export function CollectionDetail({
           shareTitle={localCollection.name}
           onClose={() => setShowShareSheet(false)}
           onSend={async (userIds) => {
-            await Promise.all(
+            const results = await Promise.allSettled(
               userIds.map((userId) =>
                 fetch(`/api/collections/${localCollection.id}/share-to-user`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ recipient_user_id: userId }),
-                })
+                }).then((r) => { if (!r.ok) throw new Error(); })
               )
             );
+            const failed = results.filter((r) => r.status === "rejected").length;
+            if (failed > 0) throw new Error(`Failed to share with ${failed} recipient(s)`);
           }}
         />
       )}

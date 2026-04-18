@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, ClipboardList } from "lucide-react";
+import { useToast } from "@/components/toast";
 import type { Experience } from "@/app/page";
 import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
@@ -70,6 +71,7 @@ function DeleteConfirmModal({
 
 export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: ProfileExperiencesProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,7 +128,11 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
         setExperiences(updated);
         onCountLoaded?.(updated.length);
         setDeleteTarget(null);
+      } else {
+        toast("Couldn't delete experience", "error");
       }
+    } catch {
+      toast("Couldn't delete experience", "error");
     } finally {
       setDeleting(false);
     }

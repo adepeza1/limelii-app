@@ -4,6 +4,7 @@ import { Inter, Poppins } from "next/font/google";
 import { KindeProvider } from "@kinde-oss/kinde-auth-nextjs";
 import { BottomNav } from "@/components/bottom-nav";
 import { SplashScreen } from "@/components/splash-screen";
+import { ToastProvider } from "@/components/toast";
 import "@fontsource/mona-sans/400.css";
 import "@fontsource/mona-sans/500.css";
 import "@fontsource/mona-sans/600.css";
@@ -43,10 +44,12 @@ export default function RootLayout({
             src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
             strategy="beforeInteractive"
           />
-          <SplashScreen>
-            {children}
-            <BottomNav />
-          </SplashScreen>
+          <ToastProvider>
+            <SplashScreen>
+              {children}
+              <BottomNav />
+            </SplashScreen>
+          </ToastProvider>
         </body>
       </html>
     </KindeProvider>

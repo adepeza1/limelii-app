@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { ChevronLeft, Send, Maximize2 } from "lucide-react";
 import { ShareSheet } from "./collection-share-sheet";
+import { useToast } from "@/components/toast";
 
 const SAVED_KEY = "limelii_saved";
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -46,12 +47,6 @@ function toggleSaved(experience: Experience): boolean {
   }
   localStorage.setItem(SAVED_KEY, JSON.stringify(ids));
   localStorage.setItem(SAVED_ITEMS_KEY, JSON.stringify(items));
-  // Sync to server in the background — don't block the UI
-  if (saving) {
-    saveExperience(experience.id).catch(() => {});
-  } else {
-    unsaveExperience(experience.id).catch(() => {});
-  }
   return saving;
 }
 import dynamic from "next/dynamic";
@@ -155,6 +150,7 @@ export function ExperienceDetail({
   backLabel?: string;
 }) {
   const [activeSlide, setActiveSlide] = useState(0);
+  const { toast } = useToast();
   const [mapExpanded, setMapExpanded] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showCollectionSheet, setShowCollectionSheet] = useState(false);
@@ -258,9 +254,15 @@ export function ExperienceDetail({
       <div className="px-4 pt-2 pb-4 flex items-start gap-3">
         <p className="flex-1 text-[13px] text-black leading-5">{experience.description}</p>
         <button
-          onClick={() => {
+          onClick={async () => {
             if (saved) {
-              setSaved(toggleSaved(experience));
+              setSaved(toggleSaved(experience)); // optimistic
+              try {
+                await unsaveExperience(experience.id);
+              } catch {
+                setSaved(toggleSaved(experience)); // rollback
+                toast("Couldn't unsave — please try again", "error");
+              }
             } else {
               setShowCollectionSheet(true);
             }
@@ -403,7 +405,15 @@ export function ExperienceDetail({
       {showCollectionSheet && (
         <AddToCollectionSheet
           experienceId={experience.id}
-          onFlatSave={() => setSaved(toggleSaved(experience))}
+          onFlatSave={async () => {
+            setSaved(toggleSaved(experience)); // optimistic
+            try {
+              await saveExperience(experience.id);
+            } catch {
+              setSaved(toggleSaved(experience)); // rollback
+              toast("Couldn't save — please try again", "error");
+            }
+          }}
           onClose={() => setShowCollectionSheet(false)}
         />
       )}
@@ -416,15 +426,17 @@ export function ExperienceDetail({
           shareTitle={experience.title}
           onClose={() => setShowShareSheet(false)}
           onSend={async (userIds) => {
-            await Promise.all(
+            const results = await Promise.allSettled(
               userIds.map((userId) =>
                 fetch(`/api/experiences/${experience.id}/share-to-user`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ recipient_user_id: userId }),
-                })
+                }).then((r) => { if (!r.ok) throw new Error(); })
               )
             );
+            const failed = results.filter((r) => r.status === "rejected").length;
+            if (failed > 0) throw new Error(`Failed to share with ${failed} recipient(s)`);
           }}
         />
       )}
