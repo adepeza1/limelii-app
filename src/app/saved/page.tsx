@@ -27,6 +27,32 @@ import {
 
 type CollectionsPageTab = "browse" | "following" | "shared";
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function CollectionCardSkeleton() {
+  return (
+    <div className="rounded-2xl overflow-hidden bg-white border border-[#F2F4F7] animate-pulse">
+      <div className="h-36 bg-gray-100" />
+      <div className="p-4 flex flex-col gap-2.5">
+        <div className="h-4 w-2/3 bg-gray-100 rounded-full" />
+        <div className="h-3 w-1/2 bg-gray-100 rounded-full" />
+        <div className="flex gap-2 mt-1">
+          <div className="h-5 w-16 bg-gray-100 rounded-full" />
+          <div className="h-5 w-20 bg-gray-100 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CollectionSkeletons() {
+  return (
+    <div className="px-5 pb-28 flex flex-col gap-4 pt-2">
+      {[1, 2, 3].map((i) => <CollectionCardSkeleton key={i} />)}
+    </div>
+  );
+}
+
 // ─── Browse Tab ───────────────────────────────────────────────────────────────
 
 function BrowseTab({
@@ -70,9 +96,7 @@ function BrowseTab({
       </div>
 
       {loading ? (
-        <div className="px-5 py-16 flex items-center justify-center">
-          <p className="text-sm text-[#667085]">Loading collections…</p>
-        </div>
+        <CollectionSkeletons />
       ) : collections.length === 0 ? (
         <div className="px-5 py-16 flex flex-col items-center gap-3 text-center">
           <div className="w-14 h-14 rounded-2xl bg-[#FFF0F3] flex items-center justify-center">
@@ -110,7 +134,7 @@ function BrowseTab({
 
 // ─── Following Tab ────────────────────────────────────────────────────────────
 
-function FollowingTab({ allExperiences, currentUserId, followedIds }: { allExperiences: Experience[]; currentUserId?: number | null; followedIds?: number[] | null }) {
+function FollowingTab({ allExperiences, currentUserId, followedIds, onSwitchToBrowse }: { allExperiences: Experience[]; currentUserId?: number | null; followedIds?: number[] | null; onSwitchToBrowse: () => void }) {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -123,11 +147,7 @@ function FollowingTab({ allExperiences, currentUserId, followedIds }: { allExper
   }, []);
 
   if (loading) {
-    return (
-      <div className="px-5 py-16 flex items-center justify-center">
-        <p className="text-sm text-[#667085]">Loading…</p>
-      </div>
-    );
+    return <CollectionSkeletons />;
   }
 
   if (collections.length === 0) {
@@ -142,8 +162,14 @@ function FollowingTab({ allExperiences, currentUserId, followedIds }: { allExper
         </div>
         <p className="text-[#101828] font-semibold text-base">No followed users yet</p>
         <p className="text-[#667085] text-sm max-w-[240px]">
-          Follow users from Browse to see their collections here.
+          Follow people from Browse to see their collections here.
         </p>
+        <button
+          onClick={onSwitchToBrowse}
+          className="mt-1 bg-[#667085] text-white font-semibold rounded-2xl px-6 py-2.5 text-sm"
+        >
+          Browse Collections
+        </button>
       </div>
     );
   }
@@ -186,11 +212,7 @@ function SharedTab({ allExperiences, currentUserId }: { allExperiences: Experien
   }, []);
 
   if (loading) {
-    return (
-      <div className="px-5 py-16 flex items-center justify-center">
-        <p className="text-sm text-[#667085]">Loading…</p>
-      </div>
-    );
+    return <CollectionSkeletons />;
   }
 
   if (collections.length === 0 && experiences.length === 0) {
@@ -591,7 +613,7 @@ export default function CollectionsPage() {
               followedIds={followedIds}
             />
           ) : activeTab === "following" ? (
-            <FollowingTab key={followingTabKey} allExperiences={allExperiences} currentUserId={currentUserId} followedIds={followedIds} />
+            <FollowingTab key={followingTabKey} allExperiences={allExperiences} currentUserId={currentUserId} followedIds={followedIds} onSwitchToBrowse={() => setActiveTab("browse")} />
           ) : (
             <SharedTab allExperiences={allExperiences} currentUserId={currentUserId} />
           )}

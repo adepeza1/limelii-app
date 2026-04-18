@@ -48,31 +48,51 @@ export function ExperienceCard({
     } catch { /* ignore */ }
   }, [experience.id]);
 
-  function flatSave() {
-    // Update localStorage for instant UI
+  async function flatSave() {
+    // Optimistic update
     try {
       const items = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "{}");
-      items[experience.id] = experience;
+      items[String(experience.id)] = experience;
       localStorage.setItem(SAVED_KEY, JSON.stringify(items));
     } catch { /* ignore */ }
     setSaved(true);
-    // Persist to server (fire and forget — localStorage is source of truth for UI)
-    saveExperience(experience.id).catch(() => { /* ignore */ });
-  }
 
-  function toggleSave(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (saved) {
-      // Unsave
+    // Persist to server; roll back UI if it fails
+    try {
+      await saveExperience(experience.id);
+    } catch {
       try {
         const items = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "{}");
-        delete items[experience.id];
+        delete items[String(experience.id)];
+        localStorage.setItem(SAVED_KEY, JSON.stringify(items));
+      } catch { /* ignore */ }
+      setSaved(false);
+    }
+  }
+
+  async function toggleSave(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (saved) {
+      // Optimistic unsave
+      try {
+        const items = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "{}");
+        delete items[String(experience.id)];
         localStorage.setItem(SAVED_KEY, JSON.stringify(items));
       } catch { /* ignore */ }
       setSaved(false);
       onUnsave?.(experience.id);
-      // Remove from server (fire and forget)
-      unsaveExperience(experience.id).catch(() => { /* ignore */ });
+
+      // Sync to server; roll back if it fails
+      try {
+        await unsaveExperience(experience.id);
+      } catch {
+        try {
+          const items = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "{}");
+          items[String(experience.id)] = experience;
+          localStorage.setItem(SAVED_KEY, JSON.stringify(items));
+        } catch { /* ignore */ }
+        setSaved(true);
+      }
     } else {
       // Open sheet to choose flat save or collection
       setShowCollectionSheet(true);
