@@ -71,7 +71,7 @@ export function OnboardingWalkthrough() {
 
   return (
     <div
-      className={`fixed inset-x-0 top-0 h-[100dvh] z-[500] transition-opacity duration-300 ${
+      className={`fixed inset-x-0 top-0 h-[100dvh] z-[800] transition-opacity duration-300 ${
         visible && !leaving ? "opacity-100" : "opacity-0"
       }`}
       onTouchStart={(e) => {
