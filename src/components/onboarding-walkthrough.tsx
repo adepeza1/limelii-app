@@ -71,7 +71,7 @@ export function OnboardingWalkthrough() {
 
   return (
     <div
-      className={`fixed inset-0 z-[500] transition-opacity duration-300 ${
+      className={`fixed inset-x-0 top-0 h-[100dvh] z-[500] transition-opacity duration-300 ${
         visible && !leaving ? "opacity-100" : "opacity-0"
       }`}
       onTouchStart={(e) => {
@@ -136,7 +136,7 @@ export function OnboardingWalkthrough() {
       {/* Controls — always on top */}
       <div
         className="absolute bottom-0 left-0 right-0 flex flex-col items-center gap-5 px-6"
-        style={{ paddingBottom: "max(2.5rem, calc(env(safe-area-inset-bottom) + 1.5rem))" }}
+        style={{ paddingBottom: "max(4rem, calc(env(safe-area-inset-bottom) + 3rem))" }}
       >
         {/* Dot indicators */}
         <div className="flex items-center gap-2">
