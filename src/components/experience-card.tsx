@@ -5,6 +5,7 @@ import Image from "next/image";
 import type { Experience, Place } from "@/app/page";
 import { AddToCollectionSheet } from "./add-to-collection-sheet";
 import { saveExperience, unsaveExperience } from "@/lib/saved";
+import { useToast } from "@/components/toast";
 
 function getPlaceImage(place: Place): string | null {
   return (place.display_images ?? []).find((img) => img.url)?.url
@@ -33,6 +34,7 @@ export function ExperienceCard({
   onUnsave?: (id: number) => void;
   distanceMiles?: number;
 }) {
+  const { toast } = useToast();
   const [activeIndex, setActiveIndex] = useState(0);
   const [visible, setVisible] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -67,6 +69,7 @@ export function ExperienceCard({
         localStorage.setItem(SAVED_KEY, JSON.stringify(items));
       } catch { /* ignore */ }
       setSaved(false);
+      toast("Couldn't save — please try again", "error");
     }
   }
 
@@ -92,6 +95,7 @@ export function ExperienceCard({
           localStorage.setItem(SAVED_KEY, JSON.stringify(items));
         } catch { /* ignore */ }
         setSaved(true);
+        toast("Couldn't unsave — please try again", "error");
       }
     } else {
       // Open sheet to choose flat save or collection
