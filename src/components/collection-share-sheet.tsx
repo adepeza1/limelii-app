@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X, Search, Check, Link2, ChevronRight } from "lucide-react";
+import { useToast } from "@/components/toast";
 
 export interface ShareUser {
   id: number;
@@ -38,6 +39,7 @@ function extractPhotoUrl(user: ShareUser): string | null {
 }
 
 export function ShareSheet({ title, subtitle, onSend, onClose, shareUrl, shareTitle }: ShareSheetProps) {
+  const { toast } = useToast();
   const [followedUsers, setFollowedUsers] = useState<ShareUser[]>([]);
   const [searchResults, setSearchResults] = useState<ShareUser[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -94,6 +96,8 @@ export function ShareSheet({ title, subtitle, onSend, onClose, shareUrl, shareTi
       await onSend(Array.from(selected));
       setSent(true);
       setTimeout(onClose, 1200);
+    } catch {
+      toast("Couldn't send — please try again", "error");
     } finally {
       setSending(false);
     }
@@ -102,11 +106,19 @@ export function ShareSheet({ title, subtitle, onSend, onClose, shareUrl, shareTi
   async function handleShareLink() {
     if (!shareUrl) return;
     if (typeof navigator !== "undefined" && navigator.share) {
-      await navigator.share({ title: shareTitle, url: shareUrl }).catch(() => {});
+      try {
+        await navigator.share({ title: shareTitle, url: shareUrl });
+      } catch {
+        // User dismissed — no feedback needed
+      }
     } else {
-      await navigator.clipboard.writeText(shareUrl).catch(() => {});
-      setLinkState("copied");
-      setTimeout(() => setLinkState("idle"), 2000);
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setLinkState("copied");
+        setTimeout(() => setLinkState("idle"), 2000);
+      } catch {
+        toast("Couldn't copy link", "error");
+      }
     }
   }
 
@@ -242,15 +254,17 @@ export function CollectionShareSheet({ collectionId, collectionName, onClose, sh
       shareUrl={shareUrl}
       shareTitle={collectionName}
       onSend={async (userIds) => {
-        await Promise.all(
+        const results = await Promise.allSettled(
           userIds.map((userId) =>
             fetch(`/api/collections/${collectionId}/share-to-user`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ recipient_user_id: userId }),
-            })
+            }).then((r) => { if (!r.ok) throw new Error(); })
           )
         );
+        const failed = results.filter((r) => r.status === "rejected").length;
+        if (failed > 0) throw new Error(`Failed to share with ${failed} recipient(s)`);
       }}
     />
   );

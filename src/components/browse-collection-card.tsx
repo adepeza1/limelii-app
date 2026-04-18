@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useBackHandler } from "@/hooks/useBackHandler";
 import Link from "next/link";
 import { Heart, MessageCircle, X, Send, ChevronLeft, Trash2, MapPin, ChevronRight, MoreVertical, Lock, Globe } from "lucide-react";
+import { useToast } from "@/components/toast";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import { CollectionShareSheet } from "@/components/collection-share-sheet";
@@ -139,6 +140,7 @@ export function CommentsSheet({
   collectionId: number;
   onClose: () => void;
 }) {
+  const { toast } = useToast();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
@@ -147,7 +149,7 @@ export function CommentsSheet({
 
   useEffect(() => {
     fetch(`/api/collections/${collectionId}/comments`)
-      .then((r) => r.json())
+      .then((r) => r.ok ? r.json() : [])
       .then((data) => setComments(Array.isArray(data) ? data : []))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -173,7 +175,11 @@ export function CommentsSheet({
           const data = await refreshed.json();
           setComments(Array.isArray(data) ? data : []);
         }
+      } else {
+        toast("Couldn't post comment", "error");
       }
+    } catch {
+      toast("Couldn't post comment", "error");
     } finally {
       setPosting(false);
     }
@@ -181,7 +187,17 @@ export function CommentsSheet({
 
   async function handleDelete(commentId: number) {
     setComments((prev) => prev.filter((c) => c.id !== commentId));
-    await fetch(`/api/collections/${collectionId}/comments/${commentId}`, { method: "DELETE" });
+    try {
+      const res = await fetch(`/api/collections/${collectionId}/comments/${commentId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+    } catch {
+      // Rollback — re-fetch authoritative list
+      fetch(`/api/collections/${collectionId}/comments`)
+        .then((r) => r.ok ? r.json() : [])
+        .then((data) => setComments(Array.isArray(data) ? data : []))
+        .catch(() => {});
+      toast("Couldn't delete comment", "error");
+    }
   }
 
   return (
@@ -268,6 +284,7 @@ export function BrowseCollectionCard({
   followedIds?: number[] | null;
   onDeleted?: () => void;
 }) {
+  const { toast } = useToast();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const col = collection as any;
 
@@ -424,6 +441,7 @@ export function BrowseCollectionCard({
       const reverted = getLikedIds().filter((id) => id !== collection.id);
       if (liked) reverted.push(collection.id);
       localStorage.setItem(LIKED_KEY, JSON.stringify(reverted));
+      toast("Couldn't update like", "error");
     }
   }
 
@@ -452,11 +470,11 @@ export function BrowseCollectionCard({
         localStorage.setItem(FOLLOWED_KEY, JSON.stringify(reverted));
       }
     } catch {
-      // Revert
       setFollowing(!next);
       const reverted = getFollowedIds().filter((id) => id !== ownerId);
       if (!next) reverted.push(ownerId);
       localStorage.setItem(FOLLOWED_KEY, JSON.stringify(reverted));
+      toast(`Couldn't ${next ? "follow" : "unfollow"} user`, "error");
     }
   }
 
@@ -471,7 +489,11 @@ export function BrowseCollectionCard({
         } else {
           setDeleted(true);
         }
+      } else {
+        toast("Couldn't delete collection", "error");
       }
+    } catch {
+      toast("Couldn't delete collection", "error");
     } finally {
       setDeleting(false);
     }
@@ -488,7 +510,11 @@ export function BrowseCollectionCard({
       if (res.ok) {
         setIsPublic((prev) => !prev);
         setShowPrivacyConfirm(false);
+      } else {
+        toast("Couldn't update visibility", "error");
       }
+    } catch {
+      toast("Couldn't update visibility", "error");
     } finally {
       setTogglingPrivacy(false);
     }
