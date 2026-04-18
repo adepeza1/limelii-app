@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { Search, ArrowLeft, X } from "lucide-react";
 import Image from "next/image";
@@ -67,6 +67,15 @@ function scoreExperience(exp: Experience, prefs: StoredPrefs): number {
   return score;
 }
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 /** Convert snake_case keys to readable titles */
 function formatSectionTitle(key: string): string {
   return key
@@ -77,11 +86,19 @@ function formatSectionTitle(key: string): string {
 
 export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const [activeCategory, setActiveCategory] = useState<number>(0);
-  const [sections, setSections] = useState<Record<string, Experience[]>>(
-    data.experiences
-  );
+  const [baseSections, setBaseSections] = useState<Record<string, Experience[]>>(data.experiences);
+  const [sections, setSections] = useState<Record<string, Experience[]>>(data.experiences);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const savedScrollY = useRef(0);
+
+  // Pull-to-refresh
+  const PULL_THRESHOLD = 65;
+  const PULL_MAX = 80;
+  const [pullY, setPullY] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const ptrStartY = useRef(0);
+  const ptrStartX = useRef(0);
+  const ptrActive = useRef(false);
 
   function openExperience(exp: Experience) {
     savedScrollY.current = window.scrollY;
@@ -131,12 +148,10 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
     ...[...data.experience_categories].sort((a, b) => a.id - b.id),
   ];
 
-  function filterByCategory(categoryId: number): Record<string, Experience[]> {
-    if (categoryId === 0) return data.experiences;
-
-    // Filter each section to only experiences matching this category_id
+  function filterByCategory(categoryId: number, base: Record<string, Experience[]>): Record<string, Experience[]> {
+    if (categoryId === 0) return base;
     const result: Record<string, Experience[]> = {};
-    for (const [key, exps] of Object.entries(data.experiences)) {
+    for (const [key, exps] of Object.entries(base)) {
       const matching = exps.filter((exp) => exp.category_id === categoryId);
       if (matching.length > 0) result[key] = matching;
     }
@@ -145,7 +160,47 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
 
   function handleCategoryChange(categoryId: number) {
     setActiveCategory(categoryId);
-    setSections(filterByCategory(categoryId));
+    setSections(filterByCategory(categoryId, baseSections));
+  }
+
+  const doRefresh = useCallback(() => {
+    const shuffled: Record<string, Experience[]> = {};
+    for (const [key, exps] of Object.entries(data.experiences)) {
+      shuffled[key] = shuffle(exps);
+    }
+    setBaseSections(shuffled);
+    setSections(filterByCategory(activeCategory, shuffled));
+    setTimeout(() => setRefreshing(false), 600);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory]);
+
+  function onPTRTouchStart(e: React.TouchEvent) {
+    if (window.scrollY > 0 || refreshing) return;
+    ptrStartY.current = e.touches[0].clientY;
+    ptrStartX.current = e.touches[0].clientX;
+    ptrActive.current = false;
+  }
+
+  function onPTRTouchMove(e: React.TouchEvent) {
+    if (refreshing || window.scrollY > 0) return;
+    const dy = e.touches[0].clientY - ptrStartY.current;
+    const dx = Math.abs(e.touches[0].clientX - ptrStartX.current);
+    if (!ptrActive.current) {
+      if (dy > 8 && dy > dx * 1.5) ptrActive.current = true;
+      else return;
+    }
+    if (dy > 0) setPullY(Math.min(dy * 0.45, PULL_MAX));
+  }
+
+  function onPTRTouchEnd() {
+    ptrActive.current = false;
+    if (pullY >= PULL_THRESHOLD) {
+      setRefreshing(true);
+      setPullY(0);
+      doRefresh();
+    } else {
+      setPullY(0);
+    }
   }
 
   function openSearch() {
@@ -216,8 +271,33 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   }
 
   return (
-    <div className="bg-white min-h-screen max-w-5xl mx-auto relative">
+    <div
+      className="bg-white min-h-screen max-w-5xl mx-auto relative"
+      onTouchStart={onPTRTouchStart}
+      onTouchMove={onPTRTouchMove}
+      onTouchEnd={onPTRTouchEnd}
+    >
       <div className="h-[env(safe-area-inset-top,44px)]" />
+
+      {/* Pull-to-refresh indicator */}
+      <div
+        className="overflow-hidden flex items-center justify-center gap-2"
+        style={{
+          height: refreshing ? 52 : pullY,
+          transition: pullY === 0 ? "height 0.2s ease-out" : "none",
+        }}
+      >
+        <div
+          className="w-4 h-4 rounded-full border-2 border-[#FB6983]/30"
+          style={{
+            borderTopColor: "#FB6983",
+            animation: refreshing || pullY >= PULL_THRESHOLD ? "spin 0.75s linear infinite" : "none",
+          }}
+        />
+        <span className="text-xs text-[#98A2B3]">
+          {refreshing ? "Refreshing…" : pullY >= PULL_THRESHOLD ? "Release to refresh" : "Pull to refresh"}
+        </span>
+      </div>
       {/* Top Bar */}
       <header className="sticky top-0 z-10 bg-white">
         {searchOpen ? (
