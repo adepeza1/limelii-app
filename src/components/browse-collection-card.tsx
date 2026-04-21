@@ -20,10 +20,25 @@ interface Comment {
   collection_id: number;
   text?: string;
   comment_text?: string;
-  _user?: { username?: string; name?: string };
+  _user?: {
+    username?: string;
+    name?: string;
+    photo?: string | { url: string };
+    profile_photo_url?: string | { url: string };
+    picture?: string | { url: string };
+  };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// Xano image fields can be a plain URL string or a file object {url: string}.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractUrl(val: any): string | null {
+  if (!val) return null;
+  if (typeof val === "string") return val || null;
+  if (typeof val === "object" && typeof val.url === "string") return val.url || null;
+  return null;
+}
 
 export function getExpImage(exp: Experience): string | null {
   for (const p of exp.places_id ?? []) {
@@ -221,8 +236,17 @@ export function CommentsSheet({
           ) : (
             comments.map((c) => (
               <div key={c.id} className="flex gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-[#F2F4F7] flex items-center justify-center text-[10px] font-bold text-[#667085] shrink-0">
-                  {(c._user?.username ?? c._user?.name ?? "?").slice(0, 2).toUpperCase()}
+                <div className="w-7 h-7 rounded-full bg-[#F2F4F7] flex items-center justify-center text-[10px] font-bold text-[#667085] shrink-0 overflow-hidden">
+                  {(() => {
+                    const photo =
+                      extractUrl(c._user?.photo) ??
+                      extractUrl(c._user?.profile_photo_url) ??
+                      extractUrl(c._user?.picture);
+                    const initials = (c._user?.username ?? c._user?.name ?? "?").slice(0, 2).toUpperCase();
+                    return photo
+                      ? <img src={photo} alt={initials} className="w-full h-full object-cover" />
+                      : initials;
+                  })()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
@@ -393,14 +417,6 @@ export function BrowseCollectionCard({
   const ownerHandle = collection._users?.username ?? collection.owner_handle;
   const ownerId = collection._users?.id ?? col.users_id;
 
-  // Xano image fields can be a plain URL string or a file object {url: string}.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function extractUrl(val: any): string | null {
-    if (!val) return null;
-    if (typeof val === "string") return val || null;
-    if (typeof val === "object" && typeof val.url === "string") return val.url || null;
-    return null;
-  }
   const ownerPhoto =
     extractUrl(collection._users?.photo) ??
     extractUrl(collection._users?.profile_photo_url) ??
