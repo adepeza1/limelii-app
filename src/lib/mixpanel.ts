@@ -5,6 +5,7 @@ const TOKEN = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
 let initialized = false;
 
 export function initMixpanel() {
+  console.log("[Mixpanel] initMixpanel called, TOKEN:", TOKEN ? "set" : "missing");
   if (initialized || typeof window === "undefined") return;
   if (!TOKEN) {
     console.warn("[Mixpanel] NEXT_PUBLIC_MIXPANEL_TOKEN is not set");
