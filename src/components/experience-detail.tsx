@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ChevronLeft, Send, Maximize2, MoreVertical } from "lucide-react";
 import { ShareSheet } from "./collection-share-sheet";
 import { ReportModal } from "./report-modal";
+import { track } from "@/lib/mixpanel";
 import { useToast } from "@/components/toast";
 
 const SAVED_KEY = "limelii_saved";
@@ -192,6 +193,7 @@ export function ExperienceDetail({
   // Sync saved state from localStorage on mount
   useEffect(() => {
     setSaved(getSaved().includes(experience.id));
+    track("Experience Viewed", { experience_id: experience.id, title: experience.title });
   }, [experience.id]);
 
   const placesWithImages = experience.places_id.filter(
@@ -267,6 +269,7 @@ export function ExperienceDetail({
           onClick={async () => {
             if (saved) {
               setSaved(toggleSaved(experience)); // optimistic
+              track("Experience Unsaved", { experience_id: experience.id, title: experience.title });
               try {
                 await unsaveExperience(experience.id);
               } catch {
@@ -274,6 +277,7 @@ export function ExperienceDetail({
                 toast("Couldn't unsave — please try again", "error");
               }
             } else {
+              track("Experience Saved", { experience_id: experience.id, title: experience.title });
               setShowCollectionSheet(true);
             }
           }}

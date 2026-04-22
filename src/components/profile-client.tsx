@@ -5,6 +5,7 @@ import { haptic } from "@/lib/haptics";
 import { useRouter } from "next/navigation";
 import { useBackHandler } from "@/hooks/useBackHandler";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
+import { reset as mixpanelReset } from "@/lib/mixpanel";
 import {
   Settings,
   MapPin,
@@ -716,6 +717,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                   try {
                     await fetch("/api/user/me", { method: "DELETE" });
                   } finally {
+                    mixpanelReset();
                     window.location.href = "/api/auth/logout?post_logout_redirect_url=/api/auth/login";
                   }
                 }}

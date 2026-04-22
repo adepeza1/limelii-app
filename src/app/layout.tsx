@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { SplashScreen } from "@/components/splash-screen";
 import { ToastProvider } from "@/components/toast";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
+import { MixpanelProvider } from "@/components/mixpanel-provider";
 import "@fontsource/mona-sans/400.css";
 import "@fontsource/mona-sans/500.css";
 import "@fontsource/mona-sans/600.css";
@@ -46,6 +47,7 @@ export default function RootLayout({
             strategy="beforeInteractive"
           />
           <ToastProvider>
+            <MixpanelProvider />
             <SplashScreen>
               {children}
               <BottomNav />

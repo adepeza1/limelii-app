@@ -9,6 +9,7 @@ import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import { CollectionShareSheet } from "@/components/collection-share-sheet";
 import { ReportModal } from "@/components/report-modal";
+import { track } from "@/lib/mixpanel";
 import type { Experience } from "@/app/page";
 import type { Collection } from "@/lib/collections";
 
@@ -529,7 +530,7 @@ export function BrowseCollectionCard({
     <>
       <div className="rounded-xl border border-[#EAECF0] overflow-hidden bg-white shadow-sm">
         {/* Mosaic — click opens detail */}
-        <div className="relative h-44 cursor-pointer" onClick={() => setShowDetail(true)}>
+        <div className="relative h-44 cursor-pointer" onClick={() => { setShowDetail(true); track("Collection Viewed", { collection_id: collection.id, name: collection.name }); }}>
           <CollectionMosaic ids={ids} allExperiences={[...allExperiences, ...extraExperiences]} />
         </div>
 

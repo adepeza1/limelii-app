@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChatKit, useChatKit } from "@openai/chatkit-react";
+import { track } from "@/lib/mixpanel";
 
 export default function CreatePage() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function CreatePage() {
       };
 
       try {
+        track("AI Itinerary Generated", { name: itineraryData.itinerary_name, stop_count: (itineraryData.locations as unknown[]).length });
         const res = await fetch("/api/chatkit/add-experience", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
