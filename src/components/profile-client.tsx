@@ -192,6 +192,8 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   const [xanoName, setXanoName] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   // Account settings form state
   const [xanoNameInput, setXanoNameInput] = useState("");
   const [savingDisplayName, setSavingDisplayName] = useState(false);
@@ -540,7 +542,10 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                 </a>
 
                 <div className="pt-3 mt-2 border-t border-gray-100">
-                  <LogoutLink className="w-full flex items-center px-4 py-3.5 rounded-xl hover:bg-gray-50 transition-colors text-left">
+                  <LogoutLink
+                    postLogoutRedirectURL="/api/auth/login"
+                    className="w-full flex items-center px-4 py-3.5 rounded-xl hover:bg-gray-50 transition-colors text-left"
+                  >
                     <span className="text-sm font-medium text-[#FB6983]">Log Out</span>
                   </LogoutLink>
                 </div>
@@ -672,6 +677,52 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                 {usernameAvailability === "available" && <p className="text-xs text-[#12B76A] mt-1.5">@{usernameInput} is available</p>}
                 {usernameAvailability === "taken" && <p className="text-xs text-[#E8405A] mt-1.5">@{usernameInput} is already taken</p>}
               </div>
+
+              {/* Danger zone */}
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                <p className="text-xs font-semibold text-[#98A2B3] uppercase tracking-wide mb-3">Danger Zone</p>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-full flex items-center justify-between py-3.5 px-4 rounded-xl hover:bg-red-50 transition-colors"
+                >
+                  <span className="text-sm font-medium text-red-500">Delete Account</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete account confirmation */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center px-6">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h2 className="text-[#101828] font-semibold text-base mb-1">Delete your account?</h2>
+            <p className="text-[#667085] text-sm mb-5 leading-relaxed">
+              This will permanently delete your account, profile, collections, and all your data. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 py-2.5 rounded-xl border border-[#D0D5DD] text-sm font-semibold text-[#344054] disabled:opacity-40"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={deleting}
+                onClick={async () => {
+                  setDeleting(true);
+                  try {
+                    await fetch("/api/user/me", { method: "DELETE" });
+                  } finally {
+                    window.location.href = "/api/auth/logout?post_logout_redirect_url=/api/auth/login";
+                  }
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
             </div>
           </div>
         </div>

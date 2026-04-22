@@ -27,3 +27,15 @@ export async function PATCH(request: NextRequest) {
   }
   return NextResponse.json(await res.json());
 }
+
+export async function DELETE() {
+  const { isAuthenticated } = getKindeServerSession();
+  if (!(await isAuthenticated())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const res = await apiFetch("/user/me", { method: "DELETE" }, USER_API_BASE);
+  if (!res.ok) {
+    console.warn("[delete account] Xano DELETE /user/me failed:", res.status);
+  }
+  return NextResponse.json({ success: true });
+}

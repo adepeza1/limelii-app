@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, MapPin } from "lucide-react";
+import { ChevronLeft, MapPin, MoreVertical } from "lucide-react";
 import type { Collection } from "@/lib/collections";
 import type { Experience, DiscoveryResponse } from "@/app/page";
 import { API_BASE } from "@/lib/xano";
 import { BrowseCollectionCard, getTagsForCollection } from "@/components/browse-collection-card";
+import { ReportModal } from "@/components/report-modal";
 
 interface PublicProfile {
   id: number;
@@ -41,6 +42,9 @@ export default function PublicProfilePage() {
   const [followerCount, setFollowerCount] = useState(0);
   const [followLoading, setFollowLoading] = useState(false);
   const [confirmUnfollow, setConfirmUnfollow] = useState(false);
+  const [showUserKebab, setShowUserKebab] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [blocked, setBlocked] = useState(false);
 
   // Load current user + seed follow state
   useEffect(() => {
@@ -257,19 +261,28 @@ export default function PublicProfilePage() {
                         : initials}
                     </button>
 
-                    {/* Follow button */}
+                    {/* Follow + options buttons */}
                     {!isOwnProfile && currentUserId && (
-                      <button
-                        onClick={handleFollow}
-                        disabled={followLoading}
-                        className={`shrink-0 text-sm font-medium px-5 py-1.5 rounded-full border transition-colors disabled:opacity-50 ${
-                          following
-                            ? "border-[#667085] text-[#667085] bg-[#F9FAFB]"
-                            : "border-[#101828] text-[#101828]"
-                        }`}
-                      >
-                        {following ? "Following" : "+ Follow"}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleFollow}
+                          disabled={followLoading}
+                          className={`shrink-0 text-sm font-medium px-5 py-1.5 rounded-full border transition-colors disabled:opacity-50 ${
+                            following
+                              ? "border-[#667085] text-[#667085] bg-[#F9FAFB]"
+                              : "border-[#101828] text-[#101828]"
+                          }`}
+                        >
+                          {following ? "Following" : "+ Follow"}
+                        </button>
+                        <button
+                          aria-label="More options"
+                          onClick={() => setShowUserKebab(true)}
+                          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                        >
+                          <MoreVertical className="w-4 h-4 text-gray-400" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </>
@@ -354,6 +367,61 @@ export default function PublicProfilePage() {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showUserKebab && (
+        <div className="fixed inset-0 z-[900] bg-black/40 flex items-end" onClick={(e) => { if (e.target === e.currentTarget) setShowUserKebab(false); }}>
+          <div className="w-full bg-white rounded-t-2xl px-4 pt-4 pb-10 safe-bottom">
+            <button
+              onClick={() => { setShowUserKebab(false); setShowReportModal(true); }}
+              className="w-full flex items-center py-3.5 px-2 text-sm font-medium text-red-500"
+            >
+              Report user
+            </button>
+            <button
+              onClick={async () => {
+                setShowUserKebab(false);
+                if (profile) {
+                  await fetch(`/api/users/${profile.id}/block`, { method: "POST" });
+                  setBlocked(true);
+                }
+              }}
+              className="w-full flex items-center py-3.5 px-2 text-sm font-medium text-red-500"
+            >
+              Block user
+            </button>
+            <button
+              onClick={() => setShowUserKebab(false)}
+              className="w-full flex items-center py-3.5 px-2 text-sm font-medium text-gray-500"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showReportModal && profile && (
+        <ReportModal
+          type="user"
+          targetId={profile.id}
+          targetName={profile.username}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
+
+      {blocked && (
+        <div className="fixed inset-0 z-[900] bg-black/40 flex items-center justify-center px-6">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <p className="text-[#101828] font-semibold text-base mb-1">User blocked</p>
+            <p className="text-[#667085] text-sm mb-5">You won&apos;t see content from this user anymore.</p>
+            <button
+              onClick={() => router.back()}
+              className="w-full py-3 rounded-xl bg-[#101828] text-white text-sm font-medium"
+            >
+              Go back
+            </button>
           </div>
         </div>
       )}
