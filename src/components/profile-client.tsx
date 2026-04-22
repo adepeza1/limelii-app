@@ -542,7 +542,10 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                 </a>
 
                 <div className="pt-3 mt-2 border-t border-gray-100">
-                  <LogoutLink className="w-full flex items-center px-4 py-3.5 rounded-xl hover:bg-gray-50 transition-colors text-left">
+                  <LogoutLink
+                    postLogoutRedirectURL="/api/auth/login"
+                    className="w-full flex items-center px-4 py-3.5 rounded-xl hover:bg-gray-50 transition-colors text-left"
+                  >
                     <span className="text-sm font-medium text-[#FB6983]">Log Out</span>
                   </LogoutLink>
                 </div>
@@ -713,7 +716,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                   try {
                     await fetch("/api/user/me", { method: "DELETE" });
                   } finally {
-                    window.location.href = "/api/auth/logout";
+                    window.location.href = "/api/auth/logout?post_logout_redirect_url=/api/auth/login";
                   }
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold disabled:opacity-50"
