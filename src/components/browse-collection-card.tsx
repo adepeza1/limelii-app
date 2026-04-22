@@ -8,6 +8,7 @@ import { useToast } from "@/components/toast";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import { CollectionShareSheet } from "@/components/collection-share-sheet";
+import { ReportModal } from "@/components/report-modal";
 import type { Experience } from "@/app/page";
 import type { Collection } from "@/lib/collections";
 
@@ -410,6 +411,8 @@ export function BrowseCollectionCard({
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [showKebab, setShowKebab] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showReportKebab, setShowReportKebab] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [showPrivacyConfirm, setShowPrivacyConfirm] = useState(false);
@@ -579,16 +582,25 @@ export function BrowseCollectionCard({
                 )}
               </div>
             ) : !hideFollow && ownerId && currentUserId && currentUserId !== ownerId ? (
-              <button
-                onClick={handleFollow}
-                className={`text-sm font-medium px-4 py-1.5 rounded-full border transition-colors ${
-                  following
-                    ? "border-[#667085] text-[#667085] bg-[#F9FAFB]"
-                    : "border-[#101828] text-[#101828]"
-                }`}
-              >
-                {following ? "Following" : "+ Follow"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleFollow}
+                  className={`text-sm font-medium px-4 py-1.5 rounded-full border transition-colors ${
+                    following
+                      ? "border-[#667085] text-[#667085] bg-[#F9FAFB]"
+                      : "border-[#101828] text-[#101828]"
+                  }`}
+                >
+                  {following ? "Following" : "+ Follow"}
+                </button>
+                <button
+                  aria-label="More options"
+                  onClick={() => setShowReportKebab(true)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  <MoreVertical className="w-4 h-4 text-gray-400" />
+                </button>
+              </div>
             ) : null}
           </div>
 
@@ -740,6 +752,34 @@ export function BrowseCollectionCard({
             </div>
           </div>
         </>
+      )}
+
+      {showReportKebab && (
+        <div className="fixed inset-0 z-[90] bg-black/40 flex items-end" onClick={(e) => { if (e.target === e.currentTarget) setShowReportKebab(false); }}>
+          <div className="w-full bg-white rounded-t-2xl px-4 pt-4 pb-10 safe-bottom">
+            <button
+              onClick={() => { setShowReportKebab(false); setShowReportModal(true); }}
+              className="w-full flex items-center py-3.5 px-2 text-sm font-medium text-red-500"
+            >
+              Report collection
+            </button>
+            <button
+              onClick={() => setShowReportKebab(false)}
+              className="w-full flex items-center py-3.5 px-2 text-sm font-medium text-gray-500"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showReportModal && (
+        <ReportModal
+          type="collection"
+          targetId={collection.id}
+          targetName={collection.name}
+          onClose={() => setShowReportModal(false)}
+        />
       )}
 
       {showDetail && (

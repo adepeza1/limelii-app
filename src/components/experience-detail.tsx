@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { ChevronLeft, Send, Maximize2 } from "lucide-react";
+import { ChevronLeft, Send, Maximize2, MoreVertical } from "lucide-react";
 import { ShareSheet } from "./collection-share-sheet";
+import { ReportModal } from "./report-modal";
 import { useToast } from "@/components/toast";
 
 const SAVED_KEY = "limelii_saved";
@@ -155,6 +156,8 @@ export function ExperienceDetail({
   const [saved, setSaved] = useState(false);
   const [showCollectionSheet, setShowCollectionSheet] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showKebab, setShowKebab] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const swipeTouchStart = useRef<{ x: number; y: number } | null>(null);
@@ -246,6 +249,13 @@ export function ExperienceDetail({
             onClick={() => setShowShareSheet(true)}
           >
             <Send className="w-5 h-5 text-black" />
+          </button>
+          <button
+            aria-label="More options"
+            className="p-1"
+            onClick={() => setShowKebab(true)}
+          >
+            <MoreVertical className="w-5 h-5 text-black" />
           </button>
         </div>
       </header>
@@ -438,6 +448,35 @@ export function ExperienceDetail({
             const failed = results.filter((r) => r.status === "rejected").length;
             if (failed > 0) throw new Error(`Failed to share with ${failed} recipient(s)`);
           }}
+        />
+      )}
+
+      {/* Kebab menu */}
+      {showKebab && (
+        <div className="fixed inset-0 z-[90] bg-black/40 flex items-end" onClick={(e) => { if (e.target === e.currentTarget) setShowKebab(false); }}>
+          <div className="w-full bg-white rounded-t-2xl px-4 pt-4 pb-10 safe-bottom">
+            <button
+              onClick={() => { setShowKebab(false); setShowReportModal(true); }}
+              className="w-full flex items-center py-3.5 px-2 text-sm font-medium text-red-500"
+            >
+              Report experience
+            </button>
+            <button
+              onClick={() => setShowKebab(false)}
+              className="w-full flex items-center py-3.5 px-2 text-sm font-medium text-gray-500"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showReportModal && (
+        <ReportModal
+          type="experience"
+          targetId={experience.id}
+          targetName={experience.title}
+          onClose={() => setShowReportModal(false)}
         />
       )}
     </div>
