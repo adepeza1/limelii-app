@@ -530,7 +530,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                   </button>
                 ))}
                 <a
-                  href="/privacy"
+                  href="https://limelii.com/privacy"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full flex items-center justify-between py-3.5 px-4 rounded-xl hover:bg-gray-50 transition-colors"
@@ -538,6 +538,18 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                   <div className="flex items-center gap-3">
                     <Lock className="w-4.5 h-4.5 text-gray-400" strokeWidth={1.7} />
                     <span className="text-sm font-medium text-gray-800">Privacy Policy</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-300" />
+                </a>
+                <a
+                  href="https://limelii.com/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-between py-3.5 px-4 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Lock className="w-4.5 h-4.5 text-gray-400" strokeWidth={1.7} />
+                    <span className="text-sm font-medium text-gray-800">Terms of Service</span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-300" />
                 </a>
