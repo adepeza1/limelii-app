@@ -530,7 +530,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                   </button>
                 ))}
                 <a
-                  href="https://limelii.com/privacy"
+                  href="https://limelii.com/privacy.html"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full flex items-center justify-between py-3.5 px-4 rounded-xl hover:bg-gray-50 transition-colors"
@@ -542,7 +542,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                   <ChevronRight className="w-4 h-4 text-gray-300" />
                 </a>
                 <a
-                  href="https://limelii.com/terms"
+                  href="https://limelii.com/terms.html"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full flex items-center justify-between py-3.5 px-4 rounded-xl hover:bg-gray-50 transition-colors"
