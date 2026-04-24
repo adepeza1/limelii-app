@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { MapPin, Sparkles, ChevronRight } from "lucide-react";
 import { haptic } from "@/lib/haptics";
@@ -28,6 +29,7 @@ const SLIDES: Slide[] = [
 ];
 
 export function OnboardingWalkthrough() {
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -68,6 +70,7 @@ export function OnboardingWalkthrough() {
     if (step > 0) setStep((s) => s - 1);
   }
 
+  if (pathname === "/onboarding") return null;
   if (!mounted) return null;
 
   const isFirst = step === 0;
