@@ -12,3 +12,10 @@ export async function GET(request: NextRequest) {
   response.cookies.delete("xano_session");
   return response;
 }
+
+export async function POST() {
+  const response = NextResponse.json({ success: true });
+  response.cookies.delete("xano_token");
+  response.cookies.delete("xano_session");
+  return response;
+}
