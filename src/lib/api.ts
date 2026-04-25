@@ -41,13 +41,15 @@ export async function refreshXanoToken(): Promise<string> {
   const isSecure =
     process.env.NODE_ENV === "production" ||
     (process.env.KINDE_SITE_URL ?? "").startsWith("https");
-  cookieStore.set("xano_token", xanoToken, {
+  const cookieOpts = {
     httpOnly: true,
     secure: isSecure,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: "/",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
-  });
+  };
+  cookieStore.set("xano_token", xanoToken, { ...cookieOpts, maxAge: 60 * 60 * 24 * 30 });
+  // Short-lived marker so the middleware can detect a stale xano_token from a previous session
+  cookieStore.set("xano_session", "1", { ...cookieOpts, maxAge: 60 * 60 * 24 });
 
   return xanoToken;
 }

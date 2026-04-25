@@ -37,5 +37,8 @@ export async function DELETE() {
   if (!res.ok) {
     console.warn("[delete account] Xano DELETE /user/me failed:", res.status);
   }
-  return NextResponse.json({ success: true });
+  const response = NextResponse.json({ success: true });
+  response.cookies.delete("xano_token");
+  response.cookies.delete("xano_session");
+  return response;
 }
