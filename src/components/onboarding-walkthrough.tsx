@@ -37,8 +37,16 @@ export function OnboardingWalkthrough() {
   const [userId, setUserId] = useState<number | null>(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
+  // Tracks whether we've already fetched so navigating between pages doesn't
+  // trigger repeated API calls after the first successful attempt.
+  const didFetchRef = useRef(false);
 
   useEffect(() => {
+    // Skip pages where the Xano token isn't set yet or where we render null anyway
+    if (pathname === "/auth/callback" || pathname === "/onboarding") return;
+    if (didFetchRef.current) return;
+    didFetchRef.current = true;
+
     fetch("/api/user/me")
       .then((r) => (r.ok ? r.json() : null))
       .then((user) => {
@@ -50,7 +58,7 @@ export function OnboardingWalkthrough() {
         requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
       })
       .catch(() => {});
-  }, []);
+  }, [pathname]);
 
   function dismiss() {
     haptic("light");
