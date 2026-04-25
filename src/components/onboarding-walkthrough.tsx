@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { MapPin, Sparkles, ChevronRight } from "lucide-react";
 import { haptic } from "@/lib/haptics";
@@ -30,6 +30,7 @@ const SLIDES: Slide[] = [
 
 export function OnboardingWalkthrough() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -42,8 +43,13 @@ export function OnboardingWalkthrough() {
   const didFetchRef = useRef(false);
 
   useEffect(() => {
-    // Skip pages where the Xano token isn't set yet or where we render null anyway
-    if (pathname === "/auth/callback" || pathname === "/onboarding") return;
+    // Skip pages where the Xano token isn't set yet
+    if (pathname === "/auth/callback") return;
+    // Reset so the walkthrough check re-runs after the user completes onboarding
+    if (pathname === "/onboarding") {
+      didFetchRef.current = false;
+      return;
+    }
     if (didFetchRef.current) return;
     didFetchRef.current = true;
 
@@ -51,6 +57,11 @@ export function OnboardingWalkthrough() {
       .then((r) => (r.ok ? r.json() : null))
       .then((user) => {
         if (!user?.id) return;
+        // Guard: stale token / new account with no username — send to onboarding
+        if (!user.username) {
+          router.replace("/onboarding");
+          return;
+        }
         if (localStorage.getItem(`${KEY}_${user.id}`)) return;
         setUserId(user.id);
         setMounted(true);
@@ -58,7 +69,7 @@ export function OnboardingWalkthrough() {
         requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
       })
       .catch(() => {});
-  }, [pathname]);
+  }, [pathname, router]);
 
   function dismiss() {
     haptic("light");
