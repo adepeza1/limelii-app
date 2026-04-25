@@ -10,22 +10,32 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     async function exchangeToken() {
       try {
-        const res = await fetch("/api/auth/xano-token", { method: "POST" });
+        // Try the existing session first — if the user already has a valid Xano
+        // token (e.g. arriving here after /onboarding), this avoids a redundant
+        // exchange and the second /api/user/me call that can stall.
+        let user: { id?: number; username?: string } | null = null;
 
-        if (!res.ok) {
-          const data = await res.json();
-          setError(data.error || "Token exchange failed");
-          return;
+        const initialMeRes = await fetch("/api/user/me");
+        if (initialMeRes.ok) {
+          user = await initialMeRes.json();
         }
 
-        // Check if user needs onboarding — redirect if no username or fetch fails
-        let needsOnboarding = true;
-        const userRes = await fetch("/api/user/me");
-        if (userRes.ok) {
-          const user = await userRes.json();
-          needsOnboarding = !user.username;
+        // No valid session yet — do the Kinde → Xano token exchange
+        if (!user?.id) {
+          const exchangeRes = await fetch("/api/auth/xano-token", { method: "POST" });
+          if (!exchangeRes.ok) {
+            const data = await exchangeRes.json().catch(() => ({}));
+            setError(data.error || "Token exchange failed");
+            return;
+          }
+
+          const meRes = await fetch("/api/user/me");
+          if (meRes.ok) {
+            user = await meRes.json();
+          }
         }
-        if (needsOnboarding) {
+
+        if (!user?.username) {
           router.replace("/onboarding");
           return;
         }

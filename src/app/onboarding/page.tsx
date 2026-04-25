@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 
 export default function OnboardingPage() {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [usernameState, setUsernameState] = useState<"idle" | "checking" | "available" | "taken" | "error">("idle");
   const [saving, setSaving] = useState(false);
@@ -58,7 +56,7 @@ export default function OnboardingPage() {
 
       // Mark onboarding complete
       await fetch("/api/user/onboarding", { method: "POST" });
-      router.replace("/");
+      window.location.href = "/";
     } catch {
       setUsernameState("error");
       setSaving(false);
