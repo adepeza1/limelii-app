@@ -81,7 +81,7 @@ export default function CreatePage() {
       },
     },
     startScreen: {
-      greeting: "What can I help with today?",
+      greeting: "Describe what you're in the mood for and we'll build you a personalized NYC itinerary.",
       prompts: [
         {
           label: "I'm bored, entertain me",
@@ -143,8 +143,7 @@ export default function CreatePage() {
         </div>
       </header>
 
-      <div className="flex-1 min-h-0 w-full max-w-5xl mx-auto px-1 pb-20 sm:pb-24 relative">
-        <p className="absolute top-2 left-4 right-16 text-sm text-gray-500 z-10 pointer-events-none">Describe what you&apos;re in the mood for and we&apos;ll build you a personalized NYC itinerary.</p>
+      <div className="flex-1 min-h-0 w-full max-w-5xl mx-auto px-1 pb-20 sm:pb-24">
         <ChatKit control={control} className="h-full w-full" />
       </div>
 
