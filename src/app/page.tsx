@@ -1,8 +1,6 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 import { DiscoverPage } from "@/components/discover-page";
-import { apiFetch } from "@/lib/api";
-import { API_BASE, USER_API_BASE } from "@/lib/xano";
+import { API_BASE } from "@/lib/xano";
 
 export interface Place {
   id: number;
@@ -89,16 +87,7 @@ function DiscoverSkeleton() {
   );
 }
 
-export default async function Page() {
-  // Guard: if the user somehow bypassed /auth/callback (e.g. stale xano_token
-  // from a deleted account), apiFetch's 401 retry will exchange for a fresh
-  // token. If the resulting account has no username, send them to onboarding.
-  const userRes = await apiFetch("/user/me", {}, USER_API_BASE);
-  if (userRes.ok) {
-    const user = await userRes.json();
-    if (!user.username) redirect("/onboarding");
-  }
-
+export default function Page() {
   return (
     <Suspense fallback={<DiscoverSkeleton />}>
       <DiscoverContent />

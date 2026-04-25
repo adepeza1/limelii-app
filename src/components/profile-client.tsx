@@ -554,12 +554,16 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                 </a>
 
                 <div className="pt-3 mt-2 border-t border-gray-100">
-                  <a
-                    href="/api/user/logout?post_logout_redirect_url=%2Fapi%2Fauth%2Flogin"
+                  <button
                     className="w-full flex items-center px-4 py-3.5 rounded-xl hover:bg-gray-50 transition-colors text-left"
+                    onClick={async () => {
+                      mixpanelReset();
+                      await fetch("/api/user/logout", { method: "POST" });
+                      window.location.href = "/api/auth/logout?post_logout_redirect_url=/api/auth/login";
+                    }}
                   >
                     <span className="text-sm font-medium text-[#FB6983]">Log Out</span>
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
