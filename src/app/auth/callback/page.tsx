@@ -15,9 +15,11 @@ export default function AuthCallbackPage() {
         // exchange and the second /api/user/me call that can stall.
         let user: { id?: number; username?: string } | null = null;
 
-        const initialMeRes = await fetch("/api/user/me");
+        // redirect: "manual" prevents fetch from following a middleware 307
+        // redirect to /auth/callback (which would return HTML, not JSON).
+        const initialMeRes = await fetch("/api/user/me", { redirect: "manual" });
         if (initialMeRes.ok) {
-          user = await initialMeRes.json();
+          user = await initialMeRes.json().catch(() => null);
         }
 
         // No valid session yet — do the Kinde → Xano token exchange
