@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { haptic } from "@/lib/haptics";
 import { useRouter } from "next/navigation";
 import { useBackHandler } from "@/hooks/useBackHandler";
-import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { reset as mixpanelReset } from "@/lib/mixpanel";
 import {
   Settings,
@@ -555,12 +554,12 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                 </a>
 
                 <div className="pt-3 mt-2 border-t border-gray-100">
-                  <LogoutLink
-                    postLogoutRedirectURL="/api/auth/login"
+                  <a
+                    href="/api/user/logout?post_logout_redirect_url=%2Fapi%2Fauth%2Flogin"
                     className="w-full flex items-center px-4 py-3.5 rounded-xl hover:bg-gray-50 transition-colors text-left"
                   >
                     <span className="text-sm font-medium text-[#FB6983]">Log Out</span>
-                  </LogoutLink>
+                  </a>
                 </div>
               </div>
             </div>
@@ -730,7 +729,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                     await fetch("/api/user/me", { method: "DELETE" });
                   } finally {
                     mixpanelReset();
-                    window.location.href = "/api/auth/logout?post_logout_redirect_url=/api/auth/login";
+                    window.location.href = "/api/user/logout?post_logout_redirect_url=%2Fapi%2Fauth%2Flogin";
                   }
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold disabled:opacity-50"
