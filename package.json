@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "sync": "next build && npx cap sync ios",
+    "sync": "npx cap sync ios",
     "start": "next start",
     "lint": "eslint"
   },
