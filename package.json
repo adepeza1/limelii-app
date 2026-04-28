@@ -5,10 +5,16 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "sync": "npx cap sync ios",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/browser": "^8.0.3",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1",
+    "@capacitor/ios": "^8.3.1",
     "@fontsource/mona-sans": "^5.2.8",
     "@kinde-oss/kinde-auth-nextjs": "^2.11.0",
     "@openai/chatkit-react": "^1.5.0",

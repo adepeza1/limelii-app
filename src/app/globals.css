@@ -12,6 +12,7 @@ body {
   color: #000000;
   font-family: "Mona Sans", "Inter", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  padding-top: env(safe-area-inset-top);
 }
 
 /* Prevent iOS Safari auto-zoom on input focus (requires font-size >= 16px) */
