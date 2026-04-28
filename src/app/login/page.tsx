@@ -50,6 +50,7 @@ export default function LoginPage() {
       justifyContent: "center",
       minHeight: "100vh",
       padding: "2rem",
+      paddingTop: "calc(env(safe-area-inset-top) + 2rem)",
       gap: "2rem",
     }}>
       <img src="/limelii-logo.svg" alt="Limelii" width={160} height={48} style={{ objectFit: "contain" }} />
