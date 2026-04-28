@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { generatePKCE } from "@/lib/pkce";
 
 export default function LoginPage() {
@@ -92,7 +91,7 @@ export default function LoginPage() {
       padding: "2rem",
       gap: "2rem",
     }}>
-      <Image src="/limelii-logo.svg" alt="Limelii" width={160} height={48} priority />
+      <img src="/limelii-logo.svg" alt="Limelii" width={160} height={48} style={{ objectFit: "contain" }} />
 
       <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: "1rem" }}>
         <button
