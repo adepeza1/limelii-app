@@ -21,7 +21,6 @@ export default function LoginPage() {
       const postLogin = encodeURIComponent(`/auth/callback?redirect_to=${encodeURIComponent(redirectTo)}`);
       window.location.href = `/api/auth/login?post_login_redirect_url=${postLogin}`;
     }
-
     return () => { listenerRef.current?.remove(); };
   }, []);
 
@@ -38,7 +37,7 @@ export default function LoginPage() {
       localStorage.setItem("pkce_verifier", verifier);
 
       const res = await fetch(`/api/auth/mobile-login?challenge=${encodeURIComponent(challenge)}`);
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      if (!res.ok) throw new Error(`Login request failed: ${res.status}`);
       const { url } = await res.json();
 
       listenerRef.current?.remove();
@@ -51,7 +50,7 @@ export default function LoginPage() {
           const storedVerifier = localStorage.getItem("pkce_verifier");
 
           if (!code || !storedVerifier) {
-            setError("Sign in failed. Please try again.");
+            setError(`Missing: code=${!!code} verifier=${!!storedVerifier}`);
             return;
           }
 
@@ -61,13 +60,17 @@ export default function LoginPage() {
             body: JSON.stringify({ code, verifier: storedVerifier }),
           });
 
+          const body = await exchangeRes.json();
+
           if (exchangeRes.ok) {
             localStorage.removeItem("pkce_verifier");
             const params = new URLSearchParams(window.location.search);
             router.replace(params.get("redirect_to") || "/");
           } else {
-            setError("Sign in failed. Please try again.");
+            setError(`Exchange failed: ${body.error} — ${JSON.stringify(body.detail)}`);
           }
+        } catch (e) {
+          setError(`Error: ${e instanceof Error ? e.message : String(e)}`);
         } finally {
           await Browser.close();
           setLoading(false);
@@ -118,7 +121,7 @@ export default function LoginPage() {
         </button>
 
         {error && (
-          <p style={{ textAlign: "center", color: "#FB6983", fontSize: "0.875rem" }}>
+          <p style={{ textAlign: "center", color: "#FB6983", fontSize: "0.75rem", wordBreak: "break-all" }}>
             {error}
           </p>
         )}

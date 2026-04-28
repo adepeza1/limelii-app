@@ -25,10 +25,15 @@ export async function POST(req: NextRequest) {
   if (!tokenRes.ok) {
     const err = await tokenRes.json().catch(() => ({}));
     console.error("[mobile-exchange] Kinde token exchange failed:", err);
-    return NextResponse.json({ error: "Token exchange failed" }, { status: 400 });
+    return NextResponse.json({ error: "Kinde exchange failed", detail: err }, { status: 400 });
   }
 
-  const { id_token } = await tokenRes.json();
+  const tokenBody = await tokenRes.json();
+  const { id_token } = tokenBody;
+  if (!id_token) {
+    console.error("[mobile-exchange] No id_token in Kinde response:", tokenBody);
+    return NextResponse.json({ error: "No id_token returned", detail: tokenBody }, { status: 400 });
+  }
 
   // Exchange Kinde id_token for Xano token (same flow as web auth)
   const xanoRes = await fetch(XANO_TOKEN_EXCHANGE_URL, {
