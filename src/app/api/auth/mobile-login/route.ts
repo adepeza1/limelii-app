@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
 
   const params = new URLSearchParams({
     client_id: process.env.KINDE_CLIENT_ID!,
-    redirect_uri: "https://limelii-app.vercel.app/auth/mobile-callback",
+    redirect_uri: "com.limelii.app://callback",
     response_type: "code",
     scope: "openid profile email",
     code_challenge: challenge,
