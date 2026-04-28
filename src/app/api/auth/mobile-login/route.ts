@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const state = randomBytes(16).toString("hex");
 
   const params = new URLSearchParams({
-    client_id: process.env.KINDE_CLIENT_ID!,
+    client_id: "ad4debb65b7648e38add5c691a88254b",
     redirect_uri: "https://limelii-app.vercel.app/auth/mobile-callback",
     response_type: "code",
     scope: "openid profile email",

@@ -15,8 +15,7 @@ export async function POST(req: NextRequest) {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "authorization_code",
-      client_id: process.env.KINDE_CLIENT_ID!,
-      client_secret: process.env.KINDE_CLIENT_SECRET!,
+      client_id: "ad4debb65b7648e38add5c691a88254b",
       code,
       redirect_uri: "https://limelii-app.vercel.app/auth/mobile-callback",
       code_verifier: verifier,
