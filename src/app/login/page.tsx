@@ -33,20 +33,16 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const { Browser } = await import("@capacitor/browser");
-
       const { verifier, challenge } = await generatePKCE();
       sessionStorage.setItem("pkce_verifier", verifier);
 
       const res = await fetch(`/api/auth/mobile-login?challenge=${encodeURIComponent(challenge)}`);
       const { url } = await res.json();
 
-      // Remove any previous listener
       if (callbackRef.current) {
         window.removeEventListener("limeliiUrlCallback", callbackRef.current);
       }
 
-      // Listen for the native URL scheme callback dispatched from AppDelegate
       const handler = async (e: Event) => {
         window.removeEventListener("limeliiUrlCallback", handler);
         callbackRef.current = null;
@@ -73,7 +69,6 @@ export default function LoginPage() {
             setError("Sign in failed. Please try again.");
           }
         } finally {
-          await Browser.close();
           setLoading(false);
         }
       };
@@ -81,7 +76,8 @@ export default function LoginPage() {
       callbackRef.current = handler;
       window.addEventListener("limeliiUrlCallback", handler);
 
-      await Browser.open({ url });
+      // window.open with '_system' is handled by Capacitor Core (no plugin needed)
+      window.open(url, "_system");
     } catch (err) {
       console.error("[login] sign in error:", err);
       const msg = err instanceof Error ? err.message : String(err);
