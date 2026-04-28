@@ -4,21 +4,20 @@ import { XANO_DOMAIN } from "@/lib/xano";
 const XANO_TOKEN_EXCHANGE_URL = `${XANO_DOMAIN}/api:J86-AUyj/external_token/exchange`;
 
 export async function POST(req: NextRequest) {
-  const { code, verifier } = await req.json();
-  if (!code || !verifier) {
-    return NextResponse.json({ error: "Missing code or verifier" }, { status: 400 });
+  const { code } = await req.json();
+  if (!code) {
+    return NextResponse.json({ error: "Missing code" }, { status: 400 });
   }
 
-  // Exchange auth code + PKCE verifier for Kinde tokens
   const tokenRes = await fetch(`${process.env.KINDE_ISSUER_URL}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "authorization_code",
-      client_id: "ad4debb65b7648e38add5c691a88254b",
+      client_id: process.env.KINDE_CLIENT_ID!,
+      client_secret: process.env.KINDE_CLIENT_SECRET!,
       code,
       redirect_uri: "https://limelii-app.vercel.app/auth/mobile-callback",
-      code_verifier: verifier,
     }),
   });
 

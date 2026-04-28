@@ -1,21 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 
-export async function GET(req: NextRequest) {
-  const challenge = req.nextUrl.searchParams.get("challenge");
-  if (!challenge) {
-    return NextResponse.json({ error: "Missing challenge" }, { status: 400 });
-  }
-
+export async function GET() {
   const state = randomBytes(16).toString("hex");
 
   const params = new URLSearchParams({
-    client_id: "ad4debb65b7648e38add5c691a88254b",
+    client_id: process.env.KINDE_CLIENT_ID!,
     redirect_uri: "https://limelii-app.vercel.app/auth/mobile-callback",
     response_type: "code",
     scope: "openid profile email",
-    code_challenge: challenge,
-    code_challenge_method: "S256",
     state,
   });
 
