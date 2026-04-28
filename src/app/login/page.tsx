@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerPlugin } from "@capacitor/core";
-import { generatePKCE } from "@/lib/pkce";
 
 const NativeAuth = registerPlugin<{
   openAuth: (options: { url: string }) => Promise<{ opened: boolean }>;
@@ -35,10 +34,7 @@ export default function LoginPage() {
     try {
       const { App } = await import("@capacitor/app");
 
-      const { verifier, challenge } = await generatePKCE();
-      localStorage.setItem("pkce_verifier", verifier);
-
-      const res = await fetch(`/api/auth/mobile-login?challenge=${encodeURIComponent(challenge)}`);
+      const res = await fetch(`/api/auth/mobile-login`);
       if (!res.ok) throw new Error(`Login request failed: ${res.status}`);
       const { url } = await res.json();
 
@@ -50,23 +46,21 @@ export default function LoginPage() {
         try {
           const cbUrl = new URL(data.url);
           const code = cbUrl.searchParams.get("code");
-          const storedVerifier = localStorage.getItem("pkce_verifier");
 
-          if (!code || !storedVerifier) {
-            setError(`Missing: code=${!!code} verifier=${!!storedVerifier}`);
+          if (!code) {
+            setError(`Missing code in callback`);
             return;
           }
 
           const exchangeRes = await fetch("/api/auth/mobile-exchange", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code, verifier: storedVerifier }),
+            body: JSON.stringify({ code }),
           });
 
           const body = await exchangeRes.json();
 
           if (exchangeRes.ok) {
-            localStorage.removeItem("pkce_verifier");
             const params = new URLSearchParams(window.location.search);
             router.replace(params.get("redirect_to") || "/");
           } else {
