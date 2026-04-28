@@ -25,6 +25,6 @@ export default async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api/auth|api/auth/mobile-login|api/auth/mobile-exchange|auth/callback|login|_next/static|_next/image|favicon\\.ico).*)",
+    "/((?!api/auth|api/auth/mobile-login|api/auth/mobile-exchange|auth/callback|auth/mobile-callback|login|_next/static|_next/image|favicon\\.ico).*)",
   ],
 };
