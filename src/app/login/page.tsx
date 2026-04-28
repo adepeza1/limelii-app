@@ -9,7 +9,7 @@ export default function LoginPage() {
   const [isCapacitor, setIsCapacitor] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const listenerRef = useRef<{ remove: () => void } | null>(null);
+  const callbackRef = useRef<((e: Event) => void) | null>(null);
 
   useEffect(() => {
     const capacitor = (window as any).Capacitor;
@@ -22,17 +22,18 @@ export default function LoginPage() {
       window.location.href = `/api/auth/login?post_login_redirect_url=${postLogin}`;
     }
 
-    return () => { listenerRef.current?.remove(); };
+    return () => {
+      if (callbackRef.current) {
+        window.removeEventListener("limeliiUrlCallback", callbackRef.current);
+      }
+    };
   }, []);
 
   const handleSignIn = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [{ Browser }, { App }] = await Promise.all([
-        import("@capacitor/browser"),
-        import("@capacitor/app"),
-      ]);
+      const { Browser } = await import("@capacitor/browser");
 
       const { verifier, challenge } = await generatePKCE();
       sessionStorage.setItem("pkce_verifier", verifier);
@@ -40,11 +41,17 @@ export default function LoginPage() {
       const res = await fetch(`/api/auth/mobile-login?challenge=${encodeURIComponent(challenge)}`);
       const { url } = await res.json();
 
-      listenerRef.current?.remove();
-      listenerRef.current = await App.addListener("appUrlOpen", async (data) => {
-        listenerRef.current?.remove();
+      // Remove any previous listener
+      if (callbackRef.current) {
+        window.removeEventListener("limeliiUrlCallback", callbackRef.current);
+      }
+
+      // Listen for the native URL scheme callback dispatched from AppDelegate
+      const handler = async (e: Event) => {
+        window.removeEventListener("limeliiUrlCallback", handler);
+        callbackRef.current = null;
         try {
-          const cbUrl = new URL(data.url);
+          const cbUrl = new URL((e as CustomEvent).detail);
           const code = cbUrl.searchParams.get("code");
           const storedVerifier = sessionStorage.getItem("pkce_verifier");
 
@@ -69,7 +76,10 @@ export default function LoginPage() {
           await Browser.close();
           setLoading(false);
         }
-      });
+      };
+
+      callbackRef.current = handler;
+      window.addEventListener("limeliiUrlCallback", handler);
 
       await Browser.open({ url });
     } catch (err) {
