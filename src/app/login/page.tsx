@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerPlugin } from "@capacitor/core";
 import { generatePKCE } from "@/lib/pkce";
 
 const NativeAuth = registerPlugin<{
-  openAuth: (options: { url: string }) => Promise<{ url: string }>;
+  openAuth: (options: { url: string }) => Promise<{ opened: boolean }>;
 }>("NativeAuth");
 
 export default function LoginPage() {
@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [isCapacitor, setIsCapacitor] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const listenerRef = useRef<{ remove: () => void } | null>(null);
 
   useEffect(() => {
     const capacitor = (window as any).Capacitor;
@@ -25,12 +26,15 @@ export default function LoginPage() {
       const postLogin = encodeURIComponent(`/auth/callback?redirect_to=${encodeURIComponent(redirectTo)}`);
       window.location.href = `/api/auth/login?post_login_redirect_url=${postLogin}`;
     }
+    return () => { listenerRef.current?.remove(); };
   }, []);
 
   const handleSignIn = async () => {
     setLoading(true);
     setError(null);
     try {
+      const { App } = await import("@capacitor/app");
+
       const { verifier, challenge } = await generatePKCE();
       localStorage.setItem("pkce_verifier", verifier);
 
@@ -38,38 +42,49 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(`Login request failed: ${res.status}`);
       const { url } = await res.json();
 
-      // ASWebAuthenticationSession — Google-approved OAuth browser on iOS.
-      // Returns the full callback URL directly (no appUrlOpen listener needed).
-      const { url: callbackUrl } = await NativeAuth.openAuth({ url });
+      // Register callback listener before opening browser
+      listenerRef.current?.remove();
+      listenerRef.current = await App.addListener("appUrlOpen", async (data) => {
+        listenerRef.current?.remove();
+        listenerRef.current = null;
+        try {
+          const cbUrl = new URL(data.url);
+          const code = cbUrl.searchParams.get("code");
+          const storedVerifier = localStorage.getItem("pkce_verifier");
 
-      const cbUrl = new URL(callbackUrl);
-      const code = cbUrl.searchParams.get("code");
-      const storedVerifier = localStorage.getItem("pkce_verifier");
+          if (!code || !storedVerifier) {
+            setError(`Missing: code=${!!code} verifier=${!!storedVerifier}`);
+            return;
+          }
 
-      if (!code || !storedVerifier) {
-        setError(`Missing: code=${!!code} verifier=${!!storedVerifier}`);
-        return;
-      }
+          const exchangeRes = await fetch("/api/auth/mobile-exchange", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code, verifier: storedVerifier }),
+          });
 
-      const exchangeRes = await fetch("/api/auth/mobile-exchange", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, verifier: storedVerifier }),
+          const body = await exchangeRes.json();
+
+          if (exchangeRes.ok) {
+            localStorage.removeItem("pkce_verifier");
+            const params = new URLSearchParams(window.location.search);
+            router.replace(params.get("redirect_to") || "/");
+          } else {
+            setError(`Exchange failed: ${body.error} — ${JSON.stringify(body.detail)}`);
+          }
+        } catch (e) {
+          setError(`Error: ${e instanceof Error ? e.message : String(e)}`);
+        } finally {
+          setLoading(false);
+        }
       });
 
-      const body = await exchangeRes.json();
-
-      if (exchangeRes.ok) {
-        localStorage.removeItem("pkce_verifier");
-        const params = new URLSearchParams(window.location.search);
-        router.replace(params.get("redirect_to") || "/");
-      } else {
-        setError(`Exchange failed: ${body.error} — ${JSON.stringify(body.detail)}`);
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg !== "cancelled") setError(`Error: ${msg}`);
-    } finally {
+      // UIApplication.shared.open — opens real Safari, bypasses all embedded
+      // browser detection by Google, Apple, etc.
+      await NativeAuth.openAuth({ url });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(`Error: ${msg}`);
       setLoading(false);
     }
   };
