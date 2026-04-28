@@ -31,8 +31,9 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const { url } = await res.json();
 
-      // Navigate the WKWebView directly to Kinde — no popup, no native plugins needed
-      window.location.href = url;
+      // Open in system Safari so Google/Apple OAuth work (they block WKWebView)
+      // AppDelegate catches com.limelii.app://callback and loads /auth/mobile-callback
+      window.open(url, "_system");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(`Error: ${msg}`);
