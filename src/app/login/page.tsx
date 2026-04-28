@@ -73,9 +73,10 @@ export default function LoginPage() {
         }
       });
 
-      // Open in real Safari (UIApplication.shared.open) so Google OAuth
-      // isn't blocked by its SFSafariViewController/WKWebView detection.
-      await App.openUrl({ url });
+      // Open in real Safari (UIApplication.shared.open via Capacitor's
+      // _system target) so Google OAuth isn't blocked by its
+      // SFSafariViewController/WKWebView embedded-browser detection.
+      window.open(url, "_system");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(`Error: ${msg}`);
