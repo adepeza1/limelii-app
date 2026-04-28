@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     body: new URLSearchParams({
       grant_type: "authorization_code",
       client_id: process.env.KINDE_CLIENT_ID!,
+      client_secret: process.env.KINDE_CLIENT_SECRET!,
       code,
       redirect_uri: "com.limelii.app://callback",
       code_verifier: verifier,
