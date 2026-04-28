@@ -5,10 +5,9 @@ const config: CapacitorConfig = {
   appName: 'Limelii',
   webDir: 'public',
   server: {
-    // Point to your deployed Vercel URL so API routes and auth work.
-    // Replace with your actual production URL before submitting to App Store.
     url: 'https://limelii-app.vercel.app',
     cleartext: false,
+    allowNavigation: ['*.kinde.com', 'limelii-app.vercel.app'],
   },
 };
 
