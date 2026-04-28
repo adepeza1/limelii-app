@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { generatePKCE } from "@/lib/pkce";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [isCapacitor, setIsCapacitor] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const callbackRef = useRef<((e: Event) => void) | null>(null);
 
   useEffect(() => {
     const capacitor = (window as any).Capacitor;
@@ -21,12 +18,6 @@ export default function LoginPage() {
       const postLogin = encodeURIComponent(`/auth/callback?redirect_to=${encodeURIComponent(redirectTo)}`);
       window.location.href = `/api/auth/login?post_login_redirect_url=${postLogin}`;
     }
-
-    return () => {
-      if (callbackRef.current) {
-        window.removeEventListener("limeliiUrlCallback", callbackRef.current);
-      }
-    };
   }, []);
 
   const handleSignIn = async () => {
@@ -34,52 +25,15 @@ export default function LoginPage() {
     setError(null);
     try {
       const { verifier, challenge } = await generatePKCE();
-      sessionStorage.setItem("pkce_verifier", verifier);
+      localStorage.setItem("pkce_verifier", verifier);
 
       const res = await fetch(`/api/auth/mobile-login?challenge=${encodeURIComponent(challenge)}`);
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const { url } = await res.json();
 
-      if (callbackRef.current) {
-        window.removeEventListener("limeliiUrlCallback", callbackRef.current);
-      }
-
-      const handler = async (e: Event) => {
-        window.removeEventListener("limeliiUrlCallback", handler);
-        callbackRef.current = null;
-        try {
-          const cbUrl = new URL((e as CustomEvent).detail);
-          const code = cbUrl.searchParams.get("code");
-          const storedVerifier = sessionStorage.getItem("pkce_verifier");
-
-          if (!code || !storedVerifier) {
-            setError("Sign in failed. Please try again.");
-            return;
-          }
-
-          const exchangeRes = await fetch("/api/auth/mobile-exchange", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code, verifier: storedVerifier }),
-          });
-
-          if (exchangeRes.ok) {
-            const params = new URLSearchParams(window.location.search);
-            router.replace(params.get("redirect_to") || "/");
-          } else {
-            setError("Sign in failed. Please try again.");
-          }
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      callbackRef.current = handler;
-      window.addEventListener("limeliiUrlCallback", handler);
-
-      // window.open with '_system' is handled by Capacitor Core (no plugin needed)
-      window.open(url, "_system");
+      // Navigate the WKWebView directly to Kinde — no popup, no native plugins needed
+      window.location.href = url;
     } catch (err) {
-      console.error("[login] sign in error:", err);
       const msg = err instanceof Error ? err.message : String(err);
       setError(`Error: ${msg}`);
       setLoading(false);

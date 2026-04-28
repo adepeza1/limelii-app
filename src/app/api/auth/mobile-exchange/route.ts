@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       grant_type: "authorization_code",
       client_id: process.env.KINDE_CLIENT_ID!,
       code,
-      redirect_uri: "com.limelii.app://callback",
+      redirect_uri: "https://limelii-app.vercel.app/auth/mobile-callback",
       code_verifier: verifier,
     }),
   });
