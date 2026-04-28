@@ -9,7 +9,7 @@ export function getKindeServerSession() {
     isAuthenticated: async (): Promise<boolean> => {
       const cookieStore = await cookies();
       if (cookieStore.has("xano_token")) return true;
-      return originalIsAuthenticated();
+      return (await originalIsAuthenticated()) ?? false;
     },
   } as ReturnType<typeof _getKindeServerSession>;
 }
