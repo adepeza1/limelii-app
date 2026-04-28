@@ -57,14 +57,23 @@ function FolderIcon({ color }: { color: string }) {
   );
 }
 
+function hasMobileAuthCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split(";").some((c) => c.trim().startsWith("mobile_authed=1"));
+}
+
 export function BottomNav() {
   const pathname = usePathname();
-  const { isAuthenticated } = useKindeBrowserClient();
+  const { isAuthenticated: kindeAuth } = useKindeBrowserClient();
   const [mounted, setMounted] = useState(false);
+  const [mobileAuthed, setMobileAuthed] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    setMobileAuthed(hasMobileAuthCookie());
   }, []);
+
+  const isAuthenticated = kindeAuth || mobileAuthed;
 
   if (pathname === "/onboarding") return null;
 
