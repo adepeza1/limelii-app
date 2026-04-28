@@ -28,10 +28,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const [{ Browser }, { App }] = await Promise.all([
-        import("@capacitor/browser"),
-        import("@capacitor/app"),
-      ]);
+      const { App } = await import("@capacitor/app");
 
       const { verifier, challenge } = await generatePKCE();
       localStorage.setItem("pkce_verifier", verifier);
@@ -72,12 +69,14 @@ export default function LoginPage() {
         } catch (e) {
           setError(`Error: ${e instanceof Error ? e.message : String(e)}`);
         } finally {
-          await Browser.close();
           setLoading(false);
         }
       });
 
-      await Browser.open({ url });
+      // Open in real Safari (UIApplication.shared.open via Capacitor's
+      // _system target) so Google OAuth isn't blocked by its
+      // SFSafariViewController/WKWebView embedded-browser detection.
+      window.open(url, "_system");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(`Error: ${msg}`);
