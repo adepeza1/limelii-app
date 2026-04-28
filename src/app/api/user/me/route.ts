@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getKindeServerSession } from "@/lib/server-auth";
 import { apiFetch } from "@/lib/api";
 import { USER_API_BASE } from "@/lib/xano";
 

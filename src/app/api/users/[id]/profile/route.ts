@@ -1,4 +1,4 @@
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getKindeServerSession } from "@/lib/server-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { apiFetch, API_BASE } from "@/lib/api";
 

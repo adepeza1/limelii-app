@@ -58,6 +58,14 @@ export async function POST(req: NextRequest) {
     maxAge: 60 * 60 * 24 * 30,
     path: "/",
   });
+  // Non-httpOnly flag so client-side JS can detect mobile auth state
+  response.cookies.set("mobile_authed", "1", {
+    httpOnly: false,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 30,
+    path: "/",
+  });
 
   return response;
 }
