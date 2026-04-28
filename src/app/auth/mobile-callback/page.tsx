@@ -1,44 +1,22 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 export default function MobileCallbackPage() {
-  const router = useRouter();
-
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    const verifier = localStorage.getItem("pkce_verifier");
-
-    if (!code || !verifier) {
-      router.replace("/login");
-      return;
+    // Forward all query params (code, state, etc.) to the app via custom URL scheme.
+    // Using an HTTPS redirect_uri satisfies Google's OAuth policy; this page
+    // then hands off to the app without needing Safari's localStorage.
+    const search = window.location.search;
+    if (search.includes("code=")) {
+      window.location.href = `com.limelii.app://callback${search}`;
+    } else {
+      window.location.href = `com.limelii.app://callback?error=no_code`;
     }
-
-    fetch("/api/auth/mobile-exchange", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, verifier }),
-    })
-      .then((res) => {
-        localStorage.removeItem("pkce_verifier");
-        if (res.ok) {
-          router.replace("/");
-        } else {
-          router.replace("/login");
-        }
-      })
-      .catch(() => router.replace("/login"));
   }, []);
 
   return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: "100vh",
-    }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
       <p style={{ color: "#667085", fontSize: "1rem" }}>Completing sign in…</p>
     </div>
   );

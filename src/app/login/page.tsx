@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { registerPlugin } from "@capacitor/core";
 import { generatePKCE } from "@/lib/pkce";
+
+const NativeAuth = registerPlugin<{
+  openAuth: (options: { url: string }) => Promise<{ opened: boolean }>;
+}>("NativeAuth");
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,6 +42,7 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(`Login request failed: ${res.status}`);
       const { url } = await res.json();
 
+      // Register callback listener before opening browser
       listenerRef.current?.remove();
       listenerRef.current = await App.addListener("appUrlOpen", async (data) => {
         listenerRef.current?.remove();
@@ -73,10 +79,9 @@ export default function LoginPage() {
         }
       });
 
-      // Open in real Safari (UIApplication.shared.open via Capacitor's
-      // _system target) so Google OAuth isn't blocked by its
-      // SFSafariViewController/WKWebView embedded-browser detection.
-      window.open(url, "_system");
+      // UIApplication.shared.open — opens real Safari, bypasses all embedded
+      // browser detection by Google, Apple, etc.
+      await NativeAuth.openAuth({ url });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(`Error: ${msg}`);
