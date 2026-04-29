@@ -58,7 +58,7 @@ export default function LoginPage() {
 
           if (exchangeRes.ok) {
             const params = new URLSearchParams(window.location.search);
-            router.replace(params.get("redirect_to") || "/");
+            window.location.href = params.get("redirect_to") || "/";
           } else {
             setError(`Exchange failed: ${body.error} — ${JSON.stringify(body.detail)}`);
           }
