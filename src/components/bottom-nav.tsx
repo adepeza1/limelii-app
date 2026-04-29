@@ -96,7 +96,7 @@ export function BottomNav() {
 
   const isAuthenticated = kindeAuth || mobileAuthed;
 
-  if (pathname === "/onboarding") return null;
+  if (pathname === "/onboarding" || pathname === "/login") return null;
   if (keyboardOpen) return null;
 
   return (
