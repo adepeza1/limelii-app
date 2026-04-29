@@ -10,7 +10,7 @@ export async function GET() {
     response_type: "code",
     scope: "openid profile email",
     state,
-    prompt: "login select_account",
+    prompt: "login",
   });
 
   const url = `${process.env.KINDE_ISSUER_URL}/oauth2/auth?${params}`;
