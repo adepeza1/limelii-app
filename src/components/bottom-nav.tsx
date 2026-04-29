@@ -73,21 +73,25 @@ export function BottomNav() {
     setMobileAuthed(hasMobileAuthCookie());
   }, []);
 
+  const [debugMsg, setDebugMsg] = useState("init");
+
   useEffect(() => {
-    if (!(window as any).Capacitor?.isNativePlatform?.()) return;
+    const cap = (window as any).Capacitor;
+    setDebugMsg(`cap=${!!cap} native=${cap?.isNativePlatform?.()}`);
+    if (!cap?.isNativePlatform?.()) return;
     const subs: Array<{ remove: () => void }> = [];
     import("@capacitor/keyboard").then(({ Keyboard }) => {
-      console.log("[bottom-nav] @capacitor/keyboard loaded");
+      setDebugMsg("plugin loaded, registering");
       const register = async (event: string, open: boolean) => {
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const handle = await (Keyboard.addListener as any)(event, () => {
-            console.log(`[bottom-nav] ${event} fired`);
+            setDebugMsg(`${event} fired`);
             setKeyboardOpen(open);
           });
           subs.push(handle);
         } catch (e) {
-          console.error(`[bottom-nav] failed to register ${event}`, e);
+          setDebugMsg(`reg ${event} fail: ${String(e)}`);
         }
       };
       register("keyboardWillShow", true);
@@ -95,7 +99,7 @@ export function BottomNav() {
       register("keyboardWillHide", false);
       register("keyboardDidHide", false);
     }).catch((e) => {
-      console.error("[bottom-nav] failed to import @capacitor/keyboard", e);
+      setDebugMsg(`import fail: ${String(e)}`);
     });
     return () => { subs.forEach((s) => s.remove()); };
   }, []);
@@ -103,9 +107,13 @@ export function BottomNav() {
   const isAuthenticated = kindeAuth || mobileAuthed;
 
   if (pathname === "/onboarding") return null;
-  if (keyboardOpen) return null;
 
   return (
+    <>
+      <div style={{ position: "fixed", top: "env(safe-area-inset-top, 44px)", left: 8, zIndex: 9999, background: "rgba(0,0,0,0.7)", color: "#fff", padding: "4px 8px", fontSize: 11, borderRadius: 6, maxWidth: "90vw", wordBreak: "break-all" }}>
+        {debugMsg}
+      </div>
+      {keyboardOpen ? null : (
     <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-[750] bg-white border-t border-gray-100" style={{ touchAction: "manipulation" }}>
       <div className="max-w-5xl mx-auto flex items-end justify-around px-4" style={{ paddingTop: 4, paddingBottom: "calc(env(safe-area-inset-bottom) + 2px)" }}>
         {tabs.map((tab) => {
@@ -177,5 +185,7 @@ export function BottomNav() {
         })}
       </div>
     </nav>
+      )}
+    </>
   );
 }
