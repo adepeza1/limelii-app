@@ -66,15 +66,31 @@ export function BottomNav() {
   const { isAuthenticated: kindeAuth } = useKindeBrowserClient();
   const [mounted, setMounted] = useState(false);
   const [mobileAuthed, setMobileAuthed] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     setMobileAuthed(hasMobileAuthCookie());
   }, []);
 
+  useEffect(() => {
+    if (!(window as any).Capacitor?.isNativePlatform?.()) return;
+    let showSub: { remove: () => void } | null = null;
+    let hideSub: { remove: () => void } | null = null;
+    import("@capacitor/keyboard").then(({ Keyboard }) => {
+      Keyboard.addListener("keyboardWillShow", () => setKeyboardOpen(true)).then((s) => { showSub = s; });
+      Keyboard.addListener("keyboardWillHide", () => setKeyboardOpen(false)).then((s) => { hideSub = s; });
+    }).catch(() => { /* plugin not available */ });
+    return () => {
+      showSub?.remove();
+      hideSub?.remove();
+    };
+  }, []);
+
   const isAuthenticated = kindeAuth || mobileAuthed;
 
   if (pathname === "/onboarding") return null;
+  if (keyboardOpen) return null;
 
   return (
     <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-[750] bg-white border-t border-gray-100" style={{ touchAction: "manipulation" }}>
