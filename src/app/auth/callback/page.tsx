@@ -59,7 +59,7 @@ export default function AuthCallbackPage() {
     return (
       <div style={{ padding: "2rem", textAlign: "center" }}>
         <p>Login error: {error}</p>
-        <a href="/api/auth/login">Try again</a>
+        <a href="/login">Try again</a>
       </div>
     );
   }

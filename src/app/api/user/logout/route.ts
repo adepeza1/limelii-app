@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const postLogoutRedirectUrl = searchParams.get("post_logout_redirect_url") ?? "/api/auth/login";
+  const postLogoutRedirectUrl = searchParams.get("post_logout_redirect_url") ?? "/login";
 
   const kindeLogoutUrl = new URL("/api/auth/logout", request.url);
   kindeLogoutUrl.searchParams.set("post_logout_redirect_url", postLogoutRedirectUrl);

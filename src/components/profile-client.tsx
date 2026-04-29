@@ -559,7 +559,12 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                     onClick={async () => {
                       mixpanelReset();
                       await fetch("/api/user/logout", { method: "POST" });
-                      window.location.href = "/api/auth/logout?post_logout_redirect_url=/api/auth/login";
+                      const isCapacitor = (window as any).Capacitor?.isNativePlatform?.();
+                      if (isCapacitor) {
+                        window.location.href = "/login";
+                      } else {
+                        window.location.href = "/api/auth/logout?post_logout_redirect_url=/login";
+                      }
                     }}
                   >
                     <span className="text-sm font-medium text-[#FB6983]">Log Out</span>
