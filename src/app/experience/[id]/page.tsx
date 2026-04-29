@@ -74,7 +74,7 @@ export default function ExperienceDeepLinkPage() {
       .catch(() => setSavedState("idle"));
   }, [autoSave, experience, currentUserId, savedState]);
 
-  const loginUrl = `/api/auth/login?post_login_redirect_url=${encodeURIComponent(`/experience/${id}?autosave=1`)}`;
+  const loginUrl = `/login?redirect_to=${encodeURIComponent(`/experience/${id}?autosave=1`)}`;
   const isLoggedOut = currentUserId === null;
 
   if (loading) {

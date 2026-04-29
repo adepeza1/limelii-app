@@ -85,7 +85,7 @@ export default function SharedCollectionPage() {
     }
   }, [collection, saveState]);
 
-  const loginUrl = `/api/auth/login?post_login_redirect_url=${encodeURIComponent(`/c/${token}?autosave=1`)}`;
+  const loginUrl = `/login?redirect_to=${encodeURIComponent(`/c/${token}?autosave=1`)}`;
   const ownerHandle = collection?._users?.username;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function extractUrl(val: any): string | null {

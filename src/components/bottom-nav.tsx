@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ClipboardList, User } from "lucide-react";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
-import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 
 import type { LucideIcon } from "lucide-react";
 
@@ -91,16 +90,16 @@ export function BottomNav() {
 
           if (tab.href === "/profile" && mounted && !isAuthenticated) {
             return (
-              <LoginLink
+              <Link
                 key={tab.href}
-                postLoginRedirectURL="/auth/callback"
+                href="/login?redirect_to=/profile"
                 className="flex flex-col items-center gap-1 min-w-[56px] cursor-pointer"
                 style={{ touchAction: "manipulation" }}
                 suppressHydrationWarning
               >
                 <User className="w-6 h-6" style={{ color: INACTIVE }} strokeWidth={1.6} />
                 <span className="text-[11px]" style={{ color: INACTIVE }}>Log In</span>
-              </LoginLink>
+              </Link>
             );
           }
 
