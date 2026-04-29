@@ -78,9 +78,10 @@ export function BottomNav() {
     const subs: Array<{ remove: () => void }> = [];
     import("@capacitor/keyboard").then(({ Keyboard }) => {
       console.log("[bottom-nav] @capacitor/keyboard loaded");
-      const register = async (event: "keyboardWillShow" | "keyboardDidShow" | "keyboardWillHide" | "keyboardDidHide", open: boolean) => {
+      const register = async (event: string, open: boolean) => {
         try {
-          const handle = await Keyboard.addListener(event, () => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const handle = await (Keyboard.addListener as any)(event, () => {
             console.log(`[bottom-nav] ${event} fired`);
             setKeyboardOpen(open);
           });
