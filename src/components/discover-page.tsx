@@ -5,6 +5,7 @@ import { haptic } from "@/lib/haptics";
 import Link from "next/link";
 import { Search, ArrowLeft, X } from "lucide-react";
 import Image from "next/image";
+import { LimeliiLogo } from "@/components/limelii-logo";
 import type {
   DiscoveryResponse,
   Experience,
@@ -338,7 +339,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           </div>
         ) : (
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100">
-            <Image src="/limelii-logo.svg" alt="Limelii" width={80} height={28} priority />
+            <LimeliiLogo width={80} height={28} />
             <div className="flex items-center gap-4">
               <button onClick={openSearch} aria-label="Search">
                 <Search className="w-6 h-6 text-gray-900" strokeWidth={1.8} />

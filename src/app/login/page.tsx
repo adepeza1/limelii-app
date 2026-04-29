@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { LimeliiLogo } from "@/components/limelii-logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -90,7 +91,7 @@ export default function LoginPage() {
       paddingTop: "calc(env(safe-area-inset-top) + 2rem)",
       gap: "2rem",
     }}>
-      <img src="/limelii-logo.svg" alt="Limelii" width={160} height={48} style={{ objectFit: "contain" }} />
+      <LimeliiLogo width={160} height={48} />
 
       <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: "1rem" }}>
         <button
