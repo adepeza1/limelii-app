@@ -20,7 +20,7 @@ export function MixpanelProvider() {
     }
 
     let cancelled = false;
-    import("@capacitor-community/app-tracking-transparency")
+    import("@capgo/capacitor-app-tracking-transparency")
       .then(async ({ AppTrackingTransparency }) => {
         const status = await AppTrackingTransparency.getStatus();
         let resolved = status.status;
