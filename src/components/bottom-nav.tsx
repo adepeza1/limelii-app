@@ -78,6 +78,7 @@ export function BottomNav() {
     if (!cap?.isNativePlatform?.()) return;
     const subs: Array<{ remove: () => void }> = [];
     import("@capacitor/keyboard").then(({ Keyboard }) => {
+      Keyboard.setAccessoryBarVisible({ isVisible: true }).catch(() => {});
       const register = async (event: string, open: boolean) => {
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
