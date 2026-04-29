@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { LimeliiLogo } from "@/components/limelii-logo";
 
 export default function OnboardingPage() {
   const [username, setUsername] = useState("");
@@ -69,8 +70,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-white flex flex-col px-6 pt-16" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 40px)" }}>
       {/* Logo */}
       <div className="mb-6">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/limelii-logo.svg" alt="limelii" className="h-8 w-auto" />
+        <LimeliiLogo height={32} width="auto" />
         <p className="text-sm text-[#667085] mt-2">Let's set up your profile</p>
       </div>
 
