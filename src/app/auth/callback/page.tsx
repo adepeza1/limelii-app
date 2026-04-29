@@ -38,14 +38,14 @@ export default function AuthCallbackPage() {
         }
 
         if (!user?.username) {
-          router.replace("/onboarding");
+          window.location.href = "/onboarding";
           return;
         }
 
         // Read redirect_to from URL without useSearchParams (avoids Suspense issues)
         const params = new URLSearchParams(window.location.search);
         const redirectTo = params.get("redirect_to");
-        router.replace(redirectTo && redirectTo.startsWith("/") ? redirectTo : "/");
+        window.location.href = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/";
       } catch (err) {
         setError("Something went wrong during login");
         console.error("[auth/callback] error:", err);
