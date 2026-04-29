@@ -75,16 +75,28 @@ export function BottomNav() {
 
   useEffect(() => {
     if (!(window as any).Capacitor?.isNativePlatform?.()) return;
-    let showSub: { remove: () => void } | null = null;
-    let hideSub: { remove: () => void } | null = null;
+    const subs: Array<{ remove: () => void }> = [];
     import("@capacitor/keyboard").then(({ Keyboard }) => {
-      Keyboard.addListener("keyboardWillShow", () => setKeyboardOpen(true)).then((s) => { showSub = s; });
-      Keyboard.addListener("keyboardWillHide", () => setKeyboardOpen(false)).then((s) => { hideSub = s; });
-    }).catch(() => { /* plugin not available */ });
-    return () => {
-      showSub?.remove();
-      hideSub?.remove();
-    };
+      console.log("[bottom-nav] @capacitor/keyboard loaded");
+      const register = async (event: "keyboardWillShow" | "keyboardDidShow" | "keyboardWillHide" | "keyboardDidHide", open: boolean) => {
+        try {
+          const handle = await Keyboard.addListener(event, () => {
+            console.log(`[bottom-nav] ${event} fired`);
+            setKeyboardOpen(open);
+          });
+          subs.push(handle);
+        } catch (e) {
+          console.error(`[bottom-nav] failed to register ${event}`, e);
+        }
+      };
+      register("keyboardWillShow", true);
+      register("keyboardDidShow", true);
+      register("keyboardWillHide", false);
+      register("keyboardDidHide", false);
+    }).catch((e) => {
+      console.error("[bottom-nav] failed to import @capacitor/keyboard", e);
+    });
+    return () => { subs.forEach((s) => s.remove()); };
   }, []);
 
   const isAuthenticated = kindeAuth || mobileAuthed;
