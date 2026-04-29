@@ -82,47 +82,69 @@ export default function LoginPage() {
 
   return (
     <div style={{
+      position: "fixed",
+      inset: 0,
+      background: "#FCE5D8",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      justifyContent: "center",
-      minHeight: "100vh",
-      padding: "2rem",
-      paddingTop: "calc(env(safe-area-inset-top) + 2rem)",
-      gap: "2rem",
+      paddingTop: "calc(env(safe-area-inset-top) + 4rem)",
+      paddingBottom: "calc(env(safe-area-inset-bottom) + 2rem)",
+      paddingLeft: "1.5rem",
+      paddingRight: "1.5rem",
     }}>
-      <LimeliiLogo width={160} height={48} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem", width: "100%" }}>
+        <LimeliiLogo width={260} height={102} />
+        <p style={{
+          color: "#f78539",
+          fontSize: "0.95rem",
+          fontWeight: 600,
+          letterSpacing: "0.01em",
+          margin: 0,
+        }}>
+          Where Experiences Begin
+        </p>
+      </div>
 
-      <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: "0.75rem" }}>
         <button
           onClick={handleSignIn}
           disabled={loading}
           style={{
             width: "100%",
-            padding: "1rem",
-            borderRadius: "0.75rem",
+            padding: "1.05rem 1rem",
+            borderRadius: "999px",
             border: "none",
-            background: "linear-gradient(135deg, #FB6983, #FF9A56)",
+            background: loading ? "#FB6983" : "linear-gradient(135deg, #FB6983, #FF9A56)",
             color: "#fff",
             fontSize: "1rem",
             fontWeight: 600,
             cursor: loading ? "not-allowed" : "pointer",
             opacity: loading ? 0.7 : 1,
+            boxShadow: "0 8px 24px rgba(251, 105, 131, 0.25)",
+            transition: "transform 0.1s ease, opacity 0.2s ease",
           }}
         >
           {loading ? "Signing in…" : "Continue"}
         </button>
 
         {error && (
-          <p style={{ textAlign: "center", color: "#FB6983", fontSize: "0.75rem", wordBreak: "break-all" }}>
+          <p style={{ textAlign: "center", color: "#B42318", fontSize: "0.75rem", wordBreak: "break-word", margin: 0 }}>
             {error}
           </p>
         )}
-      </div>
 
-      <p style={{ color: "#667085", fontSize: "0.75rem", textAlign: "center" }}>
-        By continuing you agree to our Terms & Privacy Policy
-      </p>
+        <p style={{
+          color: "#667085",
+          fontSize: "0.7rem",
+          textAlign: "center",
+          margin: "0.5rem 0 0",
+          lineHeight: 1.5,
+        }}>
+          By continuing you agree to our<br />
+          <a href="/privacy" style={{ color: "#667085", textDecoration: "underline" }}>Privacy Policy</a>
+        </p>
+      </div>
     </div>
   );
 }
