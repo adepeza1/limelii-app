@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Delete your Limelii account",
-  description: "How to delete your Limelii account and what happens to your data.",
+  title: "Delete your limelii account",
+  description: "How to delete your limelii account and what happens to your data.",
 };
 
 export default function DeleteAccountPage() {
@@ -14,11 +14,11 @@ export default function DeleteAccountPage() {
       lineHeight: 1.6,
     }}>
       <h1 style={{ fontSize: "1.875rem", fontWeight: 700, marginBottom: "1rem" }}>
-        Delete your Limelii account
+        Delete your limelii account
       </h1>
 
       <p style={{ fontSize: "1rem", color: "#475467", marginBottom: "2rem" }}>
-        You can delete your Limelii account and associated data at any time.
+        You can delete your limelii account and associated data at any time.
         Below are the steps to request deletion and details about what data is
         removed or retained.
       </p>
@@ -27,7 +27,7 @@ export default function DeleteAccountPage() {
         Option 1: Delete from inside the app
       </h2>
       <ol style={{ paddingLeft: "1.25rem", marginBottom: "1.5rem" }}>
-        <li>Open the Limelii app on your phone</li>
+        <li>Open the limelii app on your phone</li>
         <li>Sign in if you aren&apos;t already</li>
         <li>Tap <strong>Profile</strong> in the bottom navigation</li>
         <li>Scroll to <strong>Account Settings</strong></li>
@@ -108,7 +108,7 @@ export default function DeleteAccountPage() {
 
       <hr style={{ marginTop: "3rem", marginBottom: "1.5rem", border: "none", borderTop: "1px solid #EAECF0" }} />
       <p style={{ fontSize: "0.875rem", color: "#667085" }}>
-        Limelii — your guide to NYC experiences.
+        limelii — your guide to NYC experiences.
       </p>
     </main>
   );

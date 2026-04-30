@@ -25,7 +25,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Limelii - Discover",
+  title: "limelii - Discover",
   description: "Discover experiences, events, and hidden gems near you",
 };
 

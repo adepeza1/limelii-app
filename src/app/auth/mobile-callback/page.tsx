@@ -48,7 +48,7 @@ export default function MobileCallbackPage() {
             display: "inline-block",
           }}
         >
-          Return to Limelii
+          Return to limelii
         </a>
       )}
     </div>

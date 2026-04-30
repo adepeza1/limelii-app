@@ -17,7 +17,7 @@ export function LimeliiLogo({
   className,
   style,
   preserveAspectRatio = "xMidYMid meet",
-  "aria-label": ariaLabel = "Limelii",
+  "aria-label": ariaLabel = "limelii",
 }: LimeliiLogoProps) {
   return (
     <svg

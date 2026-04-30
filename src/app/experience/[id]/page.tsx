@@ -116,7 +116,7 @@ export default function ExperienceDeepLinkPage() {
       {/* Persistent sign-up CTA — unauthenticated only */}
       {isLoggedOut && (
         <div className="fixed bottom-0 left-0 right-0 z-[800] max-w-5xl mx-auto bg-white border-t border-[#EAECF0] px-5 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
-          <p className="text-sm font-semibold text-[#101828] mb-0.5">Save this experience to Limelii</p>
+          <p className="text-sm font-semibold text-[#101828] mb-0.5">Save this experience to limelii</p>
           <p className="text-xs text-[#667085] mb-3">Sign up free to save and discover experiences in NYC.</p>
           <button
             onClick={() => router.push(loginUrl)}

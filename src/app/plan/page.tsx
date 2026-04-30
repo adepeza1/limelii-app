@@ -595,7 +595,7 @@ function PlanPageInner() {
                     <button onClick={() => setOutsideNYC(false)} className="absolute top-3 right-3 text-gray-400"><X className="w-4 h-4" /></button>
                     <p className="text-sm font-medium text-[#101828]">We&apos;re not in your area yet</p>
                     <p className="text-xs text-[#667085] leading-relaxed mt-1">We&apos;re currently in NYC and expanding soon.</p>
-                    <a href="mailto:hello@limelii.com?subject=Notify me when Limelii launches near me" className="mt-2 inline-block bg-black text-white text-xs font-medium rounded-full px-4 py-2">Notify me</a>
+                    <a href="mailto:hello@limelii.com?subject=Notify me when limelii launches near me" className="mt-2 inline-block bg-black text-white text-xs font-medium rounded-full px-4 py-2">Notify me</a>
                   </div>
                 )}
                 {neighborhoodOptions.length > 0 && (
