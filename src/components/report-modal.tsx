@@ -23,19 +23,27 @@ export function ReportModal({ type, targetId, targetName, onClose }: Props) {
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit() {
     if (!reason) return;
     setLoading(true);
+    setError(null);
     try {
-      await fetch("/api/report", {
+      const res = await fetch("/api/report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type, target_id: targetId, reason, note }),
       });
+      if (res.ok) {
+        setSubmitted(true);
+      } else {
+        setError("We couldn't submit your report. Please try again.");
+      }
+    } catch {
+      setError("Network error. Please check your connection and try again.");
     } finally {
       setLoading(false);
-      setSubmitted(true);
     }
   }
 
@@ -90,6 +98,9 @@ export function ReportModal({ type, targetId, targetName, onClose }: Props) {
               rows={3}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-700 placeholder-gray-400 resize-none mb-4 focus:outline-none focus:border-gray-400"
             />
+            {error && (
+              <p className="text-sm text-[#E8405A] mb-3">{error}</p>
+            )}
             <button
               onClick={handleSubmit}
               disabled={!reason || loading}
