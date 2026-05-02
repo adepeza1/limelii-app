@@ -27,3 +27,15 @@ input, textarea, select {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* Inside the native Capacitor WebView, suppress the iOS long-press image
+   callout (Save Image / Share / Search Image with Google) and image drag.
+   Buttons/links keep their default tap behavior. The data-capacitor flag
+   is set by CapacitorClassMarker on mount, so regular web visitors keep
+   normal browser behavior. */
+html[data-capacitor] img {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
