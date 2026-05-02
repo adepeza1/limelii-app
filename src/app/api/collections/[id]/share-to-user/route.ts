@@ -37,9 +37,15 @@ export async function POST(
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    console.warn("[share-collection] Xano failed:", res.status, err);
-    return NextResponse.json({ error: "Failed to share collection" }, { status: res.status });
+    const text = await res.text().catch(() => "");
+    let parsed: unknown = null;
+    try { parsed = text ? JSON.parse(text) : null; } catch { parsed = null; }
+    console.warn("[share-collection] Xano failed:", res.status, text.slice(0, 500));
+    const xanoMsg =
+      (parsed && typeof parsed === "object" && (parsed as { message?: string }).message) ||
+      text ||
+      "Failed to share collection";
+    return NextResponse.json({ error: xanoMsg, xano: parsed ?? text }, { status: res.status });
   }
   return NextResponse.json(await res.json().catch(() => ({ success: true })));
 }

@@ -445,16 +445,24 @@ export function ExperienceDetail({
           onClose={() => setShowShareSheet(false)}
           onSend={async (userIds) => {
             const results = await Promise.allSettled(
-              userIds.map((userId) =>
-                fetch(`/api/experiences/${experience.id}/share-to-user`, {
+              userIds.map(async (userId) => {
+                const r = await fetch(`/api/experiences/${experience.id}/share-to-user`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ recipient_user_id: userId }),
-                }).then((r) => { if (!r.ok) throw new Error(); })
-              )
+                });
+                if (!r.ok) {
+                  const data = await r.json().catch(() => ({}));
+                  const msg = (data && typeof data === "object" && (data as { error?: string }).error) || `status ${r.status}`;
+                  throw new Error(msg);
+                }
+              })
             );
-            const failed = results.filter((r) => r.status === "rejected").length;
-            if (failed > 0) throw new Error(`Failed to share with ${failed} recipient(s)`);
+            const failures = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[];
+            if (failures.length > 0) {
+              const reason = failures[0].reason instanceof Error ? failures[0].reason.message : String(failures[0].reason);
+              throw new Error(reason);
+            }
           }}
         />
       )}

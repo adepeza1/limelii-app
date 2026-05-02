@@ -104,8 +104,13 @@ export function ShareSheet({ title, subtitle, onSend, onClose, shareUrl, shareTi
       await onSend(Array.from(selected));
       setSent(true);
       setTimeout(onClose, 1200);
-    } catch {
-      toast("Couldn't send — please try again", "error");
+    } catch (err) {
+      // Surface whatever message the caller threw with so we can see why
+      // Xano is rejecting it instead of the generic "please try again".
+      const msg = err instanceof Error && err.message
+        ? `Couldn't send: ${err.message}`
+        : "Couldn't send — please try again";
+      toast(msg, "error");
     } finally {
       setSending(false);
     }
@@ -263,16 +268,24 @@ export function CollectionShareSheet({ collectionId, collectionName, onClose, sh
       shareTitle={collectionName}
       onSend={async (userIds) => {
         const results = await Promise.allSettled(
-          userIds.map((userId) =>
-            fetch(`/api/collections/${collectionId}/share-to-user`, {
+          userIds.map(async (userId) => {
+            const r = await fetch(`/api/collections/${collectionId}/share-to-user`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ recipient_user_id: userId }),
-            }).then((r) => { if (!r.ok) throw new Error(); })
-          )
+            });
+            if (!r.ok) {
+              const data = await r.json().catch(() => ({}));
+              const msg = (data && typeof data === "object" && (data as { error?: string }).error) || `status ${r.status}`;
+              throw new Error(msg);
+            }
+          })
         );
-        const failed = results.filter((r) => r.status === "rejected").length;
-        if (failed > 0) throw new Error(`Failed to share with ${failed} recipient(s)`);
+        const failures = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[];
+        if (failures.length > 0) {
+          const reason = failures[0].reason instanceof Error ? failures[0].reason.message : String(failures[0].reason);
+          throw new Error(reason);
+        }
       }}
     />
   );
