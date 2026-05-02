@@ -310,6 +310,20 @@ export function ExperienceDetail({
             return (
               <div key={place.id} className="snap-start shrink-0 w-full flex flex-col px-[22px]">
                 <PlaceImageCard place={place} />
+                {placesWithImages.length > 1 && (
+                  <div className="flex items-center justify-center gap-1.5 pt-3 pb-1">
+                    {placesWithImages.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`rounded-full transition-all ${
+                          i === activeSlide
+                            ? "w-2 h-2 bg-gray-900"
+                            : "w-1.5 h-1.5 bg-gray-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
                 <div className="mt-2 px-1">
                   <h3 className="text-base font-medium text-black">{place.name}</h3>
                   {place.neighborhood && (
@@ -372,22 +386,6 @@ export function ExperienceDetail({
             );
           })}
         </div>
-
-        {/* Dot indicators */}
-        {placesWithImages.length > 1 && (
-          <div className="flex items-center justify-center gap-1.5 py-3">
-            {placesWithImages.map((_, i) => (
-              <div
-                key={i}
-                className={`rounded-full transition-all ${
-                  i === activeSlide
-                    ? "w-2 h-2 bg-gray-900"
-                    : "w-1.5 h-1.5 bg-gray-300"
-                }`}
-              />
-            ))}
-          </div>
-        )}
 
         {/* Map */}
         <div className="px-4 flex flex-col gap-4">
