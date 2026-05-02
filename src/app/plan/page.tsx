@@ -22,16 +22,6 @@ const VALID_BOROUGHS = new Set(["Manhattan", "Brooklyn", "Queens", "Bronx", "Sta
 const BUDGETS = ["Free", "$", "$$", "$$$"];
 const SETTINGS = ["Indoor", "Outdoor"];
 
-// Include both specific and generic (Xano) type labels so matching works
-const QUICK_VIBES = [
-  { label: "Date Night",     types: ["Fine Dining", "Cocktail Bar", "Food", "Drink", "Bar", "Restaurant"], photo: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=200&q=80" },
-  { label: "Rooftop Drinks", types: ["Rooftop Bar", "Rooftop Lounge", "Rooftop Restaurant", "Rooftop", "Drink"],  photo: "https://images.unsplash.com/photo-1533929736458-ca588d08c8be?auto=format&fit=crop&w=200&q=80" },
-  { label: "Cozy Cafe",      types: ["Traditional Cafe", "Specialty Coffee", "Cafe", "Coffee"],                    photo: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=200&q=80" },
-  { label: "Art & Culture",  types: ["Museum", "Art Gallery", "Live Theater", "Cultural", "Arts", "Culture", "Art", "Gallery"], photo: "https://images.unsplash.com/photo-1554907984-15263bfd63bd?auto=format&fit=crop&w=200&q=80" },
-  { label: "Night Out",      types: ["Dance Club", "Live Music Club", "Jazz Club", "Comedy Club", "Nightlife"],    photo: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=200&q=80" },
-  { label: "Fresh Air",      types: ["Public Park", "Botanical Garden", "Beach", "Outdoor", "Outdoors", "Park"],  photo: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=200&q=80" },
-];
-
 const VENUE_GRID: { label: string; types: string[]; gradient: string; icon: LucideIcon; photo: string }[] = [
   { label: "Dining",         types: ["Fine Dining","Casual Dining","Fast Casual","Food Hall","Food Truck","Food","Restaurant"],                          gradient: "from-orange-400 to-amber-500",  icon: UtensilsCrossed, photo: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80" },
   { label: "Coffee & Cafe",  types: ["Traditional Cafe","Specialty Coffee","Work/Study Space","Cafe","Coffee"],                                           gradient: "from-amber-800 to-amber-600",   icon: Coffee,          photo: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=200&q=80" },
@@ -227,7 +217,9 @@ function PlanPageInner() {
   const [budgets, setBudgets] = useState<string[]>([]);
   const [settings, setSettings] = useState<string[]>([]);
   const [venueTypes, setVenueTypes] = useState<string[]>([]);
-  const [quickVibeTypes, setQuickVibeTypes] = useState<string[]>([]);
+  // Quick Vibe UI was removed; keep an empty array so the existing filter
+  // pipeline (combinedTypes, fallback relaxations, resetExplore) keeps working.
+  const quickVibeTypes: string[] = [];
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [results, setResults] = useState<Experience[] | null>(null);
   const [resultsOpen, setResultsOpen] = useState(false);
@@ -362,11 +354,6 @@ function PlanPageInner() {
     setUserCoords(null);
   }
 
-  function handleQuickVibe(types: string[]) {
-    const allSelected = types.every((t) => quickVibeTypes.includes(t));
-    setQuickVibeTypes(allSelected ? quickVibeTypes.filter((t) => !types.includes(t)) : [...new Set([...quickVibeTypes, ...types])]);
-  }
-
   function handleVenueGrid(types: string[]) {
     const allSelected = types.every((t) => venueTypes.includes(t));
     setVenueTypes(allSelected ? venueTypes.filter((t) => !types.includes(t)) : [...new Set([...venueTypes, ...types])]);
@@ -418,7 +405,6 @@ function PlanPageInner() {
   function resetExplore() {
     setSelectedExperience(null);
     setVenueTypes([]);
-    setQuickVibeTypes([]);
     setBudgets([]);
     setSettings([]);
     setLocation("All NYC");
@@ -492,34 +478,6 @@ function PlanPageInner() {
         className="absolute left-0 right-0 z-20 flex flex-col justify-end pointer-events-none"
         style={{ top: "50dvh", bottom: BOTTOM_BAR_H }}
       >
-        {/* Quick Vibe */}
-        <div className="px-4 mb-4 pointer-events-auto">
-          <p className="text-[11px] font-bold uppercase tracking-widest mb-3"
-            style={{ color: "rgba(0,0,0,0.75)", textShadow: "0 1px 3px rgba(255,255,255,0.8)" }}>
-            Quick Vibe
-          </p>
-          <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar">
-            {QUICK_VIBES.map((vibe) => {
-              const active = vibe.types.every((t) => quickVibeTypes.includes(t));
-              return (
-                <button key={vibe.label} type="button" onClick={() => handleQuickVibe(vibe.types)}
-                  className="flex-shrink-0">
-                  <div className="w-[68px] h-[68px] rounded-full overflow-hidden relative"
-                    style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.25)" }}>
-                    <Image src={vibe.photo} fill alt={vibe.label} className="object-cover" sizes="68px" />
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <span className="text-white text-[10px] font-semibold text-center leading-tight px-2">{vibe.label}</span>
-                    </div>
-                    {/* Border overlay on top of all content so it's always visible */}
-                    <div className="absolute inset-0 rounded-full pointer-events-none transition-all"
-                      style={{ boxShadow: active ? "inset 0 0 0 3px #FF9A56" : "inset 0 0 0 2px rgba(255,255,255,0.5)" }} />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {/* What's the Vibe */}
         <div className="px-4 mb-3 pointer-events-auto">
           <p className="text-[11px] font-bold uppercase tracking-widest mb-3"
