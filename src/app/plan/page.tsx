@@ -84,7 +84,18 @@ function budgetMatches(expBudgets: string[], budget: string): boolean {
 function venueTypeMatches(exp: Experience, selectedTypes: string[]): boolean {
   if (!selectedTypes.length) return true;
   const allTypes = (exp.places_id ?? []).flatMap((p) => p._location_details?.location_type ?? []);
-  return selectedTypes.some((t) => allTypes.some((at) => at.toLowerCase() === t.toLowerCase()));
+  return selectedTypes.some((sel) => {
+    const selLower = sel.toLowerCase();
+    return allTypes.some((at) => {
+      const atLower = at.toLowerCase();
+      if (atLower === selLower) return true;
+      // Multi-word filter values must appear as a substring ("Fine Dining" → "Fine Dining Restaurant").
+      if (selLower.includes(" ")) return atLower.includes(selLower);
+      // Single-word filters match on a token boundary so "Restaurant" hits
+      // "Italian Restaurant" and "Bar" hits "Cocktail Bar" without "Barbecue".
+      return atLower.split(/[^a-z0-9]+/).includes(selLower);
+    });
+  });
 }
 
 function settingMatches(settings: string[], selectedSettings: string[]): boolean {
