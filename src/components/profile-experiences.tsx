@@ -157,8 +157,12 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
   }, []);
 
   // Hide the in-progress experience(s) from the rendered grid; the skeleton
-  // placeholder represents them.
-  const visibleExperiences = experiences.filter((e) => !isGenerating(e));
+  // placeholder represents them. Newest first — prefer created_at, fall back
+  // to id (which is monotonically increasing on Xano).
+  const visibleExperiences = experiences
+    .filter((e) => !isGenerating(e))
+    .slice()
+    .sort((a, b) => (b.created_at ?? b.id) - (a.created_at ?? a.id));
   const pendingCount = experiences.filter(isGenerating).length;
   // Show the skeleton while either the URL still has the create flag, the
   // specific experience hasn't finished yet, or any experience is generating.
