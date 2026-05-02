@@ -406,6 +406,12 @@ export function ExperienceDetail({
           </div>
 
         </div>
+
+        {/* Spacer so the map clears the fixed bottom nav + iOS home indicator */}
+        <div
+          aria-hidden="true"
+          style={{ height: "calc(env(safe-area-inset-bottom, 0px) + 88px)" }}
+        />
       </div>
 
       {/* Fullscreen map overlay */}
