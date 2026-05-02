@@ -237,7 +237,7 @@ export function ExperienceDetail({
     >
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white">
-        <div className="h-[44px]" />
+        <div className="h-[env(safe-area-inset-top,44px)]" />
         <div className="flex items-center gap-3 px-4 py-3 h-12">
           <button onClick={onBack} aria-label="Back" className="flex items-center gap-0.5 text-black">
             <ChevronLeft className="w-6 h-6" />
