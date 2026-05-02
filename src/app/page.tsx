@@ -32,6 +32,7 @@ export interface Experience {
   rating: number;
   places_id: Place[];
   category_id: number;
+  creator_user_id?: number | null;
   neighborhoods: string[];
   activities: string[];
   budget: string[];

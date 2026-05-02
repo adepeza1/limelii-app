@@ -13,6 +13,7 @@ import type {
 } from "@/app/page";
 import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
+import { fetchBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
 
 
 // ─── Suggestion logic ─────────────────────────────────────────────────────────
@@ -86,12 +87,42 @@ function formatSectionTitle(key: string): string {
     .join(" ");
 }
 
+function omitBlocked(
+  sections: Record<string, Experience[]>,
+  blockedIds: number[]
+): Record<string, Experience[]> {
+  if (blockedIds.length === 0) return sections;
+  const blocked = new Set(blockedIds);
+  const result: Record<string, Experience[]> = {};
+  for (const [key, exps] of Object.entries(sections)) {
+    const kept = exps.filter((e) => !(e.creator_user_id != null && blocked.has(e.creator_user_id)));
+    if (kept.length > 0) result[key] = kept;
+  }
+  return result;
+}
+
 export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const [activeCategory, setActiveCategory] = useState<number>(0);
-  const [baseSections, setBaseSections] = useState<Record<string, Experience[]>>(data.experiences);
-  const [sections, setSections] = useState<Record<string, Experience[]>>(data.experiences);
+  const [blockedIds, setBlockedIds] = useState<number[]>(() => getCachedBlockedIds());
+  const visibleData = useMemo(() => omitBlocked(data.experiences, blockedIds), [data.experiences, blockedIds]);
+  const [baseSections, setBaseSections] = useState<Record<string, Experience[]>>(visibleData);
+  const [sections, setSections] = useState<Record<string, Experience[]>>(visibleData);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const savedScrollY = useRef(0);
+
+  // Refresh blocked list once on mount.
+  useEffect(() => {
+    fetchBlockedIds().then((ids) => setBlockedIds(ids));
+  }, []);
+
+  // When the visible (post-block-filter) data changes, refresh both
+  // baseSections and the currently-displayed sections, preserving the
+  // user's active category.
+  useEffect(() => {
+    setBaseSections(visibleData);
+    setSections(filterByCategory(activeCategory, visibleData));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleData]);
 
   // Pull-to-refresh
   const PULL_THRESHOLD = 65;
@@ -120,7 +151,12 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const allExperiences = useMemo(() => Object.values(data.experiences).flat(), [data.experiences]);
+  const allExperiences = useMemo(() => {
+    const blocked = new Set(blockedIds);
+    return Object.values(data.experiences)
+      .flat()
+      .filter((e) => !(e.creator_user_id != null && blocked.has(e.creator_user_id)));
+  }, [data.experiences, blockedIds]);
 
   // ── Suggested for you ───────────────────────────────────────────────────────
   const [suggestions, setSuggestions] = useState<Experience[]>([]);
