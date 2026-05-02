@@ -18,6 +18,8 @@ export interface Place {
   _location_details: {
     Description: string;
     location_type: string[];
+    location_subtype?: string[];
+    location_variant?: string[];
     phone?: string;
     url?: string;
     operating_hours?: string;
