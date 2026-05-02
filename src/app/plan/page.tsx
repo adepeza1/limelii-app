@@ -118,26 +118,49 @@ function venueTypeMatches(exp: Experience, selectedTypes: string[]): boolean {
 function settingMatches(settings: string[], selectedSettings: string[]): boolean {
   if (!selectedSettings.length) return true;
   if (!settings?.length) return true;
+  // Lowercase both sides so case differences in the Xano data don't cause
+  // strict-equality misses ("Indoor" vs "indoor").
+  const lowered = settings.map((s) => (s ?? "").toLowerCase());
   return selectedSettings.some((sel) => {
     const lower = sel.toLowerCase();
-    return settings.some((s) => s === lower || s === "both");
+    return lowered.some((s) => s === lower || s === "both");
   });
 }
 
 function locationMatches(exp: Experience, borough: string, selectedNeighborhoods: string[]): boolean {
   if (borough === "All NYC" || borough === "__current__") return true;
   const places = exp.places_id ?? [];
-  if (selectedNeighborhoods.length > 0) {
-    return selectedNeighborhoods.some((n) => {
-      const needle = n.toLowerCase();
-      const all = [
-        ...(exp.neighborhoods ?? []).map((x) => x.toLowerCase()),
-        ...places.map((p) => (p.neighborhood ?? "").toLowerCase()),
-      ];
-      return all.some((x) => x.includes(needle) || needle.includes(x));
+
+  // Borough is the primary gate — at least one of the experience's places
+  // must actually live in the selected borough. Without this check the
+  // neighborhood-only path below would let through experiences from other
+  // boroughs that happened to have a place with a missing neighborhood.
+  const hasInBorough = places.some((p) => p.borough === borough);
+  if (!hasInBorough) return false;
+
+  if (selectedNeighborhoods.length === 0) return true;
+
+  // Neighborhood filter: only accept real (non-empty) string matches, and
+  // require the matching place to be inside the selected borough.
+  return selectedNeighborhoods.some((n) => {
+    const needle = (n ?? "").toLowerCase();
+    if (!needle) return false;
+
+    const placeMatch = places.some((p) => {
+      if (p.borough !== borough) return false;
+      const hood = (p.neighborhood ?? "").toLowerCase();
+      if (!hood) return false;
+      return hood === needle || hood.includes(needle) || needle.includes(hood);
     });
-  }
-  return places.some((p) => p.borough === borough);
+    if (placeMatch) return true;
+
+    // Experience-level neighborhoods array as a softer fallback.
+    return (exp.neighborhoods ?? []).some((h) => {
+      const hl = (h ?? "").toLowerCase();
+      if (!hl) return false;
+      return hl === needle || hl.includes(needle) || needle.includes(hl);
+    });
+  });
 }
 
 function filterExperiences(all: Experience[], { borough, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes }: { borough: string; selectedNeighborhoods: string[]; budgets: string[]; settings: string[]; venueTypes: string[]; quickVibeTypes: string[] }) {
