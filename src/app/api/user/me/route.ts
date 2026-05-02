@@ -22,8 +22,17 @@ export async function PATCH(request: NextRequest) {
     body: JSON.stringify(body),
   }, USER_API_BASE);
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    return NextResponse.json(data, { status: res.status });
+    const text = await res.text().catch(() => "");
+    let parsed: unknown = null;
+    try { parsed = text ? JSON.parse(text) : null; } catch { parsed = null; }
+    console.warn("[PATCH /user/me] Xano failed:", res.status, text.slice(0, 500));
+    // Surface a useful message so the UI can display *why* it failed
+    // instead of a generic "Couldn't save".
+    const xanoMsg =
+      (parsed && typeof parsed === "object" && (parsed as { message?: string }).message) ||
+      text ||
+      "Failed to update profile";
+    return NextResponse.json({ error: xanoMsg, xano: parsed ?? text }, { status: res.status });
   }
   return NextResponse.json(await res.json());
 }

@@ -665,10 +665,14 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                             setXanoName(xanoNameInput.trim());
                             setDisplayNameSaved(true);
                           } else {
-                            toast("Couldn't save display name", "error");
+                            // Surface the underlying error so we can see why
+                            // saving failed (e.g. Xano rejecting the field name).
+                            const data = await res.json().catch(() => ({}));
+                            const msg = (data && typeof data === "object" && (data as { error?: string }).error) || `Couldn't save display name (status ${res.status})`;
+                            toast(msg, "error");
                           }
-                        } catch {
-                          toast("Couldn't save display name", "error");
+                        } catch (err) {
+                          toast(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save display name", "error");
                         } finally { setSavingDisplayName(false); }
                       }}
                       className="text-xs font-semibold text-[#FB6983] disabled:opacity-50"
