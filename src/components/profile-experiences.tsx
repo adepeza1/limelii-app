@@ -78,7 +78,7 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Experience | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const prevCountRef = useRef<number | null>(null);
+  const prevPendingRef = useRef(false);
 
   useBackHandler(!!selectedExperience, () => setSelectedExperience(null));
 
@@ -91,14 +91,11 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
       }
       const data = await res.json();
       const exps: Experience[] = Array.isArray(data.experiences) ? data.experiences : [];
-
-      if (creating && prevCountRef.current !== null && exps.length > prevCountRef.current) {
-        onCreatingDone?.();
-      }
-      prevCountRef.current = exps.length;
-
       setExperiences(exps);
-      onCountLoaded?.(exps.length);
+      // Count only finished experiences for the displayed counter so the
+      // tally doesn't include the in-progress placeholder.
+      const doneCount = exps.filter((e) => e.status !== "generating").length;
+      onCountLoaded?.(doneCount);
     } catch {
       setError("Failed to load your experiences");
     } finally {
@@ -111,12 +108,32 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Show only experiences that finished generating; the rest are represented
+  // by the skeleton placeholder.
+  const visibleExperiences = experiences.filter((e) => e.status !== "generating");
+  const pendingCount = experiences.filter((e) => e.status === "generating").length;
+  // We're "pending" if either the URL arrived with ?creating=true (the user
+  // just submitted and the row may not exist yet) or Xano still has at least
+  // one experience in the generating state.
+  const isPending = (creating ?? false) || pendingCount > 0;
+
+  // Poll while pending; stop the moment everything's done.
   useEffect(() => {
-    if (!creating) return;
+    if (!isPending) return;
     const id = setInterval(fetchExperiences, 3000);
     return () => clearInterval(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [creating]);
+  }, [isPending]);
+
+  // Notify the parent on the falling edge (pending → not pending) so it can
+  // clear the ?creating=true flag and stop showing any wrapper UI.
+  useEffect(() => {
+    if (prevPendingRef.current && !isPending) {
+      onCreatingDone?.();
+    }
+    prevPendingRef.current = isPending;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPending]);
 
   async function handleDelete() {
     if (!deleteTarget) return;
@@ -168,7 +185,7 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
     return <p className="text-center text-gray-500 py-12 px-4">{error}</p>;
   }
 
-  if (!creating && experiences.length === 0) {
+  if (!isPending && visibleExperiences.length === 0) {
     return (
       <div className="py-16 flex flex-col items-center gap-3 text-center px-5">
         <div className="w-14 h-14 rounded-2xl bg-[#FFF0F3] flex items-center justify-center">
@@ -188,15 +205,15 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
     );
   }
 
-  const leftCol = experiences.filter((_, i) => i % 2 === 0);
-  const rightCol = experiences.filter((_, i) => i % 2 === 1);
+  const leftCol = visibleExperiences.filter((_, i) => i % 2 === 0);
+  const rightCol = visibleExperiences.filter((_, i) => i % 2 === 1);
 
   return (
     <>
       <div className="px-4 pb-4 flex gap-1 items-start">
         {[leftCol, rightCol].map((col, colIdx) => (
           <div key={colIdx} className="flex-1 flex flex-col gap-1">
-            {colIdx === 0 && creating && <CreatingPlaceholder />}
+            {colIdx === 0 && isPending && <CreatingPlaceholder />}
             {col.map((exp, rowIdx) => {
               const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
               return (
