@@ -15,6 +15,7 @@ import {
   Bell,
   Lock,
   UserCircle,
+  UserX,
   Camera,
 } from "lucide-react";
 import { ProfileExperiences } from "@/components/profile-experiences";
@@ -45,6 +46,24 @@ interface UserPreferences {
 }
 
 type Tab = "created" | "saved" | "collections" | "preferences";
+
+interface BlockedUserDetails {
+  id?: number;
+  username?: string;
+  name?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  photo?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  profile_photo_url?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  picture?: any;
+}
+
+interface BlockedUser {
+  id: number; // user_blocks row id
+  blocked_id: number; // the blocked user's id
+  user: BlockedUserDetails | null;
+}
 
 interface ProfileClientProps {
   givenName: string | null;
@@ -192,6 +211,9 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   const [xanoName, setXanoName] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [showBlockedUsers, setShowBlockedUsers] = useState(false);
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[] | null>(null);
+  const [unblockingId, setUnblockingId] = useState<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   // Account settings form state
@@ -514,6 +536,30 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-300" />
                 </button>
+                <button
+                  onClick={async () => {
+                    setShowBlockedUsers(true);
+                    setBlockedUsers(null);
+                    try {
+                      const res = await fetch("/api/users/me/blocked");
+                      if (res.ok) {
+                        const data = await res.json();
+                        setBlockedUsers(Array.isArray(data?.blocked) ? data.blocked : []);
+                      } else {
+                        setBlockedUsers([]);
+                      }
+                    } catch {
+                      setBlockedUsers([]);
+                    }
+                  }}
+                  className="w-full flex items-center justify-between py-3.5 px-4 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <UserX className="w-4.5 h-4.5 text-gray-400" strokeWidth={1.7} />
+                    <span className="text-sm font-medium text-gray-800">Blocked Users</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-300" />
+                </button>
                 {[
                   { icon: Bell, label: "Notifications" },
                 ].map(({ icon: Icon, label }) => (
@@ -709,6 +755,92 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                   <span className="text-sm font-medium text-red-500">Delete Account</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Blocked Users sheet ─────────────────────────────────────────────── */}
+      {showBlockedUsers && (
+        <div className="fixed inset-0 z-[60] bg-black/40 flex items-end" onClick={(e) => { if (e.target === e.currentTarget) setShowBlockedUsers(false); }}>
+          <div className="w-full bg-white rounded-t-3xl shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-9 h-1 rounded-full bg-gray-200" />
+            </div>
+            <div className="px-6 pt-3 pb-24">
+              <div className="flex items-center gap-3 mb-6">
+                <button onClick={() => setShowBlockedUsers(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                  <ChevronRight className="w-4 h-4 rotate-180" />
+                </button>
+                <h2 className="text-base font-semibold text-gray-900">Blocked Users</h2>
+              </div>
+
+              {blockedUsers === null ? (
+                <p className="text-sm text-[#667085] py-8 text-center">Loading…</p>
+              ) : blockedUsers.length === 0 ? (
+                <div className="py-12 flex flex-col items-center gap-2 text-center">
+                  <p className="text-[#101828] font-semibold text-sm">No blocked users</p>
+                  <p className="text-[#667085] text-xs max-w-[260px]">
+                    When you block someone, they&apos;ll appear here so you can unblock them later.
+                  </p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-[#F2F4F7]">
+                  {blockedUsers.map((row) => {
+                    function extractUrl(val: unknown): string | null {
+                      if (!val) return null;
+                      if (typeof val === "string") return val || null;
+                      if (typeof val === "object" && val !== null && "url" in val) {
+                        const u = (val as { url?: unknown }).url;
+                        return typeof u === "string" ? u || null : null;
+                      }
+                      return null;
+                    }
+                    const u = row.user ?? {};
+                    const photoUrl = extractUrl(u.photo) ?? extractUrl(u.profile_photo_url) ?? extractUrl(u.picture);
+                    const handle = u.username ? `@${u.username}` : `User #${row.blocked_id}`;
+                    const initials = (u.username ?? u.name ?? "?").slice(0, 2).toUpperCase();
+                    const isUnblocking = unblockingId === row.blocked_id;
+                    return (
+                      <li key={row.id} className="flex items-center gap-3 py-3">
+                        <div className="w-10 h-10 rounded-full bg-[#F2F4F7] overflow-hidden flex items-center justify-center text-[#667085] text-sm font-bold shrink-0">
+                          {photoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={photoUrl} alt={handle} className="w-full h-full object-cover" />
+                          ) : (
+                            initials
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-[#101828] truncate">{handle}</p>
+                          {u.name && <p className="text-xs text-[#667085] truncate">{u.name}</p>}
+                        </div>
+                        <button
+                          disabled={isUnblocking}
+                          onClick={async () => {
+                            setUnblockingId(row.blocked_id);
+                            try {
+                              const res = await fetch(`/api/users/${row.blocked_id}/block`, { method: "DELETE" });
+                              if (res.ok) {
+                                setBlockedUsers((prev) => (prev ?? []).filter((b) => b.blocked_id !== row.blocked_id));
+                              } else {
+                                toast("Couldn't unblock user", "error");
+                              }
+                            } catch {
+                              toast("Couldn't unblock user", "error");
+                            } finally {
+                              setUnblockingId(null);
+                            }
+                          }}
+                          className="shrink-0 text-xs font-semibold px-4 py-1.5 rounded-full border border-[#101828] text-[#101828] disabled:opacity-50"
+                        >
+                          {isUnblocking ? "…" : "Unblock"}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
           </div>
         </div>

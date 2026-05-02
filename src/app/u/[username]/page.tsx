@@ -45,6 +45,9 @@ export default function PublicProfilePage() {
   const [showUserKebab, setShowUserKebab] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [isBlockedByMe, setIsBlockedByMe] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
+  const [blockError, setBlockError] = useState<string | null>(null);
 
   // Load current user + seed follow state
   useEffect(() => {
@@ -67,6 +70,19 @@ export default function PublicProfilePage() {
             .then((r) => r.ok ? r.json() : null)
             .then((data) => { if (Array.isArray(data?.followingIds)) setFollowedIds(data.followingIds); })
             .catch(() => setFollowedIds([]));
+          // Seed blocked IDs from server
+          fetch("/api/users/me/blocked")
+            .then((r) => r.ok ? r.json() : null)
+            .then((data) => {
+              if (!Array.isArray(data?.blockedIds)) return;
+              fetch(`/api/users/${encodeURIComponent(username)}/profile`)
+                .then((r) => r.ok ? r.json() : null)
+                .then((p) => {
+                  if (p?.id && data.blockedIds.includes(p.id)) setIsBlockedByMe(true);
+                })
+                .catch(() => {});
+            })
+            .catch(() => {});
         } else {
           setFollowedIds([]);
         }
@@ -381,16 +397,38 @@ export default function PublicProfilePage() {
               Report user
             </button>
             <button
+              disabled={blockLoading}
               onClick={async () => {
                 setShowUserKebab(false);
-                if (profile) {
-                  await fetch(`/api/users/${profile.id}/block`, { method: "POST" });
-                  setBlocked(true);
+                if (!profile) return;
+                setBlockLoading(true);
+                setBlockError(null);
+                try {
+                  if (isBlockedByMe) {
+                    const res = await fetch(`/api/users/${profile.id}/block`, { method: "DELETE" });
+                    if (res.ok) {
+                      setIsBlockedByMe(false);
+                    } else {
+                      setBlockError("Couldn't unblock user. Please try again.");
+                    }
+                  } else {
+                    const res = await fetch(`/api/users/${profile.id}/block`, { method: "POST" });
+                    if (res.ok) {
+                      setIsBlockedByMe(true);
+                      setBlocked(true);
+                    } else {
+                      setBlockError("Couldn't block user. Please try again.");
+                    }
+                  }
+                } catch {
+                  setBlockError("Network error. Please try again.");
+                } finally {
+                  setBlockLoading(false);
                 }
               }}
-              className="w-full flex items-center py-3.5 px-2 text-sm font-medium text-red-500"
+              className={`w-full flex items-center py-3.5 px-2 text-sm font-medium disabled:opacity-50 ${isBlockedByMe ? "text-[#101828]" : "text-red-500"}`}
             >
-              Block user
+              {isBlockedByMe ? "Unblock user" : "Block user"}
             </button>
             <button
               onClick={() => setShowUserKebab(false)}
@@ -415,12 +453,27 @@ export default function PublicProfilePage() {
         <div className="fixed inset-0 z-[900] bg-black/40 flex items-center justify-center px-6">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <p className="text-[#101828] font-semibold text-base mb-1">User blocked</p>
-            <p className="text-[#667085] text-sm mb-5">You won&apos;t see content from this user anymore.</p>
+            <p className="text-[#667085] text-sm mb-5">You won&apos;t see content from this user anymore. You can unblock them anytime from Settings → Blocked Users.</p>
             <button
               onClick={() => router.back()}
               className="w-full py-3 rounded-xl bg-[#101828] text-white text-sm font-medium"
             >
               Go back
+            </button>
+          </div>
+        </div>
+      )}
+
+      {blockError && (
+        <div className="fixed inset-0 z-[900] bg-black/40 flex items-center justify-center px-6">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <p className="text-[#101828] font-semibold text-base mb-1">Something went wrong</p>
+            <p className="text-[#667085] text-sm mb-5">{blockError}</p>
+            <button
+              onClick={() => setBlockError(null)}
+              className="w-full py-3 rounded-xl bg-[#101828] text-white text-sm font-medium"
+            >
+              OK
             </button>
           </div>
         </div>
