@@ -90,8 +90,10 @@ function venueTypeMatches(exp: Experience, selectedTypes: string[]): boolean {
   // names, the experience's activities, and its title/description.
   const haystack: string[] = [];
   for (const place of exp.places_id ?? []) {
-    const types = place._location_details?.location_type ?? [];
-    if (Array.isArray(types)) haystack.push(...types);
+    const details = place._location_details;
+    if (Array.isArray(details?.location_type)) haystack.push(...details!.location_type);
+    if (Array.isArray(details?.location_subtype)) haystack.push(...details!.location_subtype!);
+    if (Array.isArray(details?.location_variant)) haystack.push(...details!.location_variant!);
     if (place.name) haystack.push(place.name);
   }
   if (Array.isArray(exp.activities)) haystack.push(...exp.activities);
