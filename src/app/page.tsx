@@ -33,6 +33,7 @@ export interface Experience {
   places_id: Place[];
   category_id: number;
   creator_user_id?: number | null;
+  status?: "generating" | "done";
   neighborhoods: string[];
   activities: string[];
   budget: string[];
