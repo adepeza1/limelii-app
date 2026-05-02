@@ -388,7 +388,7 @@ export function ExperienceDetail({
         </div>
 
         {/* Map */}
-        <div className="px-4 flex flex-col gap-4">
+        <div className="px-4 pt-6 flex flex-col gap-4">
           {/* Map */}
           <div className="relative">
             <div className="bg-white rounded-2xl shadow-[0px_4px_32px_0px_rgba(0,0,0,0.07)] overflow-hidden">
