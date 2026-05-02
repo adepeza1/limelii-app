@@ -410,7 +410,7 @@ export function ExperienceDetail({
         {/* Spacer so the map clears the fixed bottom nav + iOS home indicator */}
         <div
           aria-hidden="true"
-          style={{ height: "calc(env(safe-area-inset-bottom, 0px) + 88px)" }}
+          style={{ height: "calc(env(safe-area-inset-bottom, 0px) + 56px)" }}
         />
       </div>
 
