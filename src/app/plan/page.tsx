@@ -84,17 +84,31 @@ function budgetMatches(expBudgets: string[], budget: string): boolean {
 
 function venueTypeMatches(exp: Experience, selectedTypes: string[]): boolean {
   if (!selectedTypes.length) return true;
-  const allTypes = (exp.places_id ?? []).flatMap((p) => p._location_details?.location_type ?? []);
+  // Build a wide haystack of strings to match against. Looking only at
+  // _location_details.location_type missed a lot of experiences where
+  // Xano hadn't populated that array, so we also fall back to place
+  // names, the experience's activities, and its title/description.
+  const haystack: string[] = [];
+  for (const place of exp.places_id ?? []) {
+    const types = place._location_details?.location_type ?? [];
+    if (Array.isArray(types)) haystack.push(...types);
+    if (place.name) haystack.push(place.name);
+  }
+  if (Array.isArray(exp.activities)) haystack.push(...exp.activities);
+  if (exp.title) haystack.push(exp.title);
+  if (exp.description) haystack.push(exp.description);
+
+  const lowered = haystack.map((s) => (s || "").toLowerCase()).filter(Boolean);
+
   return selectedTypes.some((sel) => {
     const selLower = sel.toLowerCase();
-    return allTypes.some((at) => {
-      const atLower = at.toLowerCase();
-      if (atLower === selLower) return true;
+    return lowered.some((s) => {
+      if (s === selLower) return true;
       // Multi-word filter values must appear as a substring ("Fine Dining" → "Fine Dining Restaurant").
-      if (selLower.includes(" ")) return atLower.includes(selLower);
+      if (selLower.includes(" ")) return s.includes(selLower);
       // Single-word filters match on a token boundary so "Restaurant" hits
       // "Italian Restaurant" and "Bar" hits "Cocktail Bar" without "Barbecue".
-      return atLower.split(/[^a-z0-9]+/).includes(selLower);
+      return s.split(/[^a-z0-9]+/).includes(selLower);
     });
   });
 }
