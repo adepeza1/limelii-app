@@ -13,6 +13,7 @@ import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import type { Experience } from "@/app/page";
 import { API_BASE } from "@/lib/xano";
+import { fetchBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -209,6 +210,11 @@ function PlanPageInner() {
     embedded: Experience[];
   } | null>(null);
   const collectionMergedRef = useRef(false);
+  const [blockedIds, setBlockedIds] = useState<number[]>(() => getCachedBlockedIds());
+
+  useEffect(() => {
+    fetchBlockedIds().then((ids) => setBlockedIds(ids));
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -231,6 +237,13 @@ function PlanPageInner() {
       setNeighborhoods(extractNeighborhoods(all));
     });
   }, []);
+
+  // Drop experiences whose creator the user has blocked.
+  const visibleExperiences = useMemo(() => {
+    if (blockedIds.length === 0) return allExperiences;
+    const blocked = new Set(blockedIds);
+    return allExperiences.filter((e) => !(e.creator_user_id != null && blocked.has(e.creator_user_id)));
+  }, [allExperiences, blockedIds]);
 
   // Phase 1: fetch the collection on mount, use _experiences immediately as initial pins,
   // and store parsed IDs so Phase 2 can upgrade once allExperiences loads.
@@ -272,8 +285,8 @@ function PlanPageInner() {
 
   // matchedExperiences = all when no filters active, filtered subset otherwise
   const matchedExperiences = useMemo(
-    () => filterExperiences(allExperiences, { borough: location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes }),
-    [allExperiences, location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes]
+    () => filterExperiences(visibleExperiences, { borough: location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes }),
+    [visibleExperiences, location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes]
   );
 
   const neighborhoodOptions = neighborhoods[location] ?? [];
@@ -332,9 +345,12 @@ function PlanPageInner() {
       const res = await fetch(`${API_BASE}/discovery`);
       if (!res.ok) throw new Error();
       const data = await res.json();
+      const blocked = new Set(blockedIds);
       const all: Experience[] = Object.values(
         (data as { experiences: Record<string, Experience[]> }).experiences
-      ).flat();
+      )
+        .flat()
+        .filter((e) => !(e.creator_user_id != null && blocked.has(e.creator_user_id)));
       const filters = { borough: location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes };
       let matched = filterExperiences(all, filters);
       if (matched.length === 0 && (selectedNeighborhoods.length || budgets.length || settings.length || venueTypes.length || quickVibeTypes.length)) {

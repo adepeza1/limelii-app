@@ -2,6 +2,7 @@ import { getKindeServerSession } from "@/lib/server-auth";
 import { NextResponse } from "next/server";
 import { apiFetch } from "@/lib/api";
 import { API_BASE, USER_API_BASE } from "@/lib/xano";
+import { getMyBlockedIdSet } from "@/lib/blocked-server";
 
 export async function GET() {
   const { isAuthenticated } = getKindeServerSession();
@@ -34,12 +35,15 @@ export async function GET() {
   if (!colRes.ok) return NextResponse.json([]);
   const allCollections = await colRes.json();
 
-  // Filter to collections owned by followed users
+  const blocked = await getMyBlockedIdSet();
+
+  // Filter to collections owned by followed users, excluding blocked users.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result = Array.isArray(allCollections)
     ? allCollections.filter((col: any) => {
-        const ownerId = col._users?.id ?? col.users_id ?? col.owner_user_id;
-        return ownerId && followingIds.includes(ownerId);
+        const ownerId: number | undefined = col._users?.id ?? col.users_id ?? col.owner_user_id;
+        if (!ownerId || !followingIds.includes(ownerId)) return false;
+        return !blocked.has(ownerId);
       })
     : [];
 

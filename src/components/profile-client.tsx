@@ -29,6 +29,7 @@ import type { Collection, SavedCollection } from "@/lib/collections";
 import { listSavedExperiences } from "@/lib/saved";
 import { API_BASE } from "@/lib/xano";
 import type { DiscoveryResponse } from "@/app/page";
+import { getCachedBlockedUser, clearCachedBlockedUser, setCachedBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
 
 // ─── localStorage keys ────────────────────────────────────────────────────────
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -545,6 +546,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                       if (res.ok) {
                         const data = await res.json();
                         setBlockedUsers(Array.isArray(data?.blocked) ? data.blocked : []);
+                        if (Array.isArray(data?.blockedIds)) setCachedBlockedIds(data.blockedIds);
                       } else {
                         setBlockedUsers([]);
                       }
@@ -796,10 +798,20 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                       }
                       return null;
                     }
-                    const u = row.user ?? {};
-                    const photoUrl = extractUrl(u.photo) ?? extractUrl(u.profile_photo_url) ?? extractUrl(u.picture);
-                    const handle = u.username ? `@${u.username}` : `User #${row.blocked_id}`;
-                    const initials = (u.username ?? u.name ?? "?").slice(0, 2).toUpperCase();
+                    // Prefer Xano-joined data; fall back to the local cache
+                    // populated when the user blocked them on this device.
+                    const joined = row.user ?? {};
+                    const cached = getCachedBlockedUser(row.blocked_id);
+                    const username = joined.username ?? cached?.username;
+                    const name = joined.name ?? cached?.name;
+                    const photoUrl =
+                      extractUrl(joined.photo) ??
+                      extractUrl(joined.profile_photo_url) ??
+                      extractUrl(joined.picture) ??
+                      cached?.photoUrl ??
+                      null;
+                    const handle = username ? `@${username}` : `User #${row.blocked_id}`;
+                    const initials = (username ?? name ?? "?").slice(0, 2).toUpperCase();
                     const isUnblocking = unblockingId === row.blocked_id;
                     return (
                       <li key={row.id} className="flex items-center gap-3 py-3">
@@ -813,7 +825,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-[#101828] truncate">{handle}</p>
-                          {u.name && <p className="text-xs text-[#667085] truncate">{u.name}</p>}
+                          {name && <p className="text-xs text-[#667085] truncate">{name}</p>}
                         </div>
                         <button
                           disabled={isUnblocking}
@@ -823,6 +835,8 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                               const res = await fetch(`/api/users/${row.blocked_id}/block`, { method: "DELETE" });
                               if (res.ok) {
                                 setBlockedUsers((prev) => (prev ?? []).filter((b) => b.blocked_id !== row.blocked_id));
+                                clearCachedBlockedUser(row.blocked_id);
+                                setCachedBlockedIds(getCachedBlockedIds().filter((id) => id !== row.blocked_id));
                               } else {
                                 toast("Couldn't unblock user", "error");
                               }
