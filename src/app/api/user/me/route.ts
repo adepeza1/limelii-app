@@ -17,17 +17,26 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = await request.json();
-  const res = await apiFetch("/user/me", {
+
+  // Xano doesn't expose a generic PATCH /user/me — name updates go through
+  // the dedicated /user/update_name endpoint (mirrors /user/update_username).
+  // Route based on which field is being updated.
+  let path = "/user/me";
+  let payload: Record<string, unknown> = body;
+  if (body && typeof body === "object" && typeof (body as { name?: unknown }).name === "string") {
+    path = "/user/update_name";
+    payload = { name: (body as { name: string }).name };
+  }
+
+  const res = await apiFetch(path, {
     method: "PATCH",
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   }, USER_API_BASE);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     let parsed: unknown = null;
     try { parsed = text ? JSON.parse(text) : null; } catch { parsed = null; }
-    console.warn("[PATCH /user/me] Xano failed:", res.status, text.slice(0, 500));
-    // Surface a useful message so the UI can display *why* it failed
-    // instead of a generic "Couldn't save".
+    console.warn(`[PATCH ${path}] Xano failed:`, res.status, text.slice(0, 500));
     const xanoMsg =
       (parsed && typeof parsed === "object" && (parsed as { message?: string }).message) ||
       text ||
