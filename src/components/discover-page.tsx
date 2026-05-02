@@ -184,7 +184,9 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
 
   const categories: ExperienceCategory[] = [
     { id: 0, name: "All" },
-    ...[...data.experience_categories].sort((a, b) => a.id - b.id),
+    ...[...data.experience_categories]
+      .filter((c) => c.name?.trim().toLowerCase() !== "uncategorized")
+      .sort((a, b) => a.id - b.id),
   ];
 
   function filterByCategory(categoryId: number, base: Record<string, Experience[]>): Record<string, Experience[]> {
@@ -305,7 +307,8 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   }, []);
 
   const nonEmptySections = Object.entries(sections).filter(
-    ([, exps]) => exps.length > 0
+    ([key, exps]) =>
+      exps.length > 0 && key.trim().toLowerCase() !== "uncategorized"
   );
 
   if (selectedExperience) {
