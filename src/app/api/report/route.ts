@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
   });
 
   if (!res.ok) {
-    // Log but return success — UI should not fail if Xano table isn't set up yet
     const err = await res.text();
     console.warn("[report] Xano /reports failed:", res.status, err);
+    return NextResponse.json({ error: "Failed to submit report" }, { status: res.status });
   }
 
   return NextResponse.json({ success: true });
