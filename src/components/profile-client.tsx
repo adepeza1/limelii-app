@@ -71,7 +71,7 @@ interface ProfileClientProps {
   familyName: string | null;
   email: string | null;
   initialTab?: Tab;
-  initialCreating?: boolean;
+  initialCreating?: boolean | number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -191,7 +191,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   const router = useRouter();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
-  const [creating, setCreating] = useState(initialCreating);
+  const [creating, setCreating] = useState<boolean | number>(initialCreating);
   const [savedCount, setSavedCount] = useState(0);
   const [collectionsCount, setCollectionsCount] = useState<number | null>(null);
   const [createdCount, setCreatedCount] = useState<number | null>(null);

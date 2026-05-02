@@ -49,6 +49,16 @@ export default async function ProfilePage({
   }
 
   const params = await searchParams;
+  // `creating` may be the literal string "true" (legacy) or a numeric id
+  // pointing at the experience the user just submitted. The numeric form
+  // lets us poll for that exact row to finish generating.
+  const creatingParam = params.creating;
+  let initialCreating: boolean | number = false;
+  if (creatingParam === "true") {
+    initialCreating = true;
+  } else if (creatingParam && /^\d+$/.test(creatingParam)) {
+    initialCreating = parseInt(creatingParam, 10);
+  }
 
   return (
     <ProfileClient
@@ -56,7 +66,7 @@ export default async function ProfilePage({
       familyName={familyName}
       email={email}
       initialTab={params.tab === "preferences" ? "preferences" : "created"}
-      initialCreating={params.creating === "true"}
+      initialCreating={initialCreating}
     />
   );
 }
