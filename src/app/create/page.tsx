@@ -51,7 +51,19 @@ export default function CreatePage() {
           return;
         }
 
-        router.push("/profile?creating=true");
+        // Capture the new experience's id so the profile page can poll for
+        // exactly that row to finish generating, instead of guessing via
+        // count deltas (which doesn't work because Xano creates the row
+        // synchronously before populating places_id).
+        const data = await res.json().catch(() => null);
+        const newId =
+          (data && typeof data === "object" && (data as { id?: unknown }).id) ??
+          (data && typeof data === "object" && (data as { experience?: { id?: unknown } }).experience?.id);
+        const target =
+          typeof newId === "number" && Number.isFinite(newId)
+            ? `/profile?creating=${newId}`
+            : `/profile?creating=true`;
+        router.push(target);
       } catch {
         setError("Failed to save route. Please try again.");
       }

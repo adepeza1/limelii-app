@@ -11,8 +11,20 @@ import { useBackHandler } from "@/hooks/useBackHandler";
 
 interface ProfileExperiencesProps {
   onCountLoaded?: (count: number) => void;
-  creating?: boolean;
+  // `true` = waiting on a generic create (legacy path). Number = the specific
+  // experience id we're waiting for to finish generating.
+  creating?: boolean | number;
   onCreatingDone?: () => void;
+}
+
+// An experience is considered "still generating" if Xano marked it so, or —
+// when status isn't returned — it has no resolved places yet. The
+// /chatkit/add_experience flow inserts the row immediately and populates
+// places_id asynchronously, so empty places is the strongest fallback signal.
+function isGenerating(exp: Experience): boolean {
+  if (exp.status === "generating") return true;
+  if (exp.status === "done") return false;
+  return (exp.places_id?.length ?? 0) === 0;
 }
 
 function CreatingPlaceholder() {
@@ -78,7 +90,15 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Experience | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const prevPendingRef = useRef(false);
+  // Capture the IDs of experiences that exist on first mount. Anything new
+  // since then is treated as "the one we just created" when ?creating=true.
+  const baselineIdsRef = useRef<Set<number> | null>(null);
+  // Latest props so the polling closure always sees the current `creating`
+  // and callback without us having to re-create the interval.
+  const creatingRef = useRef(creating);
+  const onCreatingDoneRef = useRef(onCreatingDone);
+  useEffect(() => { creatingRef.current = creating; }, [creating]);
+  useEffect(() => { onCreatingDoneRef.current = onCreatingDone; }, [onCreatingDone]);
 
   useBackHandler(!!selectedExperience, () => setSelectedExperience(null));
 
@@ -92,10 +112,38 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
       const data = await res.json();
       const exps: Experience[] = Array.isArray(data.experiences) ? data.experiences : [];
       setExperiences(exps);
-      // Count only finished experiences for the displayed counter so the
-      // tally doesn't include the in-progress placeholder.
-      const doneCount = exps.filter((e) => e.status !== "generating").length;
+
+      if (baselineIdsRef.current === null) {
+        baselineIdsRef.current = new Set(exps.map((e) => e.id));
+      }
+
+      // Count only experiences that are visibly done (the in-progress one is
+      // represented by the skeleton placeholder).
+      const doneCount = exps.filter((e) => !isGenerating(e)).length;
       onCountLoaded?.(doneCount);
+
+      // Decide whether the create flow is finished and the parent should
+      // clear its `creating` flag.
+      const target = creatingRef.current;
+      if (target === false || target === undefined) {
+        // Not in create flow — nothing to do.
+      } else if (typeof target === "number") {
+        // Wait for that specific experience to flip to done.
+        const exp = exps.find((e) => e.id === target);
+        if (exp && !isGenerating(exp)) {
+          onCreatingDoneRef.current?.();
+        }
+      } else {
+        // Generic ?creating=true: a new (post-baseline) experience exists and
+        // is no longer generating.
+        const baseline = baselineIdsRef.current;
+        const newAndDone = exps.find(
+          (e) => !baseline.has(e.id) && !isGenerating(e)
+        );
+        if (newAndDone) {
+          onCreatingDoneRef.current?.();
+        }
+      }
     } catch {
       setError("Failed to load your experiences");
     } finally {
@@ -108,30 +156,24 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Show only experiences that finished generating; the rest are represented
-  // by the skeleton placeholder.
-  const visibleExperiences = experiences.filter((e) => e.status !== "generating");
-  const pendingCount = experiences.filter((e) => e.status === "generating").length;
-  // We're "pending" if either the URL arrived with ?creating=true (the user
-  // just submitted and the row may not exist yet) or Xano still has at least
-  // one experience in the generating state.
-  const isPending = (creating ?? false) || pendingCount > 0;
+  // Hide the in-progress experience(s) from the rendered grid; the skeleton
+  // placeholder represents them.
+  const visibleExperiences = experiences.filter((e) => !isGenerating(e));
+  const pendingCount = experiences.filter(isGenerating).length;
+  // Show the skeleton while either the URL still has the create flag, the
+  // specific experience hasn't finished yet, or any experience is generating.
+  const isPending = creating !== false && creating !== undefined
+    ? typeof creating === "number"
+      ? !experiences.find((e) => e.id === creating && !isGenerating(e))
+      : true
+    : pendingCount > 0;
 
-  // Poll while pending; stop the moment everything's done.
+  // Poll while pending. We use the closure-captured creatingRef inside fetch
+  // so the trigger always reads the latest props.
   useEffect(() => {
     if (!isPending) return;
     const id = setInterval(fetchExperiences, 3000);
     return () => clearInterval(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPending]);
-
-  // Notify the parent on the falling edge (pending → not pending) so it can
-  // clear the ?creating=true flag and stop showing any wrapper UI.
-  useEffect(() => {
-    if (prevPendingRef.current && !isPending) {
-      onCreatingDone?.();
-    }
-    prevPendingRef.current = isPending;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPending]);
 
