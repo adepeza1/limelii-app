@@ -20,12 +20,17 @@ export async function PATCH(request: NextRequest) {
 
   // Xano doesn't expose a generic PATCH /user/me — name updates go through
   // the dedicated /user/update_name endpoint (mirrors /user/update_username).
-  // Route based on which field is being updated.
+  // That endpoint expects first_name + last_name separately, so split the
+  // single `name` field the UI sends.
   let path = "/user/me";
   let payload: Record<string, unknown> = body;
   if (body && typeof body === "object" && typeof (body as { name?: unknown }).name === "string") {
+    const fullName = (body as { name: string }).name.trim();
+    const parts = fullName.split(/\s+/);
+    const first_name = parts[0] ?? "";
+    const last_name = parts.slice(1).join(" ");
     path = "/user/update_name";
-    payload = { name: (body as { name: string }).name };
+    payload = { first_name, last_name };
   }
 
   const res = await apiFetch(path, {
