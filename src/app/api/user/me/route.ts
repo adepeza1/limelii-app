@@ -35,7 +35,15 @@ export async function DELETE() {
   }
   const res = await apiFetch("/user/me", { method: "DELETE" }, USER_API_BASE);
   if (!res.ok) {
-    console.warn("[delete account] Xano DELETE /user/me failed:", res.status);
+    const detail = await res.text().catch(() => "");
+    console.warn("[delete account] Xano DELETE /user/me failed:", res.status, detail);
+    // Do NOT clear cookies if Xano deletion failed — the account still exists
+    // and clearing the session would just log the user out without deleting
+    // their data, which would be a real privacy/compliance bug.
+    return NextResponse.json(
+      { error: "Failed to delete account. Please try again." },
+      { status: res.status }
+    );
   }
   const response = NextResponse.json({ success: true });
   response.cookies.delete("xano_token");

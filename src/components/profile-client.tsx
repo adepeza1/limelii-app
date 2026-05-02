@@ -262,6 +262,12 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
     try {
       const records = await listSavedExperiences();
       const res = await fetch(`${API_BASE}/discovery`);
+      if (!res.ok) {
+        // Discovery is unavailable — surface the saved count from the records
+        // we already have, but don't overwrite the local cache with empty data.
+        setSavedCount(records.length);
+        return;
+      }
       const data: DiscoveryResponse = await res.json();
       const all = Object.values(data.experiences ?? {}).flat();
       const savedIds = new Set(records.map((r) => r.experiences_id));
@@ -273,7 +279,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
       matched.forEach((e) => { itemsMap[String(e.id)] = e; });
       localStorage.setItem(SAVED_ITEMS_KEY, JSON.stringify(itemsMap));
       localStorage.removeItem(MIGRATION_KEY);
-    } catch { /* ignore */ }
+    } catch { /* ignore — keep existing cache on transient errors */ }
     finally { setSavedLoading(false); }
   }
 
@@ -881,10 +887,17 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                 onClick={async () => {
                   setDeleting(true);
                   try {
-                    await fetch("/api/user/me", { method: "DELETE" });
-                  } finally {
+                    const res = await fetch("/api/user/me", { method: "DELETE" });
+                    if (!res.ok) {
+                      toast("Couldn't delete your account. Please try again or email support.", "error");
+                      setDeleting(false);
+                      return;
+                    }
                     mixpanelReset();
                     window.location.href = "/api/user/logout?post_logout_redirect_url=%2Fapi%2Fauth%2Flogin";
+                  } catch {
+                    toast("Couldn't delete your account. Please check your connection.", "error");
+                    setDeleting(false);
                   }
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold disabled:opacity-50"
