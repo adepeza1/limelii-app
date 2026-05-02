@@ -27,6 +27,7 @@ export interface Place {
 
 export interface Experience {
   id: number;
+  created_at?: number;
   title: string;
   description: string;
   rating: number;
