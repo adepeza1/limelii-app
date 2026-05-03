@@ -1118,9 +1118,9 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                   </button>
                 </div>
               ) : (
-                <div className="px-4 pt-2 flex gap-1 items-start">
+                <div className="px-4 pt-2 flex gap-0.5 items-start">
                   {[savedExperiences.filter((_, i) => i % 2 === 0), savedExperiences.filter((_, i) => i % 2 === 1)].map((col, colIdx) => (
-                    <div key={colIdx} className="flex-1 flex flex-col gap-1">
+                    <div key={colIdx} className="flex-1 flex flex-col gap-0.5">
                       {col.map((exp, rowIdx) => {
                         const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
                         return (
@@ -1128,7 +1128,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                             key={exp.id}
                             experience={exp}
                             compact
-                            className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                            className={`!aspect-auto !rounded-lg ${isTall ? "h-[220px]" : "h-[188px]"}`}
                             onClick={() => { savedScrollY.current = window.scrollY; setSelectedExperience(exp); }}
                             onUnsave={(id) => {
                               setSavedExperiences((prev) => prev.filter((e) => e.id !== id));

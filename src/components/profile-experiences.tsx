@@ -212,13 +212,13 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
 
   if (loading) {
     return (
-      <div className="px-4 flex gap-1 items-start pb-4">
+      <div className="px-4 flex gap-0.5 items-start pb-4">
         {[0, 1].map((col) => (
-          <div key={col} className="flex-1 flex flex-col gap-1">
+          <div key={col} className="flex-1 flex flex-col gap-0.5">
             {[0, 1].map((row) => (
               <div
                 key={row}
-                className={`w-full rounded-xl bg-gray-100 animate-pulse ${(col === 0 ? row % 2 === 0 : row % 2 === 1) ? "h-[220px]" : "h-[188px]"}`}
+                className={`w-full rounded-lg bg-gray-100 animate-pulse ${(col === 0 ? row % 2 === 0 : row % 2 === 1) ? "h-[220px]" : "h-[188px]"}`}
               />
             ))}
           </div>
@@ -256,9 +256,9 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
 
   return (
     <>
-      <div className="px-4 pb-4 flex gap-1 items-start">
+      <div className="px-4 pb-4 flex gap-0.5 items-start">
         {[leftCol, rightCol].map((col, colIdx) => (
-          <div key={colIdx} className="flex-1 flex flex-col gap-1">
+          <div key={colIdx} className="flex-1 flex flex-col gap-0.5">
             {colIdx === 0 && isPending && <CreatingPlaceholder />}
             {col.map((exp, rowIdx) => {
               const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
@@ -267,7 +267,7 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
                   <ExperienceCard
                     experience={exp}
                     compact
-                    className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                    className={`!aspect-auto !rounded-lg ${isTall ? "h-[220px]" : "h-[188px]"}`}
                     onClick={() => setSelectedExperience(exp)}
                   />
                   {/* Delete button overlay */}
