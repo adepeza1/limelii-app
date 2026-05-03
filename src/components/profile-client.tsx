@@ -70,6 +70,7 @@ interface ProfileClientProps {
   givenName: string | null;
   familyName: string | null;
   email: string | null;
+  authError?: boolean;
   initialTab?: Tab;
   initialCreating?: boolean | number;
 }
@@ -187,7 +188,7 @@ function loadPreferences(): UserPreferences {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export function ProfileClient({ givenName, familyName, email, initialTab = "created", initialCreating = false }: ProfileClientProps) {
+export function ProfileClient({ givenName, familyName, email, authError = false, initialTab = "created", initialCreating = false }: ProfileClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
@@ -474,6 +475,22 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
     >
       {/* Safe-area spacer */}
       <div className="h-[env(safe-area-inset-top,44px)]" />
+
+      {/* Re-auth banner — shown when the server couldn't load the user
+          because the xano_token cookie outlived the underlying token. */}
+      {authError && (
+        <div className="mx-4 mt-2 mb-1 rounded-xl bg-[#FFF4F4] border border-[#F04438]/20 px-4 py-3 flex items-center gap-3">
+          <p className="flex-1 text-xs text-[#B42318] leading-snug">
+            We couldn&apos;t load your profile. Please sign in again.
+          </p>
+          <a
+            href="/api/user/logout?post_logout_redirect_url=%2Fapi%2Fauth%2Flogin"
+            className="shrink-0 text-xs font-semibold text-white bg-[#F04438] px-3 py-1.5 rounded-full"
+          >
+            Sign in
+          </a>
+        </div>
+      )}
 
       {/* Pull-to-refresh indicator */}
       <div

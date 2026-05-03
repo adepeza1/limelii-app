@@ -22,6 +22,7 @@ export default async function ProfilePage({
   let givenName: string | null = null;
   let familyName: string | null = null;
   let email: string | null = null;
+  let authError = false;
 
   if (kindeAuth) {
     const user = await getUser();
@@ -42,9 +43,13 @@ export default async function ProfilePage({
           familyName = parts.slice(1).join(" ") || null;
         }
         email = data.email ?? null;
+      } else if (res.status === 401 || res.status === 403) {
+        // Cookie outlived the underlying token — flag it so the client
+        // can prompt for re-login instead of silently rendering "User".
+        authError = true;
       }
     } catch {
-      // Proceed with null user info — ProfileClient shows "User" fallback
+      // Network failure; proceed silently — ProfileClient shows "User" fallback.
     }
   }
 
@@ -65,6 +70,7 @@ export default async function ProfilePage({
       givenName={givenName}
       familyName={familyName}
       email={email}
+      authError={authError}
       initialTab={params.tab === "preferences" ? "preferences" : "created"}
       initialCreating={initialCreating}
     />
