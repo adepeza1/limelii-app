@@ -1089,13 +1089,13 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
           {activeTab === "saved" && (
             <div className="pt-2">
               {savedLoading ? (
-                <div className="px-4 flex gap-1 items-start pb-4">
+                <div className="px-4 flex gap-0.5 items-start pb-4">
                   {[0, 1].map((col) => (
-                    <div key={col} className="flex-1 flex flex-col gap-1">
+                    <div key={col} className="flex-1 flex flex-col gap-0.5">
                       {[0, 1].map((row) => (
                         <div
                           key={row}
-                          className={`w-full rounded-xl bg-gray-100 animate-pulse ${(col === 0 ? row % 2 === 0 : row % 2 === 1) ? "h-[220px]" : "h-[188px]"}`}
+                          className={`w-full rounded-lg bg-gray-100 animate-pulse ${(col === 0 ? row % 2 === 0 : row % 2 === 1) ? "h-[220px]" : "h-[188px]"}`}
                         />
                       ))}
                     </div>
