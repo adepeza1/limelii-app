@@ -14,6 +14,7 @@ import type {
 import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
 import { fetchBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
+import { searchAndRank, type RankedResult } from "@/lib/discover-search";
 
 
 // ─── Suggestion logic ─────────────────────────────────────────────────────────
@@ -147,7 +148,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   // Search state
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Experience[] | null>(null);
+  const [searchResults, setSearchResults] = useState<RankedResult[] | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -264,29 +265,9 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
   }
 
-  function searchExperiences(query: string): Experience[] {
-    const q = query.toLowerCase().trim();
-    if (!q) return [];
-    return allExperiences.filter((exp) => {
-      if (exp.title?.toLowerCase().includes(q)) return true;
-      if (exp.description?.toLowerCase().includes(q)) return true;
-      for (const act of exp.activities ?? []) {
-        if (act.toLowerCase().includes(q)) return true;
-      }
-      for (const n of exp.neighborhoods ?? []) {
-        if (n.toLowerCase().includes(q)) return true;
-      }
-      for (const place of exp.places_id ?? []) {
-        if (place.name?.toLowerCase().includes(q)) return true;
-        if (place.neighborhood?.toLowerCase().includes(q)) return true;
-        if (place.borough?.toLowerCase().includes(q)) return true;
-        for (const t of place._location_details?.location_type ?? []) {
-          if (t.toLowerCase().includes(q)) return true;
-        }
-        if (place._location_details?.Description?.toLowerCase().includes(q)) return true;
-      }
-      return false;
-    });
+  function searchExperiences(query: string): RankedResult[] {
+    if (!query.trim()) return [];
+    return searchAndRank(allExperiences, query);
   }
 
   function handleSearchInput(value: string) {
@@ -399,11 +380,12 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
 
           {searchResults && searchResults.length > 0 && (
             <div className="px-4 pt-4 flex flex-col gap-4">
-              {searchResults.map((exp) => (
+              {searchResults.map(({ experience, matchedPlaceId }) => (
                 <ExperienceCard
-                  key={exp.id}
-                  experience={exp}
-                  onClick={() => openExperience(exp)}
+                  key={experience.id}
+                  experience={experience}
+                  initialPlaceId={matchedPlaceId ?? undefined}
+                  onClick={() => openExperience(experience)}
                 />
               ))}
             </div>
