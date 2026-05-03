@@ -2,7 +2,6 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ProfileClient } from "@/components/profile-client";
-import { apiFetch } from "@/lib/api";
 import { USER_API_BASE } from "@/lib/xano";
 
 export default async function ProfilePage({
@@ -30,21 +29,22 @@ export default async function ProfilePage({
     familyName = user?.family_name ?? null;
     email = user?.email ?? null;
   } else if (xanoToken) {
-    // apiFetch handles 401 by refreshing the Xano token and retrying once.
-    // If it still fails, the cookie is unrecoverable — send the user back
-    // to login rather than rendering a broken profile with "User" fallback.
-    const res = await apiFetch("/user/me", { cache: "no-store" }, USER_API_BASE);
-    if (res.status === 401) {
-      redirect("/api/auth/login");
-    }
-    if (res.ok) {
-      const data = await res.json();
-      if (data.name) {
-        const parts = (data.name as string).trim().split(/\s+/);
-        givenName = parts[0] ?? null;
-        familyName = parts.slice(1).join(" ") || null;
+    try {
+      const res = await fetch(`${USER_API_BASE}/user/me`, {
+        headers: { Authorization: `Bearer ${xanoToken}` },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.name) {
+          const parts = (data.name as string).trim().split(/\s+/);
+          givenName = parts[0] ?? null;
+          familyName = parts.slice(1).join(" ") || null;
+        }
+        email = data.email ?? null;
       }
-      email = data.email ?? null;
+    } catch {
+      // Proceed with null user info — ProfileClient shows "User" fallback
     }
   }
 
