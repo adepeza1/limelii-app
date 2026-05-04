@@ -8,6 +8,7 @@ import { ToastProvider } from "@/components/toast";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { MixpanelProvider } from "@/components/mixpanel-provider";
 import { CapacitorClassMarker } from "@/components/capacitor-class-marker";
+import { SessionRefresher } from "@/components/session-refresher";
 import "@fontsource/mona-sans/400.css";
 import "@fontsource/mona-sans/500.css";
 import "@fontsource/mona-sans/600.css";
@@ -53,6 +54,7 @@ export default function RootLayout({
           <ToastProvider>
             <MixpanelProvider />
             <CapacitorClassMarker />
+            <SessionRefresher />
             <SplashScreen>
               {children}
               <BottomNav />
