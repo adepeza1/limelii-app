@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiFetch } from "@/lib/api";
 import { USER_API_BASE } from "@/lib/xano";
+import { validateUsername } from "@/lib/username-validation";
 
 export async function GET(request: NextRequest) {
   const username = request.nextUrl.searchParams.get("username");
   if (!username) {
     return NextResponse.json({ available: false });
+  }
+
+  const validation = validateUsername(username);
+  if (!validation.ok) {
+    return NextResponse.json({
+      available: false,
+      reason: validation.reason,
+      message: validation.message,
+    });
   }
 
   const res = await apiFetch(`/user/check_username?username=${encodeURIComponent(username)}`, {}, USER_API_BASE);

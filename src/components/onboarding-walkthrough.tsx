@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { MapPin, Sparkles, ChevronRight } from "lucide-react";
 import { haptic } from "@/lib/haptics";
+import { LimeliiLogo } from "@/components/limelii-logo";
 
 const KEY = "limelii_walkthrough_v1";
 
@@ -228,15 +229,7 @@ function WelcomeSlide() {
 
       {/* Content */}
       <div className="relative flex flex-col items-center gap-5">
-        {/* Logo — CSS filter makes the coral SVG render white */}
-        <Image
-          src="/limelii-logo.svg"
-          alt="Limelii"
-          width={200}
-          height={79}
-          className="brightness-0 invert"
-          priority
-        />
+        <LimeliiLogo width={200} height={79} color="#ffffff" />
 
         {/* Route icon from favicon, tinted white */}
         <Image

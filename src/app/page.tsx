@@ -18,6 +18,8 @@ export interface Place {
   _location_details: {
     Description: string;
     location_type: string[];
+    location_subtype?: string[];
+    location_variant?: string[];
     phone?: string;
     url?: string;
     operating_hours?: string;
@@ -27,11 +29,14 @@ export interface Place {
 
 export interface Experience {
   id: number;
+  created_at?: number;
   title: string;
   description: string;
   rating: number;
   places_id: Place[];
   category_id: number;
+  creator_user_id?: number | null;
+  status?: "generating" | "done";
   neighborhoods: string[];
   activities: string[];
   budget: string[];
@@ -65,7 +70,7 @@ function DiscoverSkeleton() {
   return (
     <div className="bg-white min-h-screen max-w-5xl mx-auto">
       <header className="sticky top-0 z-10 bg-white">
-        <div className="h-[44px]" />
+        <div className="h-[env(safe-area-inset-top,44px)]" />
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100">
           <h1 className="text-lg font-medium text-black">Discover</h1>
         </div>

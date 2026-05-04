@@ -4,8 +4,8 @@ import { apiFetch } from "@/lib/api";
 
 // POST /api/collections/[id]/share-to-user
 // Body: { recipient_user_id: number }
-// Creates a shared_collections row for the recipient with shared_by_user_id = current user.
-// Requires Xano endpoint: POST /collections/{id}/share_to_user
+// Calls Xano POST /collections/{id}/share_to_user, which derives the sender
+// from $auth.id internally — so we forward the recipient only.
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -27,8 +27,15 @@ export async function POST(
   });
 
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    return NextResponse.json(data, { status: res.status });
+    const text = await res.text().catch(() => "");
+    let parsed: unknown = null;
+    try { parsed = text ? JSON.parse(text) : null; } catch { parsed = null; }
+    console.warn("[share-collection] Xano failed:", res.status, text.slice(0, 500));
+    const xanoMsg =
+      (parsed && typeof parsed === "object" && (parsed as { message?: string }).message) ||
+      text ||
+      "Failed to share collection";
+    return NextResponse.json({ error: xanoMsg, xano: parsed ?? text }, { status: res.status });
   }
-  return NextResponse.json(await res.json());
+  return NextResponse.json(await res.json().catch(() => ({ success: true })));
 }

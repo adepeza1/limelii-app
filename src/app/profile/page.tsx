@@ -22,6 +22,7 @@ export default async function ProfilePage({
   let givenName: string | null = null;
   let familyName: string | null = null;
   let email: string | null = null;
+  let authError = false;
 
   if (kindeAuth) {
     const user = await getUser();
@@ -42,21 +43,36 @@ export default async function ProfilePage({
           familyName = parts.slice(1).join(" ") || null;
         }
         email = data.email ?? null;
+      } else if (res.status === 401 || res.status === 403) {
+        // Cookie outlived the underlying token — flag it so the client
+        // can prompt for re-login instead of silently rendering "User".
+        authError = true;
       }
     } catch {
-      // Proceed with null user info — ProfileClient shows "User" fallback
+      // Network failure; proceed silently — ProfileClient shows "User" fallback.
     }
   }
 
   const params = await searchParams;
+  // `creating` may be the literal string "true" (legacy) or a numeric id
+  // pointing at the experience the user just submitted. The numeric form
+  // lets us poll for that exact row to finish generating.
+  const creatingParam = params.creating;
+  let initialCreating: boolean | number = false;
+  if (creatingParam === "true") {
+    initialCreating = true;
+  } else if (creatingParam && /^\d+$/.test(creatingParam)) {
+    initialCreating = parseInt(creatingParam, 10);
+  }
 
   return (
     <ProfileClient
       givenName={givenName}
       familyName={familyName}
       email={email}
+      authError={authError}
       initialTab={params.tab === "preferences" ? "preferences" : "created"}
-      initialCreating={params.creating === "true"}
+      initialCreating={initialCreating}
     />
   );
 }

@@ -209,7 +209,8 @@ export function ExperienceDetail({
       const cardWidth = el.firstElementChild
         ? (el.firstElementChild as HTMLElement).offsetWidth
         : 1;
-      const index = Math.round(scrollLeft / (cardWidth + 8)); // 8 = gap-2
+      // Carousel has no gap between slides, so divide by cardWidth alone.
+      const index = Math.round(scrollLeft / cardWidth);
       setActiveSlide(Math.min(index, placesWithImages.length - 1));
     };
     el.addEventListener("scroll", handleScroll, { passive: true });
@@ -236,7 +237,7 @@ export function ExperienceDetail({
     >
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white">
-        <div className="h-[44px]" />
+        <div className="h-[env(safe-area-inset-top,44px)]" />
         <div className="flex items-center gap-3 px-4 py-3 h-12">
           <button onClick={onBack} aria-label="Back" className="flex items-center gap-0.5 text-black">
             <ChevronLeft className="w-6 h-6" />
@@ -390,7 +391,7 @@ export function ExperienceDetail({
         )}
 
         {/* Map */}
-        <div className="px-4 flex flex-col gap-4">
+        <div className="px-4 pt-6 flex flex-col gap-4">
           {/* Map */}
           <div className="relative">
             <div className="bg-white rounded-2xl shadow-[0px_4px_32px_0px_rgba(0,0,0,0.07)] overflow-hidden">
@@ -406,6 +407,12 @@ export function ExperienceDetail({
           </div>
 
         </div>
+
+        {/* Spacer so the map clears the fixed bottom nav + iOS home indicator */}
+        <div
+          aria-hidden="true"
+          style={{ height: "calc(env(safe-area-inset-bottom, 0px) + 56px)" }}
+        />
       </div>
 
       {/* Fullscreen map overlay */}
@@ -441,16 +448,24 @@ export function ExperienceDetail({
           onClose={() => setShowShareSheet(false)}
           onSend={async (userIds) => {
             const results = await Promise.allSettled(
-              userIds.map((userId) =>
-                fetch(`/api/experiences/${experience.id}/share-to-user`, {
+              userIds.map(async (userId) => {
+                const r = await fetch(`/api/experiences/${experience.id}/share-to-user`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ recipient_user_id: userId }),
-                }).then((r) => { if (!r.ok) throw new Error(); })
-              )
+                });
+                if (!r.ok) {
+                  const data = await r.json().catch(() => ({}));
+                  const msg = (data && typeof data === "object" && (data as { error?: string }).error) || `status ${r.status}`;
+                  throw new Error(msg);
+                }
+              })
             );
-            const failed = results.filter((r) => r.status === "rejected").length;
-            if (failed > 0) throw new Error(`Failed to share with ${failed} recipient(s)`);
+            const failures = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[];
+            if (failures.length > 0) {
+              const reason = failures[0].reason instanceof Error ? failures[0].reason.message : String(failures[0].reason);
+              throw new Error(reason);
+            }
           }}
         />
       )}

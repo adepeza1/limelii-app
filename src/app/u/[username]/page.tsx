@@ -8,6 +8,7 @@ import type { Experience, DiscoveryResponse } from "@/app/page";
 import { API_BASE } from "@/lib/xano";
 import { BrowseCollectionCard, getTagsForCollection } from "@/components/browse-collection-card";
 import { ReportModal } from "@/components/report-modal";
+import { cacheBlockedUser, clearCachedBlockedUser, setCachedBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
 
 interface PublicProfile {
   id: number;
@@ -45,6 +46,9 @@ export default function PublicProfilePage() {
   const [showUserKebab, setShowUserKebab] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [isBlockedByMe, setIsBlockedByMe] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
+  const [blockError, setBlockError] = useState<string | null>(null);
 
   // Load current user + seed follow state
   useEffect(() => {
@@ -67,6 +71,20 @@ export default function PublicProfilePage() {
             .then((r) => r.ok ? r.json() : null)
             .then((data) => { if (Array.isArray(data?.followingIds)) setFollowedIds(data.followingIds); })
             .catch(() => setFollowedIds([]));
+          // Seed blocked IDs from server
+          fetch("/api/users/me/blocked")
+            .then((r) => r.ok ? r.json() : null)
+            .then((data) => {
+              if (!Array.isArray(data?.blockedIds)) return;
+              setCachedBlockedIds(data.blockedIds);
+              fetch(`/api/users/${encodeURIComponent(username)}/profile`)
+                .then((r) => r.ok ? r.json() : null)
+                .then((p) => {
+                  if (p?.id && data.blockedIds.includes(p.id)) setIsBlockedByMe(true);
+                })
+                .catch(() => {});
+            })
+            .catch(() => {});
         } else {
           setFollowedIds([]);
         }
@@ -206,6 +224,38 @@ export default function PublicProfilePage() {
       {loading ? (
         <div className="px-5 py-16 flex items-center justify-center">
           <p className="text-sm text-[#667085]">Loading…</p>
+        </div>
+      ) : isBlockedByMe && !isOwnProfile ? (
+        <div className="px-5 py-16 flex flex-col items-center gap-3 text-center">
+          <p className="text-[#101828] font-semibold text-base">You blocked @{username}</p>
+          <p className="text-[#667085] text-sm max-w-[260px]">
+            You won&apos;t see content from this user. You can unblock them anytime from Settings &rsaquo; Blocked Users, or below.
+          </p>
+          <button
+            disabled={blockLoading}
+            onClick={async () => {
+              if (!profile) return;
+              setBlockLoading(true);
+              setBlockError(null);
+              try {
+                const res = await fetch(`/api/users/${profile.id}/block`, { method: "DELETE" });
+                if (res.ok) {
+                  setIsBlockedByMe(false);
+                  clearCachedBlockedUser(profile.id);
+                  setCachedBlockedIds(getCachedBlockedIds().filter((id) => id !== profile.id));
+                } else {
+                  setBlockError("Couldn't unblock user. Please try again.");
+                }
+              } catch {
+                setBlockError("Network error. Please try again.");
+              } finally {
+                setBlockLoading(false);
+              }
+            }}
+            className="mt-2 px-5 py-2 rounded-full border border-[#101828] text-sm font-medium text-[#101828] disabled:opacity-50"
+          >
+            {blockLoading ? "Unblocking…" : "Unblock"}
+          </button>
         </div>
       ) : notFound ? (
         <div className="px-5 py-16 flex flex-col items-center gap-3 text-center">
@@ -381,16 +431,63 @@ export default function PublicProfilePage() {
               Report user
             </button>
             <button
+              disabled={blockLoading}
               onClick={async () => {
                 setShowUserKebab(false);
-                if (profile) {
-                  await fetch(`/api/users/${profile.id}/block`, { method: "POST" });
-                  setBlocked(true);
+                if (!profile) return;
+                setBlockLoading(true);
+                setBlockError(null);
+                try {
+                  if (isBlockedByMe) {
+                    const res = await fetch(`/api/users/${profile.id}/block`, { method: "DELETE" });
+                    if (res.ok) {
+                      setIsBlockedByMe(false);
+                      clearCachedBlockedUser(profile.id);
+                      setCachedBlockedIds(getCachedBlockedIds().filter((id) => id !== profile.id));
+                    } else {
+                      setBlockError("Couldn't unblock user. Please try again.");
+                    }
+                  } else {
+                    const res = await fetch(`/api/users/${profile.id}/block`, { method: "POST" });
+                    if (res.ok) {
+                      setIsBlockedByMe(true);
+                      setBlocked(true);
+                      // Cache identity locally so the Blocked Users list shows
+                      // a real name/avatar without depending on Xano joins.
+                      function extractUrl(val: unknown): string | null {
+                        if (!val) return null;
+                        if (typeof val === "string") return val || null;
+                        if (typeof val === "object" && val !== null && "url" in val) {
+                          const u = (val as { url?: unknown }).url;
+                          return typeof u === "string" ? u || null : null;
+                        }
+                        return null;
+                      }
+                      cacheBlockedUser({
+                        id: profile.id,
+                        username: profile.username,
+                        name: profile.name,
+                        photoUrl:
+                          extractUrl(profile.photo) ??
+                          extractUrl(profile.profile_photo_url) ??
+                          extractUrl(profile.picture),
+                      });
+                      const ids = getCachedBlockedIds().filter((id) => id !== profile.id);
+                      ids.push(profile.id);
+                      setCachedBlockedIds(ids);
+                    } else {
+                      setBlockError("Couldn't block user. Please try again.");
+                    }
+                  }
+                } catch {
+                  setBlockError("Network error. Please try again.");
+                } finally {
+                  setBlockLoading(false);
                 }
               }}
-              className="w-full flex items-center py-3.5 px-2 text-sm font-medium text-red-500"
+              className={`w-full flex items-center py-3.5 px-2 text-sm font-medium disabled:opacity-50 ${isBlockedByMe ? "text-[#101828]" : "text-red-500"}`}
             >
-              Block user
+              {isBlockedByMe ? "Unblock user" : "Block user"}
             </button>
             <button
               onClick={() => setShowUserKebab(false)}
@@ -415,12 +512,27 @@ export default function PublicProfilePage() {
         <div className="fixed inset-0 z-[900] bg-black/40 flex items-center justify-center px-6">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <p className="text-[#101828] font-semibold text-base mb-1">User blocked</p>
-            <p className="text-[#667085] text-sm mb-5">You won&apos;t see content from this user anymore.</p>
+            <p className="text-[#667085] text-sm mb-5">You won&apos;t see content from this user anymore. You can unblock them anytime from Settings → Blocked Users.</p>
             <button
               onClick={() => router.back()}
               className="w-full py-3 rounded-xl bg-[#101828] text-white text-sm font-medium"
             >
               Go back
+            </button>
+          </div>
+        </div>
+      )}
+
+      {blockError && (
+        <div className="fixed inset-0 z-[900] bg-black/40 flex items-center justify-center px-6">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <p className="text-[#101828] font-semibold text-base mb-1">Something went wrong</p>
+            <p className="text-[#667085] text-sm mb-5">{blockError}</p>
+            <button
+              onClick={() => setBlockError(null)}
+              className="w-full py-3 rounded-xl bg-[#101828] text-white text-sm font-medium"
+            >
+              OK
             </button>
           </div>
         </div>

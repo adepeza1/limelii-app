@@ -1,6 +1,7 @@
 import { getKindeServerSession } from "@/lib/server-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { apiFetch } from "@/lib/api";
+import { getMyBlockedIdSet } from "@/lib/blocked-server";
 
 // GET — list collections the current user saved via a private share link
 export async function GET() {
@@ -11,7 +12,21 @@ export async function GET() {
 
   const res = await apiFetch("/shared_collections");
   if (!res.ok) return NextResponse.json([], { status: res.status });
-  return NextResponse.json(await res.json());
+  const data = await res.json();
+  if (!Array.isArray(data)) return NextResponse.json(data);
+
+  const blocked = await getMyBlockedIdSet();
+  if (blocked.size === 0) return NextResponse.json(data);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const filtered = data.filter((row: any) => {
+    const sharedBy: number | undefined =
+      row.shared_by_user_id ??
+      row.collection?.owner_user_id ??
+      row.collection?._users?.id;
+    return !(typeof sharedBy === "number" && blocked.has(sharedBy));
+  });
+  return NextResponse.json(filtered);
 }
 
 // POST — save a collection to the current user's shared list (called from /c/[token] page)

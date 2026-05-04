@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
+import { LimeliiLogo } from "@/components/limelii-logo";
 
 const SPLASH_KEY = "limelii_splash_shown";
 
@@ -30,13 +30,7 @@ export function SplashScreen({ children }: { children: React.ReactNode }) {
             fading ? "opacity-0" : "opacity-100"
           }`}
         >
-          <Image
-            src="/limelii-logo.svg"
-            alt="Limelii"
-            width={319}
-            height={126}
-            priority
-          />
+          <LimeliiLogo width={319} height={126} />
           <p className="mt-4 text-[#f78539] text-sm font-semibold font-[family-name:var(--font-poppins),sans-serif]">
             Where Experiences Begin
           </p>

@@ -13,6 +13,7 @@ import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
 import type { Experience } from "@/app/page";
 import { API_BASE } from "@/lib/xano";
+import { fetchBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -20,16 +21,6 @@ const BOROUGHS = ["All NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten
 const VALID_BOROUGHS = new Set(["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"]);
 const BUDGETS = ["Free", "$", "$$", "$$$"];
 const SETTINGS = ["Indoor", "Outdoor"];
-
-// Include both specific and generic (Xano) type labels so matching works
-const QUICK_VIBES = [
-  { label: "Date Night",     types: ["Fine Dining", "Cocktail Bar", "Food", "Drink", "Bar", "Restaurant"], photo: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=200&q=80" },
-  { label: "Rooftop Drinks", types: ["Rooftop Bar", "Rooftop Lounge", "Rooftop Restaurant", "Rooftop", "Drink"],  photo: "https://images.unsplash.com/photo-1533929736458-ca588d08c8be?auto=format&fit=crop&w=200&q=80" },
-  { label: "Cozy Cafe",      types: ["Traditional Cafe", "Specialty Coffee", "Cafe", "Coffee"],                    photo: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=200&q=80" },
-  { label: "Art & Culture",  types: ["Museum", "Art Gallery", "Live Theater", "Cultural", "Arts", "Culture", "Art", "Gallery"], photo: "https://images.unsplash.com/photo-1554907984-15263bfd63bd?auto=format&fit=crop&w=200&q=80" },
-  { label: "Night Out",      types: ["Dance Club", "Live Music Club", "Jazz Club", "Comedy Club", "Nightlife"],    photo: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=200&q=80" },
-  { label: "Fresh Air",      types: ["Public Park", "Botanical Garden", "Beach", "Outdoor", "Outdoors", "Park"],  photo: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=200&q=80" },
-];
 
 const VENUE_GRID: { label: string; types: string[]; gradient: string; icon: LucideIcon; photo: string }[] = [
   { label: "Dining",         types: ["Fine Dining","Casual Dining","Fast Casual","Food Hall","Food Truck","Food","Restaurant"],                          gradient: "from-orange-400 to-amber-500",  icon: UtensilsCrossed, photo: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80" },
@@ -83,33 +74,83 @@ function budgetMatches(expBudgets: string[], budget: string): boolean {
 
 function venueTypeMatches(exp: Experience, selectedTypes: string[]): boolean {
   if (!selectedTypes.length) return true;
-  const allTypes = (exp.places_id ?? []).flatMap((p) => p._location_details?.location_type ?? []);
-  return selectedTypes.some((t) => allTypes.some((at) => at.toLowerCase() === t.toLowerCase()));
+  // Build a wide haystack of strings to match against. Looking only at
+  // _location_details.location_type missed a lot of experiences where
+  // Xano hadn't populated that array, so we also fall back to place
+  // names, the experience's activities, and its title/description.
+  const haystack: string[] = [];
+  for (const place of exp.places_id ?? []) {
+    const details = place._location_details;
+    if (Array.isArray(details?.location_type)) haystack.push(...details!.location_type);
+    if (Array.isArray(details?.location_subtype)) haystack.push(...details!.location_subtype!);
+    if (Array.isArray(details?.location_variant)) haystack.push(...details!.location_variant!);
+    if (place.name) haystack.push(place.name);
+  }
+  if (Array.isArray(exp.activities)) haystack.push(...exp.activities);
+  if (exp.title) haystack.push(exp.title);
+  if (exp.description) haystack.push(exp.description);
+
+  const lowered = haystack.map((s) => (s || "").toLowerCase()).filter(Boolean);
+
+  return selectedTypes.some((sel) => {
+    const selLower = sel.toLowerCase();
+    return lowered.some((s) => {
+      if (s === selLower) return true;
+      // Multi-word filter values must appear as a substring ("Fine Dining" → "Fine Dining Restaurant").
+      if (selLower.includes(" ")) return s.includes(selLower);
+      // Single-word filters match on a token boundary so "Restaurant" hits
+      // "Italian Restaurant" and "Bar" hits "Cocktail Bar" without "Barbecue".
+      return s.split(/[^a-z0-9]+/).includes(selLower);
+    });
+  });
 }
 
 function settingMatches(settings: string[], selectedSettings: string[]): boolean {
   if (!selectedSettings.length) return true;
   if (!settings?.length) return true;
+  // Lowercase both sides so case differences in the Xano data don't cause
+  // strict-equality misses ("Indoor" vs "indoor").
+  const lowered = settings.map((s) => (s ?? "").toLowerCase());
   return selectedSettings.some((sel) => {
     const lower = sel.toLowerCase();
-    return settings.some((s) => s === lower || s === "both");
+    return lowered.some((s) => s === lower || s === "both");
   });
 }
 
 function locationMatches(exp: Experience, borough: string, selectedNeighborhoods: string[]): boolean {
   if (borough === "All NYC" || borough === "__current__") return true;
   const places = exp.places_id ?? [];
-  if (selectedNeighborhoods.length > 0) {
-    return selectedNeighborhoods.some((n) => {
-      const needle = n.toLowerCase();
-      const all = [
-        ...(exp.neighborhoods ?? []).map((x) => x.toLowerCase()),
-        ...places.map((p) => (p.neighborhood ?? "").toLowerCase()),
-      ];
-      return all.some((x) => x.includes(needle) || needle.includes(x));
+
+  // Borough is the primary gate — at least one of the experience's places
+  // must actually live in the selected borough. Without this check the
+  // neighborhood-only path below would let through experiences from other
+  // boroughs that happened to have a place with a missing neighborhood.
+  const hasInBorough = places.some((p) => p.borough === borough);
+  if (!hasInBorough) return false;
+
+  if (selectedNeighborhoods.length === 0) return true;
+
+  // Neighborhood filter: only accept real (non-empty) string matches, and
+  // require the matching place to be inside the selected borough.
+  return selectedNeighborhoods.some((n) => {
+    const needle = (n ?? "").toLowerCase();
+    if (!needle) return false;
+
+    const placeMatch = places.some((p) => {
+      if (p.borough !== borough) return false;
+      const hood = (p.neighborhood ?? "").toLowerCase();
+      if (!hood) return false;
+      return hood === needle || hood.includes(needle) || needle.includes(hood);
     });
-  }
-  return places.some((p) => p.borough === borough);
+    if (placeMatch) return true;
+
+    // Experience-level neighborhoods array as a softer fallback.
+    return (exp.neighborhoods ?? []).some((h) => {
+      const hl = (h ?? "").toLowerCase();
+      if (!hl) return false;
+      return hl === needle || hl.includes(needle) || needle.includes(hl);
+    });
+  });
 }
 
 function filterExperiences(all: Experience[], { borough, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes }: { borough: string; selectedNeighborhoods: string[]; budgets: string[]; settings: string[]; venueTypes: string[]; quickVibeTypes: string[] }) {
@@ -176,7 +217,9 @@ function PlanPageInner() {
   const [budgets, setBudgets] = useState<string[]>([]);
   const [settings, setSettings] = useState<string[]>([]);
   const [venueTypes, setVenueTypes] = useState<string[]>([]);
-  const [quickVibeTypes, setQuickVibeTypes] = useState<string[]>([]);
+  // Quick Vibe UI was removed; keep an empty array so the existing filter
+  // pipeline (combinedTypes, fallback relaxations, resetExplore) keeps working.
+  const quickVibeTypes: string[] = [];
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [results, setResults] = useState<Experience[] | null>(null);
   const [resultsOpen, setResultsOpen] = useState(false);
@@ -198,6 +241,11 @@ function PlanPageInner() {
     embedded: Experience[];
   } | null>(null);
   const collectionMergedRef = useRef(false);
+  const [blockedIds, setBlockedIds] = useState<number[]>(() => getCachedBlockedIds());
+
+  useEffect(() => {
+    fetchBlockedIds().then((ids) => setBlockedIds(ids));
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -220,6 +268,13 @@ function PlanPageInner() {
       setNeighborhoods(extractNeighborhoods(all));
     });
   }, []);
+
+  // Drop experiences whose creator the user has blocked.
+  const visibleExperiences = useMemo(() => {
+    if (blockedIds.length === 0) return allExperiences;
+    const blocked = new Set(blockedIds);
+    return allExperiences.filter((e) => !(e.creator_user_id != null && blocked.has(e.creator_user_id)));
+  }, [allExperiences, blockedIds]);
 
   // Phase 1: fetch the collection on mount, use _experiences immediately as initial pins,
   // and store parsed IDs so Phase 2 can upgrade once allExperiences loads.
@@ -261,8 +316,8 @@ function PlanPageInner() {
 
   // matchedExperiences = all when no filters active, filtered subset otherwise
   const matchedExperiences = useMemo(
-    () => filterExperiences(allExperiences, { borough: location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes }),
-    [allExperiences, location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes]
+    () => filterExperiences(visibleExperiences, { borough: location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes }),
+    [visibleExperiences, location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes]
   );
 
   const neighborhoodOptions = neighborhoods[location] ?? [];
@@ -299,11 +354,6 @@ function PlanPageInner() {
     setUserCoords(null);
   }
 
-  function handleQuickVibe(types: string[]) {
-    const allSelected = types.every((t) => quickVibeTypes.includes(t));
-    setQuickVibeTypes(allSelected ? quickVibeTypes.filter((t) => !types.includes(t)) : [...new Set([...quickVibeTypes, ...types])]);
-  }
-
   function handleVenueGrid(types: string[]) {
     const allSelected = types.every((t) => venueTypes.includes(t));
     setVenueTypes(allSelected ? venueTypes.filter((t) => !types.includes(t)) : [...new Set([...venueTypes, ...types])]);
@@ -321,9 +371,12 @@ function PlanPageInner() {
       const res = await fetch(`${API_BASE}/discovery`);
       if (!res.ok) throw new Error();
       const data = await res.json();
+      const blocked = new Set(blockedIds);
       const all: Experience[] = Object.values(
         (data as { experiences: Record<string, Experience[]> }).experiences
-      ).flat();
+      )
+        .flat()
+        .filter((e) => !(e.creator_user_id != null && blocked.has(e.creator_user_id)));
       const filters = { borough: location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes };
       let matched = filterExperiences(all, filters);
       if (matched.length === 0 && (selectedNeighborhoods.length || budgets.length || settings.length || venueTypes.length || quickVibeTypes.length)) {
@@ -352,7 +405,6 @@ function PlanPageInner() {
   function resetExplore() {
     setSelectedExperience(null);
     setVenueTypes([]);
-    setQuickVibeTypes([]);
     setBudgets([]);
     setSettings([]);
     setLocation("All NYC");
@@ -426,34 +478,6 @@ function PlanPageInner() {
         className="absolute left-0 right-0 z-20 flex flex-col justify-end pointer-events-none"
         style={{ top: "50dvh", bottom: BOTTOM_BAR_H }}
       >
-        {/* Quick Vibe */}
-        <div className="px-4 mb-4 pointer-events-auto">
-          <p className="text-[11px] font-bold uppercase tracking-widest mb-3"
-            style={{ color: "rgba(0,0,0,0.75)", textShadow: "0 1px 3px rgba(255,255,255,0.8)" }}>
-            Quick Vibe
-          </p>
-          <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar">
-            {QUICK_VIBES.map((vibe) => {
-              const active = vibe.types.every((t) => quickVibeTypes.includes(t));
-              return (
-                <button key={vibe.label} type="button" onClick={() => handleQuickVibe(vibe.types)}
-                  className="flex-shrink-0">
-                  <div className="w-[68px] h-[68px] rounded-full overflow-hidden relative"
-                    style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.25)" }}>
-                    <Image src={vibe.photo} fill alt={vibe.label} className="object-cover" sizes="68px" />
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <span className="text-white text-[10px] font-semibold text-center leading-tight px-2">{vibe.label}</span>
-                    </div>
-                    {/* Border overlay on top of all content so it's always visible */}
-                    <div className="absolute inset-0 rounded-full pointer-events-none transition-all"
-                      style={{ boxShadow: active ? "inset 0 0 0 3px #FF9A56" : "inset 0 0 0 2px rgba(255,255,255,0.5)" }} />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {/* What's the Vibe */}
         <div className="px-4 mb-3 pointer-events-auto">
           <p className="text-[11px] font-bold uppercase tracking-widest mb-3"

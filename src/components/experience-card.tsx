@@ -27,6 +27,7 @@ export function ExperienceCard({
   compact = false,
   onUnsave,
   distanceMiles,
+  initialPlaceId,
 }: {
   experience: Experience;
   onClick?: () => void;
@@ -34,9 +35,18 @@ export function ExperienceCard({
   compact?: boolean;
   onUnsave?: (id: number) => void;
   distanceMiles?: number;
+  initialPlaceId?: number;
 }) {
   const { toast } = useToast();
-  const [activeIndex, setActiveIndex] = useState(0);
+  const placesWithImages = experience.places_id.filter(
+    (p) => (p.display_images?.length ?? 0) > 0 || (p.images?.length ?? 0) > 0
+  );
+  const initialIndex = (() => {
+    if (initialPlaceId == null) return 0;
+    const idx = placesWithImages.findIndex((p) => p.id === initialPlaceId);
+    return idx >= 0 ? idx : 0;
+  })();
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [visible, setVisible] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showCollectionSheet, setShowCollectionSheet] = useState(false);
@@ -116,10 +126,6 @@ export function ExperienceCard({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-
-  const placesWithImages = experience.places_id.filter(
-    (p) => (p.display_images?.length ?? 0) > 0 || (p.images?.length ?? 0) > 0
-  );
 
   const activePlace =
     placesWithImages[activeIndex] ?? experience.places_id[0];

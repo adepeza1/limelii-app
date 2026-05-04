@@ -15,6 +15,7 @@ import {
   Bell,
   Lock,
   UserCircle,
+  UserX,
   Camera,
 } from "lucide-react";
 import { ProfileExperiences } from "@/components/profile-experiences";
@@ -28,6 +29,7 @@ import type { Collection, SavedCollection } from "@/lib/collections";
 import { listSavedExperiences } from "@/lib/saved";
 import { API_BASE } from "@/lib/xano";
 import type { DiscoveryResponse } from "@/app/page";
+import { getCachedBlockedUser, clearCachedBlockedUser, setCachedBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
 
 // ─── localStorage keys ────────────────────────────────────────────────────────
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -46,12 +48,31 @@ interface UserPreferences {
 
 type Tab = "created" | "saved" | "collections" | "preferences";
 
+interface BlockedUserDetails {
+  id?: number;
+  username?: string;
+  name?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  photo?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  profile_photo_url?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  picture?: any;
+}
+
+interface BlockedUser {
+  id: number; // user_blocks row id
+  blocked_id: number; // the blocked user's id
+  user: BlockedUserDetails | null;
+}
+
 interface ProfileClientProps {
   givenName: string | null;
   familyName: string | null;
   email: string | null;
+  authError?: boolean;
   initialTab?: Tab;
-  initialCreating?: boolean;
+  initialCreating?: boolean | number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -167,11 +188,11 @@ function loadPreferences(): UserPreferences {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export function ProfileClient({ givenName, familyName, email, initialTab = "created", initialCreating = false }: ProfileClientProps) {
+export function ProfileClient({ givenName, familyName, email, authError = false, initialTab = "created", initialCreating = false }: ProfileClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
-  const [creating, setCreating] = useState(initialCreating);
+  const [creating, setCreating] = useState<boolean | number>(initialCreating);
   const [savedCount, setSavedCount] = useState(0);
   const [collectionsCount, setCollectionsCount] = useState<number | null>(null);
   const [createdCount, setCreatedCount] = useState<number | null>(null);
@@ -192,6 +213,9 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   const [xanoName, setXanoName] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [showBlockedUsers, setShowBlockedUsers] = useState(false);
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[] | null>(null);
+  const [unblockingId, setUnblockingId] = useState<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   // Account settings form state
@@ -239,6 +263,12 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
     try {
       const records = await listSavedExperiences();
       const res = await fetch(`${API_BASE}/discovery`);
+      if (!res.ok) {
+        // Discovery is unavailable — surface the saved count from the records
+        // we already have, but don't overwrite the local cache with empty data.
+        setSavedCount(records.length);
+        return;
+      }
       const data: DiscoveryResponse = await res.json();
       const all = Object.values(data.experiences ?? {}).flat();
       const savedIds = new Set(records.map((r) => r.experiences_id));
@@ -250,7 +280,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
       matched.forEach((e) => { itemsMap[String(e.id)] = e; });
       localStorage.setItem(SAVED_ITEMS_KEY, JSON.stringify(itemsMap));
       localStorage.removeItem(MIGRATION_KEY);
-    } catch { /* ignore */ }
+    } catch { /* ignore — keep existing cache on transient errors */ }
     finally { setSavedLoading(false); }
   }
 
@@ -446,6 +476,22 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
       {/* Safe-area spacer */}
       <div className="h-[env(safe-area-inset-top,44px)]" />
 
+      {/* Re-auth banner — shown when the server couldn't load the user
+          because the xano_token cookie outlived the underlying token. */}
+      {authError && (
+        <div className="mx-4 mt-2 mb-1 rounded-xl bg-[#FFF4F4] border border-[#F04438]/20 px-4 py-3 flex items-center gap-3">
+          <p className="flex-1 text-xs text-[#B42318] leading-snug">
+            We couldn&apos;t load your profile. Please sign in again.
+          </p>
+          <a
+            href="/api/user/logout?post_logout_redirect_url=%2Fapi%2Fauth%2Flogin"
+            className="shrink-0 text-xs font-semibold text-white bg-[#F04438] px-3 py-1.5 rounded-full"
+          >
+            Sign in
+          </a>
+        </div>
+      )}
+
       {/* Pull-to-refresh indicator */}
       <div
         className="overflow-hidden flex items-center justify-center gap-2"
@@ -511,6 +557,31 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                   <div className="flex items-center gap-3">
                     <UserCircle className="w-4.5 h-4.5 text-gray-400" strokeWidth={1.7} />
                     <span className="text-sm font-medium text-gray-800">Account Settings</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-300" />
+                </button>
+                <button
+                  onClick={async () => {
+                    setShowBlockedUsers(true);
+                    setBlockedUsers(null);
+                    try {
+                      const res = await fetch("/api/users/me/blocked");
+                      if (res.ok) {
+                        const data = await res.json();
+                        setBlockedUsers(Array.isArray(data?.blocked) ? data.blocked : []);
+                        if (Array.isArray(data?.blockedIds)) setCachedBlockedIds(data.blockedIds);
+                      } else {
+                        setBlockedUsers([]);
+                      }
+                    } catch {
+                      setBlockedUsers([]);
+                    }
+                  }}
+                  className="w-full flex items-center justify-between py-3.5 px-4 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <UserX className="w-4.5 h-4.5 text-gray-400" strokeWidth={1.7} />
+                    <span className="text-sm font-medium text-gray-800">Blocked Users</span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-300" />
                 </button>
@@ -611,10 +682,14 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                             setXanoName(xanoNameInput.trim());
                             setDisplayNameSaved(true);
                           } else {
-                            toast("Couldn't save display name", "error");
+                            // Surface the underlying error so we can see why
+                            // saving failed (e.g. Xano rejecting the field name).
+                            const data = await res.json().catch(() => ({}));
+                            const msg = (data && typeof data === "object" && (data as { error?: string }).error) || `Couldn't save display name (status ${res.status})`;
+                            toast(msg, "error");
                           }
-                        } catch {
-                          toast("Couldn't save display name", "error");
+                        } catch (err) {
+                          toast(err instanceof Error ? `Couldn't save: ${err.message}` : "Couldn't save display name", "error");
                         } finally { setSavingDisplayName(false); }
                       }}
                       className="text-xs font-semibold text-[#FB6983] disabled:opacity-50"
@@ -714,6 +789,104 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
         </div>
       )}
 
+      {/* ── Blocked Users sheet ─────────────────────────────────────────────── */}
+      {showBlockedUsers && (
+        <div className="fixed inset-0 z-[60] bg-black/40 flex items-end" onClick={(e) => { if (e.target === e.currentTarget) setShowBlockedUsers(false); }}>
+          <div className="w-full bg-white rounded-t-3xl shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-9 h-1 rounded-full bg-gray-200" />
+            </div>
+            <div className="px-6 pt-3 pb-24">
+              <div className="flex items-center gap-3 mb-6">
+                <button onClick={() => setShowBlockedUsers(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                  <ChevronRight className="w-4 h-4 rotate-180" />
+                </button>
+                <h2 className="text-base font-semibold text-gray-900">Blocked Users</h2>
+              </div>
+
+              {blockedUsers === null ? (
+                <p className="text-sm text-[#667085] py-8 text-center">Loading…</p>
+              ) : blockedUsers.length === 0 ? (
+                <div className="py-12 flex flex-col items-center gap-2 text-center">
+                  <p className="text-[#101828] font-semibold text-sm">No blocked users</p>
+                  <p className="text-[#667085] text-xs max-w-[260px]">
+                    When you block someone, they&apos;ll appear here so you can unblock them later.
+                  </p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-[#F2F4F7]">
+                  {blockedUsers.map((row) => {
+                    function extractUrl(val: unknown): string | null {
+                      if (!val) return null;
+                      if (typeof val === "string") return val || null;
+                      if (typeof val === "object" && val !== null && "url" in val) {
+                        const u = (val as { url?: unknown }).url;
+                        return typeof u === "string" ? u || null : null;
+                      }
+                      return null;
+                    }
+                    // Prefer Xano-joined data; fall back to the local cache
+                    // populated when the user blocked them on this device.
+                    const joined = row.user ?? {};
+                    const cached = getCachedBlockedUser(row.blocked_id);
+                    const username = joined.username ?? cached?.username;
+                    const name = joined.name ?? cached?.name;
+                    const photoUrl =
+                      extractUrl(joined.photo) ??
+                      extractUrl(joined.profile_photo_url) ??
+                      extractUrl(joined.picture) ??
+                      cached?.photoUrl ??
+                      null;
+                    const handle = username ? `@${username}` : `User #${row.blocked_id}`;
+                    const initials = (username ?? name ?? "?").slice(0, 2).toUpperCase();
+                    const isUnblocking = unblockingId === row.blocked_id;
+                    return (
+                      <li key={row.id} className="flex items-center gap-3 py-3">
+                        <div className="w-10 h-10 rounded-full bg-[#F2F4F7] overflow-hidden flex items-center justify-center text-[#667085] text-sm font-bold shrink-0">
+                          {photoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={photoUrl} alt={handle} className="w-full h-full object-cover" />
+                          ) : (
+                            initials
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-[#101828] truncate">{handle}</p>
+                          {name && <p className="text-xs text-[#667085] truncate">{name}</p>}
+                        </div>
+                        <button
+                          disabled={isUnblocking}
+                          onClick={async () => {
+                            setUnblockingId(row.blocked_id);
+                            try {
+                              const res = await fetch(`/api/users/${row.blocked_id}/block`, { method: "DELETE" });
+                              if (res.ok) {
+                                setBlockedUsers((prev) => (prev ?? []).filter((b) => b.blocked_id !== row.blocked_id));
+                                clearCachedBlockedUser(row.blocked_id);
+                                setCachedBlockedIds(getCachedBlockedIds().filter((id) => id !== row.blocked_id));
+                              } else {
+                                toast("Couldn't unblock user", "error");
+                              }
+                            } catch {
+                              toast("Couldn't unblock user", "error");
+                            } finally {
+                              setUnblockingId(null);
+                            }
+                          }}
+                          className="shrink-0 text-xs font-semibold px-4 py-1.5 rounded-full border border-[#101828] text-[#101828] disabled:opacity-50"
+                        >
+                          {isUnblocking ? "…" : "Unblock"}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete account confirmation */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center px-6">
@@ -735,10 +908,17 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                 onClick={async () => {
                   setDeleting(true);
                   try {
-                    await fetch("/api/user/me", { method: "DELETE" });
-                  } finally {
+                    const res = await fetch("/api/user/me", { method: "DELETE" });
+                    if (!res.ok) {
+                      toast("Couldn't delete your account. Please try again or email support.", "error");
+                      setDeleting(false);
+                      return;
+                    }
                     mixpanelReset();
                     window.location.href = "/api/user/logout?post_logout_redirect_url=%2Fapi%2Fauth%2Flogin";
+                  } catch {
+                    toast("Couldn't delete your account. Please check your connection.", "error");
+                    setDeleting(false);
                   }
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold disabled:opacity-50"
@@ -926,13 +1106,13 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
           {activeTab === "saved" && (
             <div className="pt-2">
               {savedLoading ? (
-                <div className="px-4 flex gap-1 items-start pb-4">
+                <div className="px-4 flex gap-0 items-start pb-4">
                   {[0, 1].map((col) => (
-                    <div key={col} className="flex-1 flex flex-col gap-1">
+                    <div key={col} className="flex-1 flex flex-col gap-0">
                       {[0, 1].map((row) => (
                         <div
                           key={row}
-                          className={`w-full rounded-xl bg-gray-100 animate-pulse ${(col === 0 ? row % 2 === 0 : row % 2 === 1) ? "h-[220px]" : "h-[188px]"}`}
+                          className={`w-full rounded-none border border-black bg-gray-100 animate-pulse ${(col === 0 ? row % 2 === 0 : row % 2 === 1) ? "h-[220px]" : "h-[188px]"}`}
                         />
                       ))}
                     </div>
@@ -955,9 +1135,9 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                   </button>
                 </div>
               ) : (
-                <div className="px-4 pt-2 flex gap-1 items-start">
+                <div className="px-4 pt-2 flex gap-0 items-start">
                   {[savedExperiences.filter((_, i) => i % 2 === 0), savedExperiences.filter((_, i) => i % 2 === 1)].map((col, colIdx) => (
-                    <div key={colIdx} className="flex-1 flex flex-col gap-1">
+                    <div key={colIdx} className="flex-1 flex flex-col gap-0">
                       {col.map((exp, rowIdx) => {
                         const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
                         return (
@@ -965,7 +1145,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                             key={exp.id}
                             experience={exp}
                             compact
-                            className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                            className={`!aspect-auto !rounded-none border border-black ${isTall ? "h-[220px]" : "h-[188px]"}`}
                             onClick={() => { savedScrollY.current = window.scrollY; setSelectedExperience(exp); }}
                             onUnsave={(id) => {
                               setSavedExperiences((prev) => prev.filter((e) => e.id !== id));

@@ -5,6 +5,7 @@ import { haptic } from "@/lib/haptics";
 import Link from "next/link";
 import { Search, ArrowLeft, X } from "lucide-react";
 import Image from "next/image";
+import { LimeliiLogo } from "@/components/limelii-logo";
 import type {
   DiscoveryResponse,
   Experience,
@@ -12,6 +13,8 @@ import type {
 } from "@/app/page";
 import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
+import { fetchBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
+import { searchAndRank, type RankedResult } from "@/lib/discover-search";
 
 
 // ─── Suggestion logic ─────────────────────────────────────────────────────────
@@ -85,12 +88,42 @@ function formatSectionTitle(key: string): string {
     .join(" ");
 }
 
+function omitBlocked(
+  sections: Record<string, Experience[]>,
+  blockedIds: number[]
+): Record<string, Experience[]> {
+  if (blockedIds.length === 0) return sections;
+  const blocked = new Set(blockedIds);
+  const result: Record<string, Experience[]> = {};
+  for (const [key, exps] of Object.entries(sections)) {
+    const kept = exps.filter((e) => !(e.creator_user_id != null && blocked.has(e.creator_user_id)));
+    if (kept.length > 0) result[key] = kept;
+  }
+  return result;
+}
+
 export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const [activeCategory, setActiveCategory] = useState<number>(0);
-  const [baseSections, setBaseSections] = useState<Record<string, Experience[]>>(data.experiences);
-  const [sections, setSections] = useState<Record<string, Experience[]>>(data.experiences);
+  const [blockedIds, setBlockedIds] = useState<number[]>(() => getCachedBlockedIds());
+  const visibleData = useMemo(() => omitBlocked(data.experiences, blockedIds), [data.experiences, blockedIds]);
+  const [baseSections, setBaseSections] = useState<Record<string, Experience[]>>(visibleData);
+  const [sections, setSections] = useState<Record<string, Experience[]>>(visibleData);
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const savedScrollY = useRef(0);
+
+  // Refresh blocked list once on mount.
+  useEffect(() => {
+    fetchBlockedIds().then((ids) => setBlockedIds(ids));
+  }, []);
+
+  // When the visible (post-block-filter) data changes, refresh both
+  // baseSections and the currently-displayed sections, preserving the
+  // user's active category.
+  useEffect(() => {
+    setBaseSections(visibleData);
+    setSections(filterByCategory(activeCategory, visibleData));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleData]);
 
   // Pull-to-refresh
   const PULL_THRESHOLD = 65;
@@ -115,11 +148,16 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   // Search state
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Experience[] | null>(null);
+  const [searchResults, setSearchResults] = useState<RankedResult[] | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const allExperiences = useMemo(() => Object.values(data.experiences).flat(), [data.experiences]);
+  const allExperiences = useMemo(() => {
+    const blocked = new Set(blockedIds);
+    return Object.values(data.experiences)
+      .flat()
+      .filter((e) => !(e.creator_user_id != null && blocked.has(e.creator_user_id)));
+  }, [data.experiences, blockedIds]);
 
   // ── Suggested for you ───────────────────────────────────────────────────────
   const [suggestions, setSuggestions] = useState<Experience[]>([]);
@@ -147,7 +185,9 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
 
   const categories: ExperienceCategory[] = [
     { id: 0, name: "All" },
-    ...[...data.experience_categories].sort((a, b) => a.id - b.id),
+    ...[...data.experience_categories]
+      .filter((c) => c.name?.trim().toLowerCase() !== "uncategorized")
+      .sort((a, b) => a.id - b.id),
   ];
 
   function filterByCategory(categoryId: number, base: Record<string, Experience[]>): Record<string, Experience[]> {
@@ -225,29 +265,9 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
   }
 
-  function searchExperiences(query: string): Experience[] {
-    const q = query.toLowerCase().trim();
-    if (!q) return [];
-    return allExperiences.filter((exp) => {
-      if (exp.title?.toLowerCase().includes(q)) return true;
-      if (exp.description?.toLowerCase().includes(q)) return true;
-      for (const act of exp.activities ?? []) {
-        if (act.toLowerCase().includes(q)) return true;
-      }
-      for (const n of exp.neighborhoods ?? []) {
-        if (n.toLowerCase().includes(q)) return true;
-      }
-      for (const place of exp.places_id ?? []) {
-        if (place.name?.toLowerCase().includes(q)) return true;
-        if (place.neighborhood?.toLowerCase().includes(q)) return true;
-        if (place.borough?.toLowerCase().includes(q)) return true;
-        for (const t of place._location_details?.location_type ?? []) {
-          if (t.toLowerCase().includes(q)) return true;
-        }
-        if (place._location_details?.Description?.toLowerCase().includes(q)) return true;
-      }
-      return false;
-    });
+  function searchExperiences(query: string): RankedResult[] {
+    if (!query.trim()) return [];
+    return searchAndRank(allExperiences, query);
   }
 
   function handleSearchInput(value: string) {
@@ -268,7 +288,8 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   }, []);
 
   const nonEmptySections = Object.entries(sections).filter(
-    ([, exps]) => exps.length > 0
+    ([key, exps]) =>
+      exps.length > 0 && key.trim().toLowerCase() !== "uncategorized"
   );
 
   if (selectedExperience) {
@@ -338,7 +359,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           </div>
         ) : (
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100">
-            <Image src="/limelii-logo.svg" alt="Limelii" width={80} height={28} priority />
+            <LimeliiLogo width={80} height={28} />
             <div className="flex items-center gap-4">
               <button onClick={openSearch} aria-label="Search">
                 <Search className="w-6 h-6 text-gray-900" strokeWidth={1.8} />
@@ -358,13 +379,26 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           )}
 
           {searchResults && searchResults.length > 0 && (
-            <div className="px-4 pt-4 flex flex-col gap-4">
-              {searchResults.map((exp) => (
-                <ExperienceCard
-                  key={exp.id}
-                  experience={exp}
-                  onClick={() => openExperience(exp)}
-                />
+            <div className="px-4 pt-4 flex gap-0 items-start">
+              {[
+                searchResults.filter((_, i) => i % 2 === 0),
+                searchResults.filter((_, i) => i % 2 === 1),
+              ].map((col, colIdx) => (
+                <div key={colIdx} className="flex-1 flex flex-col gap-0">
+                  {col.map(({ experience, matchedPlaceId }, rowIdx) => {
+                    const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
+                    return (
+                      <ExperienceCard
+                        key={experience.id}
+                        experience={experience}
+                        initialPlaceId={matchedPlaceId ?? undefined}
+                        compact
+                        className={`!aspect-auto !rounded-none border border-black ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                        onClick={() => openExperience(experience)}
+                      />
+                    );
+                  })}
+                </div>
               ))}
             </div>
           )}

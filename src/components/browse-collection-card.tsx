@@ -805,14 +805,16 @@ export function BrowseCollectionCard({
             <ExperienceDetail experience={selectedExp} onBack={() => setSelectedExp(null)} />
           ) : (
             <>
-              <div className="sticky top-0 bg-white border-b border-[#EAECF0] px-4 py-3 flex items-center gap-3 z-10">
-                <div className="h-[44px]" />
-                <button onClick={() => setShowDetail(false)} className="p-1">
-                  <ChevronLeft size={22} className="text-[#101828]" />
-                </button>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[#101828] truncate">{collection.name}</p>
-                  <p className="text-xs text-[#667085]">{count} {count === 1 ? "experience" : "experiences"}</p>
+              <div className="sticky top-0 bg-white border-b border-[#EAECF0] z-10">
+                <div className="h-[env(safe-area-inset-top,44px)]" />
+                <div className="px-4 py-3 flex items-center gap-3">
+                  <button onClick={() => setShowDetail(false)} className="p-1">
+                    <ChevronLeft size={22} className="text-[#101828]" />
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-[#101828] truncate">{collection.name}</p>
+                    <p className="text-xs text-[#667085]">{count} {count === 1 ? "experience" : "experiences"}</p>
+                  </div>
                 </div>
               </div>
               {(() => {
@@ -826,12 +828,12 @@ export function BrowseCollectionCard({
                     <p className="text-[#667085] text-sm">No experiences in this collection yet.</p>
                   </div>
                 ) : (
-                  <div className="px-4 pt-4 pb-28 flex gap-1 items-start">
+                  <div className="px-4 pt-4 pb-28 flex gap-0 items-start">
                     {[
                       detailExps.filter((_, i) => i % 2 === 0),
                       detailExps.filter((_, i) => i % 2 === 1),
                     ].map((col, colIdx) => (
-                      <div key={colIdx} className="flex-1 flex flex-col gap-1">
+                      <div key={colIdx} className="flex-1 flex flex-col gap-0">
                         {col.map((exp, rowIdx) => {
                           const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
                           return (
@@ -839,7 +841,7 @@ export function BrowseCollectionCard({
                               key={exp.id}
                               experience={exp}
                               compact
-                              className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                              className={`!aspect-auto !rounded-none border border-black ${isTall ? "h-[220px]" : "h-[188px]"}`}
                               onClick={() => setSelectedExp(exp)}
                             />
                           );

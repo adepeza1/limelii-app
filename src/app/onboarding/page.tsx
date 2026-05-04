@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { LimeliiLogo } from "@/components/limelii-logo";
 
 export default function OnboardingPage() {
   const [username, setUsername] = useState("");
-  const [usernameState, setUsernameState] = useState<"idle" | "checking" | "available" | "taken" | "error">("idle");
+  const [usernameState, setUsernameState] = useState<"idle" | "checking" | "available" | "taken" | "disallowed" | "error">("idle");
+  const [unavailableMessage, setUnavailableMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [checkTimer, setCheckTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
@@ -14,6 +16,7 @@ export default function OnboardingPage() {
     const clean = val.toLowerCase().replace(/[^a-z0-9_]/g, "");
     setUsername(clean);
     setUsernameState("idle");
+    setUnavailableMessage(null);
 
     if (checkTimer) clearTimeout(checkTimer);
     if (clean.length < 3) return;
@@ -24,7 +27,16 @@ export default function OnboardingPage() {
         const res = await fetch(`/api/user/check_username?username=${encodeURIComponent(clean)}`);
         if (res.ok) {
           const data = await res.json();
-          setUsernameState(data.available ? "available" : "taken");
+          if (data.available) {
+            setUsernameState("available");
+            setUnavailableMessage(null);
+          } else if (data.reason === "reserved" || data.reason === "profanity" || data.reason === "format") {
+            setUsernameState("disallowed");
+            setUnavailableMessage(data.message ?? "That username isn't allowed.");
+          } else {
+            setUsernameState("taken");
+            setUnavailableMessage(null);
+          }
         }
       } catch {
         setUsernameState("idle");
@@ -44,8 +56,11 @@ export default function OnboardingPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        const msg = data?.message ?? "";
-        if (msg.toLowerCase().includes("taken") || msg.toLowerCase().includes("duplicate")) {
+        const msg = (data?.error ?? data?.message ?? "").toString();
+        if (data?.reason === "reserved" || data?.reason === "profanity" || data?.reason === "format") {
+          setUsernameState("disallowed");
+          setUnavailableMessage(msg || "That username isn't allowed.");
+        } else if (msg.toLowerCase().includes("taken") || msg.toLowerCase().includes("duplicate")) {
           setUsernameState("taken");
         } else {
           setUsernameState("error");
@@ -63,14 +78,13 @@ export default function OnboardingPage() {
     }
   }
 
-  const isValid = username.length >= 3 && usernameState !== "taken";
+  const isValid = username.length >= 3 && usernameState !== "taken" && usernameState !== "disallowed";
 
   return (
     <div className="min-h-screen bg-white flex flex-col px-6 pt-16" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 40px)" }}>
       {/* Logo */}
       <div className="mb-6">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/limelii-logo.svg" alt="limelii" className="h-8 w-auto" />
+        <LimeliiLogo height={32} width="auto" />
         <p className="text-sm text-[#667085] mt-2">Let's set up your profile</p>
       </div>
 
@@ -86,7 +100,7 @@ export default function OnboardingPage() {
             style={{
               borderColor:
                 usernameState === "available" ? "#12B76A" :
-                usernameState === "taken" || usernameState === "error" ? "#F04438" :
+                usernameState === "taken" || usernameState === "disallowed" || usernameState === "error" ? "#F04438" :
                 username.length > 0 ? "#FF9A56" : "#EAECF0"
             }}
           >
@@ -114,13 +128,13 @@ export default function OnboardingPage() {
           style={{
             color:
               usernameState === "available" ? "#12B76A" :
-              usernameState === "taken" ? "#F04438" :
-              usernameState === "error" ? "#F04438" :
+              usernameState === "taken" || usernameState === "disallowed" || usernameState === "error" ? "#F04438" :
               "#98A2B3"
           }}
         >
           {usernameState === "available" ? "Username is available!" :
            usernameState === "taken" ? "That username is already taken." :
+           usernameState === "disallowed" ? (unavailableMessage ?? "That username isn't allowed.") :
            usernameState === "error" ? "Something went wrong. Please try again." :
            usernameState === "checking" ? "Checking availability…" :
            "Lowercase letters, numbers, and underscores only. Min 3 characters."}

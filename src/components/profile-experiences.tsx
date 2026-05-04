@@ -11,8 +11,20 @@ import { useBackHandler } from "@/hooks/useBackHandler";
 
 interface ProfileExperiencesProps {
   onCountLoaded?: (count: number) => void;
-  creating?: boolean;
+  // `true` = waiting on a generic create (legacy path). Number = the specific
+  // experience id we're waiting for to finish generating.
+  creating?: boolean | number;
   onCreatingDone?: () => void;
+}
+
+// An experience is considered "still generating" if Xano marked it so, or —
+// when status isn't returned — it has no resolved places yet. The
+// /chatkit/add_experience flow inserts the row immediately and populates
+// places_id asynchronously, so empty places is the strongest fallback signal.
+function isGenerating(exp: Experience): boolean {
+  if (exp.status === "generating") return true;
+  if (exp.status === "done") return false;
+  return (exp.places_id?.length ?? 0) === 0;
 }
 
 function CreatingPlaceholder() {
@@ -78,7 +90,15 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Experience | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const prevCountRef = useRef<number | null>(null);
+  // Capture the IDs of experiences that exist on first mount. Anything new
+  // since then is treated as "the one we just created" when ?creating=true.
+  const baselineIdsRef = useRef<Set<number> | null>(null);
+  // Latest props so the polling closure always sees the current `creating`
+  // and callback without us having to re-create the interval.
+  const creatingRef = useRef(creating);
+  const onCreatingDoneRef = useRef(onCreatingDone);
+  useEffect(() => { creatingRef.current = creating; }, [creating]);
+  useEffect(() => { onCreatingDoneRef.current = onCreatingDone; }, [onCreatingDone]);
 
   useBackHandler(!!selectedExperience, () => setSelectedExperience(null));
 
@@ -91,14 +111,39 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
       }
       const data = await res.json();
       const exps: Experience[] = Array.isArray(data.experiences) ? data.experiences : [];
-
-      if (creating && prevCountRef.current !== null && exps.length > prevCountRef.current) {
-        onCreatingDone?.();
-      }
-      prevCountRef.current = exps.length;
-
       setExperiences(exps);
-      onCountLoaded?.(exps.length);
+
+      if (baselineIdsRef.current === null) {
+        baselineIdsRef.current = new Set(exps.map((e) => e.id));
+      }
+
+      // Count only experiences that are visibly done (the in-progress one is
+      // represented by the skeleton placeholder).
+      const doneCount = exps.filter((e) => !isGenerating(e)).length;
+      onCountLoaded?.(doneCount);
+
+      // Decide whether the create flow is finished and the parent should
+      // clear its `creating` flag.
+      const target = creatingRef.current;
+      if (target === false || target === undefined) {
+        // Not in create flow — nothing to do.
+      } else if (typeof target === "number") {
+        // Wait for that specific experience to flip to done.
+        const exp = exps.find((e) => e.id === target);
+        if (exp && !isGenerating(exp)) {
+          onCreatingDoneRef.current?.();
+        }
+      } else {
+        // Generic ?creating=true: a new (post-baseline) experience exists and
+        // is no longer generating.
+        const baseline = baselineIdsRef.current;
+        const newAndDone = exps.find(
+          (e) => !baseline.has(e.id) && !isGenerating(e)
+        );
+        if (newAndDone) {
+          onCreatingDoneRef.current?.();
+        }
+      }
     } catch {
       setError("Failed to load your experiences");
     } finally {
@@ -111,12 +156,30 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Hide the in-progress experience(s) from the rendered grid; the skeleton
+  // placeholder represents them. Newest first — prefer created_at, fall back
+  // to id (which is monotonically increasing on Xano).
+  const visibleExperiences = experiences
+    .filter((e) => !isGenerating(e))
+    .slice()
+    .sort((a, b) => (b.created_at ?? b.id) - (a.created_at ?? a.id));
+  const pendingCount = experiences.filter(isGenerating).length;
+  // Show the skeleton while either the URL still has the create flag, the
+  // specific experience hasn't finished yet, or any experience is generating.
+  const isPending = creating !== false && creating !== undefined
+    ? typeof creating === "number"
+      ? !experiences.find((e) => e.id === creating && !isGenerating(e))
+      : true
+    : pendingCount > 0;
+
+  // Poll while pending. We use the closure-captured creatingRef inside fetch
+  // so the trigger always reads the latest props.
   useEffect(() => {
-    if (!creating) return;
+    if (!isPending) return;
     const id = setInterval(fetchExperiences, 3000);
     return () => clearInterval(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [creating]);
+  }, [isPending]);
 
   async function handleDelete() {
     if (!deleteTarget) return;
@@ -149,13 +212,13 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
 
   if (loading) {
     return (
-      <div className="px-4 flex gap-1 items-start pb-4">
+      <div className="px-4 flex gap-0 items-start pb-4">
         {[0, 1].map((col) => (
-          <div key={col} className="flex-1 flex flex-col gap-1">
+          <div key={col} className="flex-1 flex flex-col gap-0">
             {[0, 1].map((row) => (
               <div
                 key={row}
-                className={`w-full rounded-xl bg-gray-100 animate-pulse ${(col === 0 ? row % 2 === 0 : row % 2 === 1) ? "h-[220px]" : "h-[188px]"}`}
+                className={`w-full rounded-none border border-black bg-gray-100 animate-pulse ${(col === 0 ? row % 2 === 0 : row % 2 === 1) ? "h-[220px]" : "h-[188px]"}`}
               />
             ))}
           </div>
@@ -168,7 +231,7 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
     return <p className="text-center text-gray-500 py-12 px-4">{error}</p>;
   }
 
-  if (!creating && experiences.length === 0) {
+  if (!isPending && visibleExperiences.length === 0) {
     return (
       <div className="py-16 flex flex-col items-center gap-3 text-center px-5">
         <div className="w-14 h-14 rounded-2xl bg-[#FFF0F3] flex items-center justify-center">
@@ -188,15 +251,15 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
     );
   }
 
-  const leftCol = experiences.filter((_, i) => i % 2 === 0);
-  const rightCol = experiences.filter((_, i) => i % 2 === 1);
+  const leftCol = visibleExperiences.filter((_, i) => i % 2 === 0);
+  const rightCol = visibleExperiences.filter((_, i) => i % 2 === 1);
 
   return (
     <>
-      <div className="px-4 pb-4 flex gap-1 items-start">
+      <div className="px-4 pb-4 flex gap-0 items-start">
         {[leftCol, rightCol].map((col, colIdx) => (
-          <div key={colIdx} className="flex-1 flex flex-col gap-1">
-            {colIdx === 0 && creating && <CreatingPlaceholder />}
+          <div key={colIdx} className="flex-1 flex flex-col gap-0">
+            {colIdx === 0 && isPending && <CreatingPlaceholder />}
             {col.map((exp, rowIdx) => {
               const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
               return (
@@ -204,7 +267,7 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
                   <ExperienceCard
                     experience={exp}
                     compact
-                    className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                    className={`!aspect-auto !rounded-none border border-black ${isTall ? "h-[220px]" : "h-[188px]"}`}
                     onClick={() => setSelectedExperience(exp)}
                   />
                   {/* Delete button overlay */}
