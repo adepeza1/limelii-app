@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { XANO_DOMAIN } from "@/lib/xano";
+import { xanoTokenMaxAge } from "@/lib/api";
 
 const XANO_TOKEN_EXCHANGE_URL = `${XANO_DOMAIN}/api:J86-AUyj/external_token/exchange`;
 
@@ -48,20 +49,22 @@ export async function POST(req: NextRequest) {
 
   const { access_token } = await xanoRes.json();
 
+  const cookieMaxAge = xanoTokenMaxAge(access_token);
   const response = NextResponse.json({ success: true });
   response.cookies.set("xano_token", access_token, {
     httpOnly: true,
     secure: true,
     sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: cookieMaxAge,
     path: "/",
   });
-  // Non-httpOnly flag so client-side JS can detect mobile auth state
+  // Non-httpOnly flag so client-side JS can detect mobile auth state.
+  // Same lifetime as xano_token so the two cookies expire together.
   response.cookies.set("mobile_authed", "1", {
     httpOnly: false,
     secure: true,
     sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: cookieMaxAge,
     path: "/",
   });
 
