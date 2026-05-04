@@ -693,9 +693,9 @@ function PlanPageInner() {
               if (userCoords) withDist.sort((a, b) => (a.miles ?? Infinity) - (b.miles ?? Infinity));
               return (
                 // Two independent flex columns so cards flow without row-aligned gaps
-                <div className="flex gap-1 items-start">
+                <div className="flex gap-0 items-start">
                   {[withDist.filter((_, i) => i % 2 === 0), withDist.filter((_, i) => i % 2 === 1)].map((col, colIdx) => (
-                    <div key={colIdx} className="flex-1 flex flex-col gap-1">
+                    <div key={colIdx} className="flex-1 flex flex-col gap-0">
                       {col.map(({ exp, miles }, rowIdx) => {
                         // Left col: tall/short/tall… Right col: short/tall/short…
                         const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
@@ -705,7 +705,7 @@ function PlanPageInner() {
                             experience={exp}
                             onClick={() => setSelectedExperience(exp)}
                             compact
-                            className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                            className={`!aspect-auto !rounded-none border border-black ${isTall ? "h-[220px]" : "h-[188px]"}`}
                             distanceMiles={miles ?? undefined}
                           />
                         );
