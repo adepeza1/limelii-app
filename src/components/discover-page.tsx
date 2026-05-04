@@ -393,7 +393,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
                         experience={experience}
                         initialPlaceId={matchedPlaceId ?? undefined}
                         compact
-                        className={`!aspect-auto !rounded-sm ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                        className={`!aspect-auto !rounded-sm border border-black ${isTall ? "h-[220px]" : "h-[188px]"}`}
                         onClick={() => openExperience(experience)}
                       />
                     );
