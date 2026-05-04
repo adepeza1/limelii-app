@@ -1095,7 +1095,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                       {[0, 1].map((row) => (
                         <div
                           key={row}
-                          className={`w-full rounded-sm border border-black bg-gray-100 animate-pulse ${(col === 0 ? row % 2 === 0 : row % 2 === 1) ? "h-[220px]" : "h-[188px]"}`}
+                          className={`w-full rounded-none border border-black bg-gray-100 animate-pulse ${(col === 0 ? row % 2 === 0 : row % 2 === 1) ? "h-[220px]" : "h-[188px]"}`}
                         />
                       ))}
                     </div>
@@ -1128,7 +1128,7 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                             key={exp.id}
                             experience={exp}
                             compact
-                            className={`!aspect-auto !rounded-sm border border-black ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                            className={`!aspect-auto !rounded-none border border-black ${isTall ? "h-[220px]" : "h-[188px]"}`}
                             onClick={() => { savedScrollY.current = window.scrollY; setSelectedExperience(exp); }}
                             onUnsave={(id) => {
                               setSavedExperiences((prev) => prev.filter((e) => e.id !== id));

@@ -841,7 +841,7 @@ export function BrowseCollectionCard({
                               key={exp.id}
                               experience={exp}
                               compact
-                              className={`!aspect-auto !rounded-sm border border-black ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                              className={`!aspect-auto !rounded-none border border-black ${isTall ? "h-[220px]" : "h-[188px]"}`}
                               onClick={() => setSelectedExp(exp)}
                             />
                           );
