@@ -27,10 +27,10 @@ export async function PATCH(request: NextRequest) {
   if (body && typeof body === "object" && typeof (body as { name?: unknown }).name === "string") {
     const fullName = (body as { name: string }).name.trim();
     const parts = fullName.split(/\s+/);
-    const first_name = parts[0] ?? "";
-    const last_name = parts.slice(1).join(" ");
+    const firstname = parts[0] ?? "";
+    const lastname = parts.slice(1).join(" ") || ".";
     path = "/user/update_name";
-    payload = { first_name, last_name };
+    payload = { firstname, lastname };
   }
 
   const res = await apiFetch(path, {
