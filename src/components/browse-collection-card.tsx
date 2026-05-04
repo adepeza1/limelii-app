@@ -828,12 +828,12 @@ export function BrowseCollectionCard({
                     <p className="text-[#667085] text-sm">No experiences in this collection yet.</p>
                   </div>
                 ) : (
-                  <div className="px-4 pt-4 pb-28 flex gap-1 items-start">
+                  <div className="px-4 pt-4 pb-28 flex gap-0 items-start">
                     {[
                       detailExps.filter((_, i) => i % 2 === 0),
                       detailExps.filter((_, i) => i % 2 === 1),
                     ].map((col, colIdx) => (
-                      <div key={colIdx} className="flex-1 flex flex-col gap-1">
+                      <div key={colIdx} className="flex-1 flex flex-col gap-0">
                         {col.map((exp, rowIdx) => {
                           const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
                           return (
@@ -841,7 +841,7 @@ export function BrowseCollectionCard({
                               key={exp.id}
                               experience={exp}
                               compact
-                              className={`!aspect-auto !rounded-xl ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                              className={`!aspect-auto !rounded-sm ${isTall ? "h-[220px]" : "h-[188px]"}`}
                               onClick={() => setSelectedExp(exp)}
                             />
                           );
