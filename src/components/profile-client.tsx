@@ -30,6 +30,7 @@ import { listSavedExperiences } from "@/lib/saved";
 import { API_BASE } from "@/lib/xano";
 import type { DiscoveryResponse } from "@/app/page";
 import { getCachedBlockedUser, clearCachedBlockedUser, setCachedBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
+import { validateUsername } from "@/lib/username-validation";
 
 // ─── localStorage keys ────────────────────────────────────────────────────────
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -222,7 +223,8 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
   const [savingDisplayName, setSavingDisplayName] = useState(false);
   const [displayNameSaved, setDisplayNameSaved] = useState(false);
   const [usernameInput, setUsernameInput] = useState("");
-  const [usernameAvailability, setUsernameAvailability] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [usernameAvailability, setUsernameAvailability] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const [usernameMessage, setUsernameMessage] = useState<string | null>(null);
   const [savingUsername, setSavingUsername] = useState(false);
   const [usernameSaved, setUsernameSaved] = useState(false);
   const usernameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -697,7 +699,11 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label htmlFor="username" className="text-xs font-semibold text-[#98A2B3] uppercase tracking-wide">Username</label>
-                  {usernameInput.trim() && usernameInput !== username && usernameAvailability !== "taken" && usernameAvailability !== "checking" && (
+                  {usernameInput.trim() &&
+                    usernameInput !== username &&
+                    usernameAvailability !== "taken" &&
+                    usernameAvailability !== "invalid" &&
+                    usernameAvailability !== "checking" && (
                     <button
                       disabled={savingUsername}
                       onClick={async () => {
@@ -712,8 +718,13 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                             setUsername(usernameInput.trim());
                             setUsernameSaved(true);
                             setUsernameAvailability("idle");
+                            setUsernameMessage(null);
                           } else {
-                            toast("Couldn't save username", "error");
+                            const data = await res.json().catch(() => ({}));
+                            const msg = (data && typeof data === "object" && (data as { message?: string }).message) || "Couldn't save username";
+                            setUsernameAvailability("invalid");
+                            setUsernameMessage(msg);
+                            toast(msg, "error");
                           }
                         } catch {
                           toast("Couldn't save username", "error");
@@ -734,19 +745,37 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                       const val = e.target.value.replace(/\s/g, "").toLowerCase();
                       setUsernameInput(val);
                       setUsernameSaved(false);
+                      setUsernameMessage(null);
                       if (usernameDebounceRef.current) clearTimeout(usernameDebounceRef.current);
                       if (!val || val === username) { setUsernameAvailability("idle"); return; }
+                      // Reject reserved + profane names locally before any
+                      // network call. The server runs the same check defensively.
+                      const validation = validateUsername(val);
+                      if (!validation.ok) {
+                        setUsernameAvailability("invalid");
+                        setUsernameMessage(validation.reason);
+                        return;
+                      }
                       setUsernameAvailability("checking");
                       usernameDebounceRef.current = setTimeout(async () => {
                         const res = await fetch(`/api/user/check_username?username=${encodeURIComponent(val)}`).catch(() => null);
                         if (!res) { setUsernameAvailability("idle"); return; }
                         const data = await res.json();
-                        setUsernameAvailability(data.available ? "available" : "taken");
+                        if (data.available) {
+                          setUsernameAvailability("available");
+                          setUsernameMessage(null);
+                        } else if (data.reason) {
+                          setUsernameAvailability("invalid");
+                          setUsernameMessage(data.reason);
+                        } else {
+                          setUsernameAvailability("taken");
+                          setUsernameMessage(null);
+                        }
                       }, 500);
                     }}
                     placeholder={username ?? "username"}
                     className={`w-full border rounded-xl pl-8 pr-4 py-3 text-sm text-[#101828] outline-none transition-colors ${
-                      usernameAvailability === "taken" ? "border-[#E8405A] focus:border-[#E8405A]"
+                      usernameAvailability === "taken" || usernameAvailability === "invalid" ? "border-[#E8405A] focus:border-[#E8405A]"
                       : usernameAvailability === "available" ? "border-[#12B76A] focus:border-[#12B76A]"
                       : "border-[#EAECF0] focus:border-[#FB6983]"
                     }`}
@@ -755,6 +784,9 @@ export function ProfileClient({ givenName, familyName, email, initialTab = "crea
                 {usernameAvailability === "checking" && <p className="text-xs text-[#98A2B3] mt-1.5">Checking availability…</p>}
                 {usernameAvailability === "available" && <p className="text-xs text-[#12B76A] mt-1.5">@{usernameInput} is available</p>}
                 {usernameAvailability === "taken" && <p className="text-xs text-[#E8405A] mt-1.5">@{usernameInput} is already taken</p>}
+                {usernameAvailability === "invalid" && (
+                  <p className="text-xs text-[#E8405A] mt-1.5">{usernameMessage ?? "That username isn't allowed."}</p>
+                )}
               </div>
 
               {/* Danger zone */}

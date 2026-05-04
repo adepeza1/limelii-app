@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { LimeliiLogo } from "@/components/limelii-logo";
+import { validateUsername } from "@/lib/username-validation";
 
 export default function OnboardingPage() {
   const [username, setUsername] = useState("");
-  const [usernameState, setUsernameState] = useState<"idle" | "checking" | "available" | "taken" | "error">("idle");
+  const [usernameState, setUsernameState] = useState<"idle" | "checking" | "available" | "taken" | "invalid" | "error">("idle");
+  const [usernameMessage, setUsernameMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [checkTimer, setCheckTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
@@ -15,9 +17,19 @@ export default function OnboardingPage() {
     const clean = val.toLowerCase().replace(/[^a-z0-9_]/g, "");
     setUsername(clean);
     setUsernameState("idle");
+    setUsernameMessage(null);
 
     if (checkTimer) clearTimeout(checkTimer);
     if (clean.length < 3) return;
+
+    // Local validation first — catches reserved + profane usernames without
+    // a network round-trip. Server runs the same check defensively.
+    const validation = validateUsername(clean);
+    if (!validation.ok) {
+      setUsernameState("invalid");
+      setUsernameMessage(validation.reason);
+      return;
+    }
 
     setUsernameState("checking");
     const t = setTimeout(async () => {
@@ -25,7 +37,13 @@ export default function OnboardingPage() {
         const res = await fetch(`/api/user/check_username?username=${encodeURIComponent(clean)}`);
         if (res.ok) {
           const data = await res.json();
-          setUsernameState(data.available ? "available" : "taken");
+          if (data.available) {
+            setUsernameState("available");
+            setUsernameMessage(null);
+          } else {
+            setUsernameState(data.reason ? "invalid" : "taken");
+            setUsernameMessage(data.reason ?? null);
+          }
         }
       } catch {
         setUsernameState("idle");
@@ -36,6 +54,12 @@ export default function OnboardingPage() {
 
   async function handleSubmit() {
     if (!username || username.length < 3) return;
+    const validation = validateUsername(username);
+    if (!validation.ok) {
+      setUsernameState("invalid");
+      setUsernameMessage(validation.reason);
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch("/api/user/username", {
@@ -45,11 +69,16 @@ export default function OnboardingPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        const msg = data?.message ?? "";
+        const msg: string = data?.message ?? "";
         if (msg.toLowerCase().includes("taken") || msg.toLowerCase().includes("duplicate")) {
           setUsernameState("taken");
+          setUsernameMessage(null);
+        } else if (msg) {
+          setUsernameState("invalid");
+          setUsernameMessage(msg);
         } else {
           setUsernameState("error");
+          setUsernameMessage(null);
         }
         setSaving(false);
         return;
@@ -64,7 +93,11 @@ export default function OnboardingPage() {
     }
   }
 
-  const isValid = username.length >= 3 && usernameState !== "taken";
+  const isValid =
+    username.length >= 3 &&
+    usernameState !== "taken" &&
+    usernameState !== "invalid" &&
+    usernameState !== "checking";
 
   return (
     <div className="min-h-screen bg-white flex flex-col px-6 pt-16" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 40px)" }}>
@@ -86,7 +119,7 @@ export default function OnboardingPage() {
             style={{
               borderColor:
                 usernameState === "available" ? "#12B76A" :
-                usernameState === "taken" || usernameState === "error" ? "#F04438" :
+                usernameState === "taken" || usernameState === "invalid" || usernameState === "error" ? "#F04438" :
                 username.length > 0 ? "#FF9A56" : "#EAECF0"
             }}
           >
@@ -114,13 +147,13 @@ export default function OnboardingPage() {
           style={{
             color:
               usernameState === "available" ? "#12B76A" :
-              usernameState === "taken" ? "#F04438" :
-              usernameState === "error" ? "#F04438" :
+              usernameState === "taken" || usernameState === "invalid" || usernameState === "error" ? "#F04438" :
               "#98A2B3"
           }}
         >
           {usernameState === "available" ? "Username is available!" :
            usernameState === "taken" ? "That username is already taken." :
+           usernameState === "invalid" ? (usernameMessage ?? "That username isn't allowed.") :
            usernameState === "error" ? "Something went wrong. Please try again." :
            usernameState === "checking" ? "Checking availability…" :
            "Lowercase letters, numbers, and underscores only. Min 3 characters."}

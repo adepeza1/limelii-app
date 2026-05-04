@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiFetch } from "@/lib/api";
 import { USER_API_BASE } from "@/lib/xano";
+import { validateUsername } from "@/lib/username-validation";
 
 export async function GET(request: NextRequest) {
   const username = request.nextUrl.searchParams.get("username");
   if (!username) {
     return NextResponse.json({ available: false });
+  }
+
+  // Block reserved + profane usernames before even asking Xano. This is
+  // also the same check the client runs for instant feedback.
+  const validation = validateUsername(username);
+  if (!validation.ok) {
+    return NextResponse.json({ available: false, reason: validation.reason });
   }
 
   const res = await apiFetch(`/user/check_username?username=${encodeURIComponent(username)}`, {}, USER_API_BASE);
