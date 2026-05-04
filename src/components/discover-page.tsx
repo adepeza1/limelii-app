@@ -379,14 +379,26 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           )}
 
           {searchResults && searchResults.length > 0 && (
-            <div className="px-4 pt-4 flex flex-col gap-4">
-              {searchResults.map(({ experience, matchedPlaceId }) => (
-                <ExperienceCard
-                  key={experience.id}
-                  experience={experience}
-                  initialPlaceId={matchedPlaceId ?? undefined}
-                  onClick={() => openExperience(experience)}
-                />
+            <div className="px-4 pt-4 flex gap-0 items-start">
+              {[
+                searchResults.filter((_, i) => i % 2 === 0),
+                searchResults.filter((_, i) => i % 2 === 1),
+              ].map((col, colIdx) => (
+                <div key={colIdx} className="flex-1 flex flex-col gap-0">
+                  {col.map(({ experience, matchedPlaceId }, rowIdx) => {
+                    const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
+                    return (
+                      <ExperienceCard
+                        key={experience.id}
+                        experience={experience}
+                        initialPlaceId={matchedPlaceId ?? undefined}
+                        compact
+                        className={`!aspect-auto !rounded-sm ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                        onClick={() => openExperience(experience)}
+                      />
+                    );
+                  })}
+                </div>
               ))}
             </div>
           )}
