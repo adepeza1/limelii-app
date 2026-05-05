@@ -67,9 +67,6 @@ interface BlockedUser {
 }
 
 interface ProfileClientProps {
-  givenName: string | null;
-  familyName: string | null;
-  email: string | null;
   authError?: boolean;
   initialTab?: Tab;
   initialCreating?: boolean | number;
@@ -188,7 +185,7 @@ function loadPreferences(): UserPreferences {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export function ProfileClient({ givenName, familyName, email, authError = false, initialTab = "created", initialCreating = false }: ProfileClientProps) {
+export function ProfileClient({ authError = false, initialTab = "created", initialCreating = false }: ProfileClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
@@ -211,6 +208,7 @@ export function ProfileClient({ givenName, familyName, email, authError = false,
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [xanoName, setXanoName] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [showBlockedUsers, setShowBlockedUsers] = useState(false);
@@ -362,6 +360,7 @@ export function ProfileClient({ givenName, familyName, email, authError = false,
         if (u?.photo?.url) setAvatarUrl(u.photo.url);
         if (u?.username) { setUsername(u.username); setUsernameInput(u.username); }
         if (u?.name) { setXanoName(u.name); setXanoNameInput(u.name); }
+        if (u?.email) setEmail(u.email);
         if (u?.id) setCurrentUserId(u.id);
       })
       .catch(() => {});
@@ -457,9 +456,21 @@ export function ProfileClient({ givenName, familyName, email, authError = false,
     }, 800);
   }
 
-  const initials = getInitials(givenName, familyName);
-  const profileName =
-    [givenName, familyName].filter(Boolean).join(" ") || email || "User";
+  // Xano's update_name endpoint requires a non-empty lastname, so the
+  // route handler stores "." when the user enters a single-word name.
+  // Strip that trailing artifact for display.
+  const cleanedXanoName = xanoName?.replace(/\s+\.$/, "").trim() || null;
+  const [xanoFirst, ...xanoRest] = (cleanedXanoName ?? "").split(/\s+/);
+  const xanoLast = xanoRest.join(" ") || null;
+
+  // Single source of truth: Xano. Falls back to email while the
+  // /api/user/me fetch is in flight, then to "User" if neither is set.
+  const profileName = cleanedXanoName || email || "User";
+  const initials = cleanedXanoName
+    ? getInitials(xanoFirst, xanoLast)
+    : email
+      ? email[0].toUpperCase()
+      : "U";
 
   // ── If viewing a detail, take over full screen ──────────────────────────────
   if (selectedExperience) {
