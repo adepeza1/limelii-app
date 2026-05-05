@@ -477,14 +477,19 @@ export function ProfileClient({ givenName, familyName, email, authError = false,
       <div className="h-[env(safe-area-inset-top,44px)]" />
 
       {/* Re-auth banner — shown when the server couldn't load the user
-          because the xano_token cookie outlived the underlying token. */}
+          because the xano_token cookie outlived the underlying token.
+          We send the user straight through Kinde login (NOT logout):
+          if their Kinde session is still alive, it's a silent re-auth
+          and the callback writes a fresh xano_token. If Kinde is also
+          gone, they get the actual login page. Hitting /api/user/logout
+          here would land them on a Kinde logout confirmation screen. */}
       {authError && (
         <div className="mx-4 mt-2 mb-1 rounded-xl bg-[#FFF4F4] border border-[#F04438]/20 px-4 py-3 flex items-center gap-3">
           <p className="flex-1 text-xs text-[#B42318] leading-snug">
             We couldn&apos;t load your profile. Please sign in again.
           </p>
           <a
-            href="/api/user/logout?post_logout_redirect_url=%2Fapi%2Fauth%2Flogin"
+            href="/api/auth/login?post_login_redirect_url=%2Fauth%2Fcallback%3Fredirect_to%3D%2Fprofile"
             className="shrink-0 text-xs font-semibold text-white bg-[#F04438] px-3 py-1.5 rounded-full"
           >
             Sign in
