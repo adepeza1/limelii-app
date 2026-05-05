@@ -12,44 +12,28 @@ export default async function ProfilePage({
   const cookieStore = await cookies();
   const xanoToken = cookieStore.get("xano_token")?.value;
 
-  const { getUser, isAuthenticated } = getKindeServerSession();
+  const { isAuthenticated } = getKindeServerSession();
   const kindeAuth = await isAuthenticated();
 
   if (!kindeAuth && !xanoToken) {
     redirect("/login");
   }
 
-  let givenName: string | null = null;
-  let familyName: string | null = null;
-  let email: string | null = null;
+  // Quick probe so we can show a re-auth banner if the xano_token cookie
+  // outlived the underlying token. Name + email are loaded client-side
+  // from /api/user/me to keep a single source of truth.
   let authError = false;
-
-  if (kindeAuth) {
-    const user = await getUser();
-    givenName = user?.given_name ?? null;
-    familyName = user?.family_name ?? null;
-    email = user?.email ?? null;
-  } else if (xanoToken) {
+  if (xanoToken) {
     try {
       const res = await fetch(`${USER_API_BASE}/user/me`, {
         headers: { Authorization: `Bearer ${xanoToken}` },
         cache: "no-store",
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.name) {
-          const parts = (data.name as string).trim().split(/\s+/);
-          givenName = parts[0] ?? null;
-          familyName = parts.slice(1).join(" ") || null;
-        }
-        email = data.email ?? null;
-      } else if (res.status === 401 || res.status === 403) {
-        // Cookie outlived the underlying token — flag it so the client
-        // can prompt for re-login instead of silently rendering "User".
+      if (res.status === 401 || res.status === 403) {
         authError = true;
       }
     } catch {
-      // Network failure; proceed silently — ProfileClient shows "User" fallback.
+      // Network failure; let the client handle it.
     }
   }
 
@@ -67,9 +51,6 @@ export default async function ProfilePage({
 
   return (
     <ProfileClient
-      givenName={givenName}
-      familyName={familyName}
-      email={email}
       authError={authError}
       initialTab={params.tab === "preferences" ? "preferences" : "created"}
       initialCreating={initialCreating}
