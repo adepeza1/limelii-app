@@ -3,7 +3,6 @@ import Script from "next/script";
 import { Inter, Poppins } from "next/font/google";
 import { KindeProvider } from "@kinde-oss/kinde-auth-nextjs";
 import { BottomNav } from "@/components/bottom-nav";
-import { SplashScreen } from "@/components/splash-screen";
 import { ToastProvider } from "@/components/toast";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { MixpanelProvider } from "@/components/mixpanel-provider";
@@ -55,10 +54,8 @@ export default function RootLayout({
             <MixpanelProvider />
             <CapacitorClassMarker />
             <SessionRefresher />
-            <SplashScreen>
-              {children}
-              <BottomNav />
-            </SplashScreen>
+            {children}
+            <BottomNav />
             <OnboardingWalkthrough />
           </ToastProvider>
         </body>
