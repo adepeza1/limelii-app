@@ -457,9 +457,24 @@ export function ProfileClient({ givenName, familyName, email, authError = false,
     }, 800);
   }
 
-  const initials = getInitials(givenName, familyName);
+  // Xano's update_name endpoint requires a non-empty lastname, so the
+  // route handler stores "." when the user enters a single-word name.
+  // Strip that trailing artifact for display.
+  const cleanedXanoName = xanoName?.replace(/\s+\.$/, "").trim() || null;
+  const [xanoFirst, ...xanoRest] = (cleanedXanoName ?? "").split(/\s+/);
+  const xanoLast = xanoRest.join(" ") || null;
+
+  // Prefer the user's edited Xano display name over the Kinde-supplied
+  // name. Without this, saving a new display name updates Xano but the
+  // header keeps rendering whatever Kinde returned at signup.
+  const initials = cleanedXanoName
+    ? getInitials(xanoFirst, xanoLast)
+    : getInitials(givenName, familyName);
   const profileName =
-    [givenName, familyName].filter(Boolean).join(" ") || email || "User";
+    cleanedXanoName ||
+    [givenName, familyName].filter(Boolean).join(" ") ||
+    email ||
+    "User";
 
   // ── If viewing a detail, take over full screen ──────────────────────────────
   if (selectedExperience) {
