@@ -5,6 +5,35 @@ export { XANO_DOMAIN, API_BASE };
 
 const XANO_TOKEN_EXCHANGE_URL = `${XANO_DOMAIN}/api:J86-AUyj/external_token/exchange`;
 
+// Fallback if we can't read the JWT's exp claim. 24 hours is conservative
+// enough that an inactive user gets cleanly redirected to login (instead
+// of stuck on a stale-cookie state) but long enough to avoid login churn.
+const COOKIE_TTL_FALLBACK_SECONDS = 60 * 60 * 24;
+// Subtract from the JWT's actual expiry so the cookie disappears just
+// before the token dies — avoids the edge where the cookie is sent but
+// the token is already invalid.
+const COOKIE_TTL_BUFFER_SECONDS = 60;
+
+/**
+ * Compute the cookie max-age (seconds) for a Xano JWT by reading its
+ * `exp` claim. Falls back to a conservative default when we can't parse it.
+ * Caller controls clock skew via the buffer constant.
+ */
+export function xanoTokenMaxAge(token: string): number {
+  try {
+    const payloadB64 = token.split(".")[1];
+    if (!payloadB64) return COOKIE_TTL_FALLBACK_SECONDS;
+    const padded = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(Buffer.from(padded, "base64").toString("utf-8"));
+    if (typeof payload.exp !== "number") return COOKIE_TTL_FALLBACK_SECONDS;
+    const remaining = payload.exp - Math.floor(Date.now() / 1000) - COOKIE_TTL_BUFFER_SECONDS;
+    if (remaining <= 0) return COOKIE_TTL_FALLBACK_SECONDS;
+    return remaining;
+  } catch {
+    return COOKIE_TTL_FALLBACK_SECONDS;
+  }
+}
+
 /**
  * Refresh the Kinde session and exchange for a new Xano token.
  * Writes the new token to the xano_token cookie and returns it.
@@ -46,7 +75,7 @@ export async function refreshXanoToken(): Promise<string> {
     secure: isSecure,
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
+    maxAge: xanoTokenMaxAge(xanoToken),
   });
 
   return xanoToken;
