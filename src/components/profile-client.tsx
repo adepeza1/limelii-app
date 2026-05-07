@@ -484,8 +484,10 @@ export function ProfileClient({ authError = false, initialTab = "created", initi
       onTouchMove={onPTRTouchMove}
       onTouchEnd={onPTRTouchEnd}
     >
-      {/* Safe-area spacer */}
-      <div className="h-[env(safe-area-inset-top,44px)]" />
+      {/* Safe-area spacer — sticky so it pins a white bar over the iOS
+          status bar area when the page scrolls, instead of letting
+          content scroll under the time/battery icons. */}
+      <div className="sticky top-0 z-20 bg-white h-[env(safe-area-inset-top,44px)]" />
 
       {/* Re-auth banner — shown when the server couldn't load the user
           because the xano_token cookie outlived the underlying token.
@@ -947,7 +949,10 @@ export function ProfileClient({ authError = false, initialTab = "created", initi
       )}
 
       {/* ── Sticky header ───────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+      <div
+        className="sticky z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100"
+        style={{ top: "env(safe-area-inset-top, 44px)" }}
+      >
         <div className="max-w-5xl mx-auto px-5 py-3 flex items-center justify-between">
           <h1 className="text-lg font-medium text-gray-900">Profile</h1>
           <button

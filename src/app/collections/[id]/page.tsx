@@ -88,7 +88,7 @@ export default function PublicCollectionPage({ params }: PublicCollectionPagePro
 
   return (
     <div className="bg-white min-h-screen max-w-5xl mx-auto">
-      <div className="h-[env(safe-area-inset-top,44px)]" />
+      <div className="sticky top-0 z-10 bg-white h-[env(safe-area-inset-top,44px)]" />
 
       {/* Header */}
       <header className="flex items-center gap-3 px-4 py-3 h-12">

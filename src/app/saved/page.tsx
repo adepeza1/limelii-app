@@ -513,7 +513,7 @@ export default function CollectionsPage() {
       onTouchMove={onPTRTouchMove}
       onTouchEnd={onPTRTouchEnd}
     >
-      <div className="h-[env(safe-area-inset-top,44px)]" />
+      <div className="sticky top-0 z-10 bg-white h-[env(safe-area-inset-top,44px)]" />
 
       {/* Pull-to-refresh indicator */}
       <div
