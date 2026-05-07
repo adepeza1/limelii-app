@@ -119,7 +119,7 @@ export default function SharedCollectionPage() {
 
   return (
     <div className="bg-white min-h-screen max-w-5xl mx-auto">
-      <div className="h-[env(safe-area-inset-top,44px)]" />
+      <div className="sticky top-0 z-10 bg-white h-[env(safe-area-inset-top,44px)]" />
 
       {/* Header */}
       <div className="px-4 py-3 flex items-center gap-2 border-b border-[#EAECF0]">
