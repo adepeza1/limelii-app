@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { haptic } from "@/lib/haptics";
 import Link from "next/link";
-import { Search, ArrowLeft, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import Image from "next/image";
 import { LimeliiLogo } from "@/components/limelii-logo";
 import type {
@@ -146,11 +146,11 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   }
 
   // Search state
-  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<RankedResult[] | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSearching = searchQuery.trim().length > 0;
 
   const allExperiences = useMemo(() => {
     const blocked = new Set(blockedIds);
@@ -253,18 +253,6 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
     }
   }
 
-  function openSearch() {
-    setSearchOpen(true);
-    setTimeout(() => searchInputRef.current?.focus(), 50);
-  }
-
-  function closeSearch() {
-    setSearchOpen(false);
-    setSearchQuery("");
-    setSearchResults(null);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-  }
-
   function searchExperiences(query: string): RankedResult[] {
     if (!query.trim()) return [];
     return searchAndRank(allExperiences, query);
@@ -335,45 +323,41 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           </span>
         </div>
 
-        {searchOpen ? (
-          <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100">
-            <button onClick={closeSearch} aria-label="Close search">
-              <ArrowLeft className="w-6 h-6 text-gray-900" strokeWidth={1.8} />
-            </button>
-            <div className="flex-1 relative">
-              <input
-                ref={searchInputRef}
-                type="text"
-                aria-label="Search experiences"
-                value={searchQuery}
-                onChange={(e) => handleSearchInput(e.target.value)}
-                placeholder="Search experiences..."
-                className="w-full bg-gray-100 rounded-lg px-4 py-2 text-base text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#416f7b]/30"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => handleSearchInput("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2"
-                  aria-label="Clear search"
-                >
-                  <X className="w-4 h-4 text-gray-400" />
-                </button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100">
-            <LimeliiLogo width={80} height={28} />
-            <div className="flex items-center gap-4">
-              <button onClick={openSearch} aria-label="Search">
-                <Search className="w-6 h-6 text-gray-900" strokeWidth={1.8} />
+        {/* Logo row */}
+        <div className="flex items-center px-4 py-2.5">
+          <LimeliiLogo width={80} height={28} />
+        </div>
+
+        {/* Persistent search bar */}
+        <div className="px-4 pb-3 border-b border-gray-100">
+          <div className="relative">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
+              strokeWidth={1.8}
+            />
+            <input
+              ref={searchInputRef}
+              type="text"
+              aria-label="Search experiences"
+              value={searchQuery}
+              onChange={(e) => handleSearchInput(e.target.value)}
+              placeholder="Search experiences..."
+              className="w-full bg-gray-100 rounded-lg pl-10 pr-9 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#416f7b]/30"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => handleSearchInput("")}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1"
+              >
+                <X className="w-4 h-4 text-gray-400" />
               </button>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </header>
 
-      {searchOpen ? (
+      {isSearching ? (
         /* Search Results */
         <main className="pb-8">
           {searchQuery.trim() && searchResults && searchResults.length === 0 && (
@@ -382,36 +366,30 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
             </p>
           )}
 
-          {searchResults && searchResults.length > 0 && (
-            <div className="px-4 pt-4 flex gap-0 items-start">
-              {[
-                searchResults.filter((_, i) => i % 2 === 0),
-                searchResults.filter((_, i) => i % 2 === 1),
-              ].map((col, colIdx) => (
-                <div key={colIdx} className="flex-1 flex flex-col gap-0">
-                  {col.map(({ experience, matchedPlaceId }, rowIdx) => {
-                    const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
-                    return (
-                      <ExperienceCard
-                        key={experience.id}
-                        experience={experience}
-                        initialPlaceId={matchedPlaceId ?? undefined}
-                        compact
-                        className={`!aspect-auto !rounded-none border border-black ${isTall ? "h-[220px]" : "h-[188px]"}`}
-                        onClick={() => openExperience(experience)}
-                      />
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!searchQuery.trim() && (
-            <p className="text-center text-gray-400 py-12 text-sm">
-              Type to search experiences
-            </p>
-          )}
+            {searchResults && searchResults.length > 0 && (
+              <div className="px-4 pt-4 flex gap-0 items-start">
+                {[
+                  searchResults.filter((_, i) => i % 2 === 0),
+                  searchResults.filter((_, i) => i % 2 === 1),
+                ].map((col, colIdx) => (
+                  <div key={colIdx} className="flex-1 flex flex-col gap-0">
+                    {col.map(({ experience, matchedPlaceId }, rowIdx) => {
+                      const isTall = colIdx === 0 ? rowIdx % 2 === 0 : rowIdx % 2 === 1;
+                      return (
+                        <ExperienceCard
+                          key={experience.id}
+                          experience={experience}
+                          initialPlaceId={matchedPlaceId ?? undefined}
+                          compact
+                          className={`!aspect-auto !rounded-none border border-black ${isTall ? "h-[220px]" : "h-[188px]"}`}
+                          onClick={() => openExperience(experience)}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            )}
         </main>
       ) : (
         <>
@@ -444,7 +422,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           {/* Content Sections */}
           <main className="pb-8">
             {/* Suggested for you */}
-            {activeCategory === 0 && !searchOpen && prefsChecked && (
+            {activeCategory === 0 && !isSearching && prefsChecked && (
               <section className="mb-8">
                 <h2 className="text-base font-medium text-black px-4 mb-4">✦ Suggested for you</h2>
                 {suggestions.length > 0 ? (
