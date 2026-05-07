@@ -308,29 +308,33 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
       onTouchMove={onPTRTouchMove}
       onTouchEnd={onPTRTouchEnd}
     >
-      <div className="h-[env(safe-area-inset-top,44px)]" />
-
-      {/* Pull-to-refresh indicator */}
-      <div
-        className="overflow-hidden flex items-center justify-center gap-2"
-        style={{
-          height: refreshing ? 52 : pullY,
-          transition: pullY === 0 ? "height 0.2s ease-out" : "none",
-        }}
-      >
-        <div
-          className="w-4 h-4 rounded-full border-2 border-[#FB6983]/30"
-          style={{
-            borderTopColor: "#FB6983",
-            animation: refreshing || pullY >= PULL_THRESHOLD ? "spin 0.75s linear infinite" : "none",
-          }}
-        />
-        <span className="text-xs text-[#98A2B3]">
-          {refreshing ? "Refreshing…" : pullY >= PULL_THRESHOLD ? "Release to refresh" : "Pull to refresh"}
-        </span>
-      </div>
-      {/* Top Bar */}
+      {/* Top Bar — safe-area + PTR + nav row all live inside the sticky
+          header so the white background extends behind the iOS status
+          bar when the page scrolls. Without this, the logo/search row
+          slides under the time/battery icons. */}
       <header className="sticky top-0 z-10 bg-white">
+        <div className="h-[env(safe-area-inset-top,44px)]" />
+
+        {/* Pull-to-refresh indicator */}
+        <div
+          className="overflow-hidden flex items-center justify-center gap-2"
+          style={{
+            height: refreshing ? 52 : pullY,
+            transition: pullY === 0 ? "height 0.2s ease-out" : "none",
+          }}
+        >
+          <div
+            className="w-4 h-4 rounded-full border-2 border-[#FB6983]/30"
+            style={{
+              borderTopColor: "#FB6983",
+              animation: refreshing || pullY >= PULL_THRESHOLD ? "spin 0.75s linear infinite" : "none",
+            }}
+          />
+          <span className="text-xs text-[#98A2B3]">
+            {refreshing ? "Refreshing…" : pullY >= PULL_THRESHOLD ? "Release to refresh" : "Pull to refresh"}
+          </span>
+        </div>
+
         {searchOpen ? (
           <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100">
             <button onClick={closeSearch} aria-label="Close search">
