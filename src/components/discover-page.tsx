@@ -323,16 +323,12 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           </span>
         </div>
 
-        {/* Logo row */}
-        <div className="flex items-center px-4 py-2.5">
-          <LimeliiLogo width={80} height={28} />
-        </div>
-
-        {/* Persistent search bar */}
-        <div className="px-4 pb-3 border-b border-gray-100">
-          <div className="relative">
+        {/* Logo + persistent search bar on the same row */}
+        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100">
+          <LimeliiLogo width={64} height={22} />
+          <div className="flex-1 relative">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
               strokeWidth={1.8}
             />
             <input
@@ -342,7 +338,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
               value={searchQuery}
               onChange={(e) => handleSearchInput(e.target.value)}
               placeholder="Search experiences..."
-              className="w-full bg-gray-100 rounded-lg pl-10 pr-9 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#416f7b]/30"
+              className="w-full bg-gray-100 rounded-lg pl-9 pr-9 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#416f7b]/30"
             />
             {searchQuery && (
               <button
