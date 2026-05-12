@@ -357,8 +357,15 @@ export function ProfileClient({ givenName, familyName, email, authError = false,
     setBioInput(prefs.bio);
     // Load user photo from Xano
     fetch("/api/user/me")
-      .then((r) => r.ok ? r.json() : null)
+      .then((r) => {
+        if (r.status === 401) {
+          window.location.href = "/auth/callback?redirect_to=/profile";
+          return null;
+        }
+        return r.ok ? r.json() : null;
+      })
       .then((u) => {
+        if (!u) return;
         if (u?.photo?.url) setAvatarUrl(u.photo.url);
         if (u?.username) { setUsername(u.username); setUsernameInput(u.username); }
         if (u?.name) { setXanoName(u.name); setXanoNameInput(u.name); }

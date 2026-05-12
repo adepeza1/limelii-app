@@ -105,6 +105,10 @@ export function ProfileExperiences({ onCountLoaded, creating, onCreatingDone }: 
   async function fetchExperiences() {
     try {
       const res = await fetch("/api/user-experiences");
+      if (res.status === 401) {
+        window.location.href = "/auth/callback?redirect_to=/profile";
+        return;
+      }
       if (!res.ok) {
         setError("Failed to load your experiences");
         return;
