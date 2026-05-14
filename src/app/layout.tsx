@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { ToastProvider } from "@/components/toast";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { MixpanelProvider } from "@/components/mixpanel-provider";
+import { PageViewTracker } from "@/components/page-view-tracker";
 import { CapacitorClassMarker } from "@/components/capacitor-class-marker";
 import { SessionRefresher } from "@/components/session-refresher";
 import "@fontsource/mona-sans/400.css";
@@ -52,6 +53,7 @@ export default function RootLayout({
           />
           <ToastProvider>
             <MixpanelProvider />
+            <PageViewTracker />
             <CapacitorClassMarker />
             <SessionRefresher />
             {children}
