@@ -7,6 +7,7 @@ import { ShareSheet } from "./collection-share-sheet";
 import { ReportModal } from "./report-modal";
 import { track } from "@/lib/mixpanel";
 import { useToast } from "@/components/toast";
+import { getPlaceLocation } from "@/lib/place-location";
 
 const SAVED_KEY = "limelii_saved";
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -313,8 +314,8 @@ export function ExperienceDetail({
                 <PlaceImageCard place={place} />
                 <div className="mt-2 px-1">
                   <h3 className="text-base font-medium text-black">{place.name}</h3>
-                  {place.neighborhood && (
-                    <span className="text-xs text-gray-500">{place.neighborhood}</span>
+                  {getPlaceLocation(place) && (
+                    <span className="text-xs text-gray-500">{getPlaceLocation(place)}</span>
                   )}
                   {details?.Description && details.Description !== "NA" && (
                     <p className="text-[13px] text-black leading-5 mt-1">

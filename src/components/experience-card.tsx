@@ -8,17 +8,12 @@ import { saveExperience, unsaveExperience } from "@/lib/saved";
 import { useToast } from "@/components/toast";
 import { haptic } from "@/lib/haptics";
 import { isNew } from "@/lib/discover-new";
+import { getPlaceLocation } from "@/lib/place-location";
 
 function getPlaceImage(place: Place): string | null {
   return (place.display_images ?? []).find((img) => img.url)?.url
     ?? (place.images ?? []).find((img) => img.url)?.url
     ?? null;
-}
-
-function getPlaceLocation(place: Place): string {
-  if (place.neighborhood) return place.neighborhood;
-  if (place.borough) return place.borough;
-  return "";
 }
 
 export function ExperienceCard({
