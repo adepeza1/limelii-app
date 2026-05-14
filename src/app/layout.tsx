@@ -9,6 +9,7 @@ import { MixpanelProvider } from "@/components/mixpanel-provider";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { CapacitorClassMarker } from "@/components/capacitor-class-marker";
 import { SessionRefresher } from "@/components/session-refresher";
+import { AtmosphereLayer } from "@/components/atmosphere-layer";
 import "@fontsource/mona-sans/400.css";
 import "@fontsource/mona-sans/500.css";
 import "@fontsource/mona-sans/600.css";
@@ -47,6 +48,7 @@ export default function RootLayout({
     <KindeProvider>
       <html lang="en">
         <body className={`${inter.variable} ${poppins.variable} antialiased`} style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 4px)" }}>
+          <AtmosphereLayer />
           <Script
             src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
             strategy="beforeInteractive"

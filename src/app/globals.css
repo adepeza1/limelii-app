@@ -39,3 +39,46 @@ html[data-capacitor] img {
   user-select: none;
   -webkit-user-select: none;
 }
+
+/* ─── Atmosphere layer ───────────────────────────────────── */
+
+@keyframes atm-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes atm-rain {
+  from { transform: translateY(-80px); }
+  to   { transform: translateY(110vh); }
+}
+
+@keyframes atm-snow {
+  0%   { transform: translateY(-24px) translateX(0px); }
+  25%  { transform: translateY(25vh) translateX(8px); }
+  50%  { transform: translateY(50vh) translateX(-5px); }
+  75%  { transform: translateY(75vh) translateX(10px); }
+  100% { transform: translateY(105vh) translateX(-3px); }
+}
+
+.atm-rain {
+  animation-name: atm-rain;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.atm-snow {
+  animation-name: atm-snow;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+/* Pause particles when app is backgrounded (data-bg-hidden set by AtmosphereLayer) */
+[data-bg-hidden] .atm-particles .atm-rain,
+[data-bg-hidden] .atm-particles .atm-snow {
+  animation-play-state: paused;
+}
+
+/* Users with prefers-reduced-motion get the tint but no particle animations */
+@media (prefers-reduced-motion: reduce) {
+  .atm-particles { display: none; }
+}
