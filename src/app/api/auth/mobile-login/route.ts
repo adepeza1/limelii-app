@@ -8,12 +8,18 @@ export async function GET() {
     client_id: process.env.KINDE_CLIENT_ID!,
     redirect_uri: "https://limelii-app.vercel.app/auth/mobile-callback",
     response_type: "code",
-    // offline_access tells Kinde to return a refresh_token alongside the
-    // id_token. We need it because the WebView has no Kinde session
-    // cookies (the OAuth happens in SFSafariViewController, separate
-    // cookie jar), so the Kinde SDK's refreshTokens() can't recover
-    // expired Xano tokens on its own.
-    scope: "openid profile email offline_access",
+    // "offline" (NOT the OIDC-standard "offline_access") is Kinde's
+    // scope name for requesting a refresh_token alongside the id_token.
+    // Per Kinde's docs: "Kinde uses offline to request a refresh
+    // token. The OIDC specification defines this scope as
+    // offline_access, but Kinde does not support offline_access."
+    // We need the refresh_token because the WebView has no Kinde
+    // session cookies (mobile auth happens in SFSafariViewController,
+    // separate cookie jar), so the Kinde SDK's refreshTokens() has
+    // nothing to work with — refreshXanoToken uses the stored
+    // refresh_token directly against Kinde's /oauth2/token endpoint
+    // instead.
+    scope: "openid profile email offline",
     state,
     prompt: "login",
   });
