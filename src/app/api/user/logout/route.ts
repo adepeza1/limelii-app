@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   response.cookies.delete("xano_token");
   response.cookies.delete("xano_session");
   response.cookies.delete("mobile_authed");
+  response.cookies.delete("kinde_refresh");
   return response;
 }
 
@@ -19,5 +20,6 @@ export async function POST() {
   response.cookies.delete("xano_token");
   response.cookies.delete("xano_session");
   response.cookies.delete("mobile_authed");
+  response.cookies.delete("kinde_refresh");
   return response;
 }

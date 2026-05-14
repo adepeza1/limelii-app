@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   }
 
   const tokenBody = await tokenRes.json();
-  const { id_token } = tokenBody;
+  const { id_token, refresh_token } = tokenBody;
   if (!id_token) {
     console.error(`[token-fail] step=mobile-no-id-token body=${JSON.stringify(tokenBody)}`);
     return NextResponse.json({ error: "No id_token returned", detail: tokenBody }, { status: 400 });
@@ -83,6 +83,20 @@ export async function POST(req: NextRequest) {
     maxAge: cookieMaxAge,
     path: "/",
   });
+  // Persist the Kinde refresh_token so refreshXanoToken can mint a new
+  // id_token without going through the Kinde SDK (which can't see any
+  // session for mobile users). 30 days matches Kinde's typical refresh
+  // token lifetime; if Kinde returns a new refresh_token on use, the
+  // refresh code path will rotate this cookie.
+  if (refresh_token) {
+    response.cookies.set("kinde_refresh", refresh_token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 30,
+      path: "/",
+    });
+  }
 
   return response;
 }

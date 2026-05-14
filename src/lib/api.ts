@@ -35,16 +35,72 @@ export function xanoTokenMaxAge(token: string): number {
 }
 
 /**
+ * Mint a fresh Kinde id_token using a stored refresh_token. Used for the
+ * mobile path where the WebView has no Kinde session cookies on the
+ * Vercel origin, so the Kinde Next.js SDK has nothing to refresh from.
+ * Rotates the kinde_refresh cookie if Kinde returns a new refresh_token
+ * (which is the default on most Kinde configurations).
+ */
+async function refreshKindeIdTokenFromCookie(refreshToken: string): Promise<string> {
+  const res = await fetch(`${process.env.KINDE_ISSUER_URL}/oauth2/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      client_id: process.env.KINDE_CLIENT_ID!,
+      client_secret: process.env.KINDE_CLIENT_SECRET!,
+      refresh_token: refreshToken,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Kinde refresh failed: ${res.status}`);
+  }
+
+  const data = await res.json();
+  const idToken: string | undefined = data.id_token;
+  if (!idToken) {
+    throw new Error("No Kinde ID token available after refresh");
+  }
+
+  // Rotate the cookie if Kinde returned a new refresh_token. If the same
+  // token is reused (rotation off), we re-set it anyway to extend the
+  // 30-day window so active users don't time out.
+  const rotated: string = data.refresh_token ?? refreshToken;
+  const cookieStore = await cookies();
+  cookieStore.set("kinde_refresh", rotated, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
+
+  return idToken;
+}
+
+/**
  * Refresh the Kinde session and exchange for a new Xano token.
  * Writes the new token to the xano_token cookie and returns it.
  */
 export async function refreshXanoToken(): Promise<string> {
-  const session = getKindeServerSession();
+  const cookieStore = await cookies();
+  const kindeRefresh = cookieStore.get("kinde_refresh")?.value;
 
-  // Refresh Kinde tokens to ensure the ID token is valid
-  await session.refreshTokens();
+  let kindeIdToken: string | null;
+  if (kindeRefresh) {
+    // Mobile path: refresh via the stored refresh_token directly. The
+    // Kinde SDK can't help here — the WebView has no Kinde session
+    // cookies because mobile auth happens in SFSafariViewController.
+    kindeIdToken = await refreshKindeIdTokenFromCookie(kindeRefresh);
+  } else {
+    // Web path: SDK reads the Kinde session cookies set during the
+    // /api/auth/login handler and rotates them in place.
+    const session = getKindeServerSession();
+    await session.refreshTokens();
+    kindeIdToken = await session.getIdTokenRaw();
+  }
 
-  const kindeIdToken = await session.getIdTokenRaw();
   if (!kindeIdToken) {
     throw new Error("No Kinde ID token available after refresh");
   }
@@ -66,7 +122,6 @@ export async function refreshXanoToken(): Promise<string> {
     throw new Error("No access_token in Xano exchange response");
   }
 
-  const cookieStore = await cookies();
   const isSecure =
     process.env.NODE_ENV === "production" ||
     (process.env.KINDE_SITE_URL ?? "").startsWith("https");
@@ -122,18 +177,21 @@ export async function apiFetch(
       );
 
       // If the auth chain is structurally broken (no Kinde session to
-      // refresh from, or Xano rejected the id_token), the cookie is
-      // unrecoverable. Clear it so middleware redirects cleanly to login
-      // on the next nav instead of letting the user sit on a page making
-      // API calls that 401 forever. Skip clearing for transient errors
-      // like network failures — those can recover on the next call.
+      // refresh from, refresh_token rejected, or Xano rejected the
+      // id_token), the cookies are unrecoverable. Clear them so middleware
+      // redirects cleanly to login on the next nav instead of letting the
+      // user sit on a page making API calls that 401 forever. Skip
+      // clearing for transient errors like network failures — those can
+      // recover on the next call.
       const isAuthChainBroken =
         errMsg.includes("No Kinde ID token available") ||
+        errMsg.includes("Kinde refresh failed") ||
         errMsg.includes("Xano token exchange failed") ||
         errMsg.includes("No access_token in Xano exchange response");
       if (isAuthChainBroken) {
         cookieStore.delete("xano_token");
         cookieStore.delete("mobile_authed");
+        cookieStore.delete("kinde_refresh");
       }
 
       return response;
