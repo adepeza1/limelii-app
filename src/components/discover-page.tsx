@@ -15,6 +15,9 @@ import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
 import { fetchBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
 import { searchAndRank, type RankedResult } from "@/lib/discover-search";
+import { useAtmosphere } from "@/hooks/use-atmosphere";
+import { GREETING_COPY, type WeatherCondition } from "@/lib/atmosphere-config";
+import { isNew } from "@/lib/discover-new";
 
 
 // ─── Suggestion logic ─────────────────────────────────────────────────────────
@@ -45,7 +48,12 @@ const INTEREST_TYPES: Record<string, string[]> = {
   "Dog-friendly":    ["Park", "Outdoor", "Outdoors", "Dog", "Beach"],
 };
 
-function scoreExperience(exp: Experience, prefs: StoredPrefs): number {
+function scoreExperience(
+  exp: Experience,
+  prefs: StoredPrefs,
+  weather?: WeatherCondition,
+  tempF?: number | null,
+): number {
   let score = 0;
   const expTypes = (exp.places_id ?? []).flatMap(p => p._location_details?.location_type ?? []).map(t => t.toLowerCase());
   const expActivities = (exp.activities ?? []).map(a => a.toLowerCase());
@@ -65,6 +73,19 @@ function scoreExperience(exp: Experience, prefs: StoredPrefs): number {
       const inHood = (exp.places_id ?? []).some(p => p.neighborhood?.toLowerCase() === hood.toLowerCase())
         || (exp.neighborhoods ?? []).some(n => n.toLowerCase() === hood.toLowerCase());
       if (inHood) score += 3;
+    }
+  }
+
+  // Weather weighting — only applied when there's a positive base score
+  if (score > 0 && weather) {
+    const tags = (exp.indoor_outdoor ?? []).map(t => t.toLowerCase());
+    const isPrimarilyOutdoor = tags.includes("outdoor") && !tags.includes("indoor");
+    const hasOutdoorComponent = tags.some(t => ["outdoor", "both", "mixed"].includes(t));
+
+    if ((weather === "rain" || weather === "snow") && isPrimarilyOutdoor) {
+      score *= 0.825; // ~17.5% penalty for primarily-outdoor when precipitating
+    } else if (weather === "clear" && tempF != null && tempF >= 60 && tempF <= 80 && hasOutdoorComponent) {
+      score *= 1.125; // ~12.5% boost for outdoor/mixed on a nice clear day
     }
   }
 
@@ -103,6 +124,9 @@ function omitBlocked(
 }
 
 export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
+  const { timeSlot, condition, tempF } = useAtmosphere();
+  const greeting = GREETING_COPY[timeSlot];
+
   const [activeCategory, setActiveCategory] = useState<number>(0);
   const [blockedIds, setBlockedIds] = useState<number[]>(() => getCachedBlockedIds());
   const visibleData = useMemo(() => omitBlocked(data.experiences, blockedIds), [data.experiences, blockedIds]);
@@ -159,6 +183,13 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
       .filter((e) => !(e.creator_user_id != null && blocked.has(e.creator_user_id)));
   }, [data.experiences, blockedIds]);
 
+  // ── New this week — flatten everything, filter by isNew, sort newest-first ──
+  const newThisWeek = useMemo(() => {
+    return allExperiences
+      .filter(isNew)
+      .sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
+  }, [allExperiences]);
+
   // ── Suggested for you ───────────────────────────────────────────────────────
   const [suggestions, setSuggestions] = useState<Experience[]>([]);
   const [prefsChecked, setPrefsChecked] = useState(false);
@@ -171,7 +202,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
         return;
       }
       const scored = allExperiences
-        .map(exp => ({ exp, score: scoreExperience(exp, prefs) }))
+        .map(exp => ({ exp, score: scoreExperience(exp, prefs, condition, tempF) }))
         .filter(({ score }) => score > 0)
         .sort((a, b) => b.score - a.score)
         .slice(0, 10)
@@ -181,7 +212,7 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
       // localStorage unavailable
     }
     setPrefsChecked(true);
-  }, [allExperiences]);
+  }, [allExperiences, condition, tempF]);
 
   const categories: ExperienceCategory[] = [
     { id: 0, name: "All" },
@@ -389,12 +420,22 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
         </main>
       ) : (
         <>
-          {/* Page Description */}
+          {/* Time-of-day greeting */}
           <div className="px-4 pt-4 pb-1">
-            <p className="text-sm text-gray-500">
-              Explore the best things to do in NYC curated by vibe, neighborhood, and occasion.
-            </p>
+            <p className="text-base font-medium text-gray-900">{greeting}</p>
           </div>
+
+          {/* New this week — cross-category; hidden entirely when empty */}
+          {newThisWeek.length > 0 && (
+            <section className="mb-2 mt-4">
+              <h2 className="text-base font-medium text-black px-4 mb-4">New this week</h2>
+              <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:pl-4 md:overflow-x-visible">
+                {newThisWeek.map((exp) => (
+                  <ExperienceCard key={exp.id} experience={exp} onClick={() => openExperience(exp)} />
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Category Navigation */}
           <nav className="px-4 py-3">

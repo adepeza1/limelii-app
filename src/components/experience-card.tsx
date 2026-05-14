@@ -7,6 +7,7 @@ import { AddToCollectionSheet } from "./add-to-collection-sheet";
 import { saveExperience, unsaveExperience } from "@/lib/saved";
 import { useToast } from "@/components/toast";
 import { haptic } from "@/lib/haptics";
+import { isNew } from "@/lib/discover-new";
 
 function getPlaceImage(place: Place): string | null {
   return (place.display_images ?? []).find((img) => img.url)?.url
@@ -150,6 +151,13 @@ export function ExperienceCard({
         />
       )}
 
+      {/* "New" badge – top-left */}
+      {isNew(experience) && (
+        <span className="absolute top-3 left-3 z-[2] bg-[#FB6983] text-white text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full shadow-sm">
+          New
+        </span>
+      )}
+
       {/* Save button – top-right */}
       <button
         onClick={toggleSave}
@@ -177,7 +185,7 @@ export function ExperienceCard({
             const isOverflow = compact ? (i === 1 && placesWithImages.length > 2) : (i === 3 && placesWithImages.length > 4);
             return (
               <button
-                key={place.id}
+                key={`${place.id}-${i}`}
                 onClick={(e) => { e.stopPropagation(); setActiveIndex(i); }}
                 className={`${compact ? "w-8 h-8" : "w-10 h-10 sm:w-[52px] sm:h-[52px]"} rounded-lg overflow-hidden border-2 shadow-md relative ${i === activeIndex ? "border-white" : "border-white/60"}`}
               >
