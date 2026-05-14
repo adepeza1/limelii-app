@@ -15,6 +15,7 @@ import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
 import { fetchBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
 import { searchAndRank, type RankedResult } from "@/lib/discover-search";
+import { isNew, newestFirst } from "@/lib/discover-new";
 
 
 // ─── Suggestion logic ─────────────────────────────────────────────────────────
@@ -158,6 +159,22 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
       .flat()
       .filter((e) => !(e.creator_user_id != null && blocked.has(e.creator_user_id)));
   }, [data.experiences, blockedIds]);
+
+  // Experiences added in the last 7 days, dedup'd across category buckets
+  // (the same experience can appear in multiple sections of the discovery
+  // response). Same `isNew` predicate that ExperienceCard uses for its
+  // badge — keeps the section and the badge in lockstep.
+  const newExperiences = useMemo(() => {
+    const seen = new Set<number>();
+    const recent: Experience[] = [];
+    for (const exp of allExperiences) {
+      if (!isNew(exp)) continue;
+      if (seen.has(exp.id)) continue;
+      seen.add(exp.id);
+      recent.push(exp);
+    }
+    return recent.sort(newestFirst);
+  }, [allExperiences]);
 
   // ── Suggested for you ───────────────────────────────────────────────────────
   const [suggestions, setSuggestions] = useState<Experience[]>([]);
@@ -417,6 +434,22 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
 
           {/* Content Sections */}
           <main className="pb-8">
+            {/* New this week — surfaces experiences uploaded in the last
+                7 days at the top of Discover so users notice fresh
+                content. Only on the "All" tab; per-category browsing is
+                its own intent and shouldn't get reordered. Hidden when
+                empty so it doesn't take up a phantom slot. */}
+            {activeCategory === 0 && newExperiences.length > 0 && (
+              <section className="mb-8">
+                <h2 className="text-base font-medium text-black px-4 mb-4">✨ New this week</h2>
+                <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4">
+                  {newExperiences.map((exp) => (
+                    <ExperienceCard key={exp.id} experience={exp} onClick={() => openExperience(exp)} />
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Suggested for you */}
             {activeCategory === 0 && !isSearching && prefsChecked && (
               <section className="mb-8">

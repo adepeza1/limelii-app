@@ -7,6 +7,7 @@ import { AddToCollectionSheet } from "./add-to-collection-sheet";
 import { saveExperience, unsaveExperience } from "@/lib/saved";
 import { useToast } from "@/components/toast";
 import { haptic } from "@/lib/haptics";
+import { isNew } from "@/lib/discover-new";
 
 function getPlaceImage(place: Place): string | null {
   return (place.display_images ?? []).find((img) => img.url)?.url
@@ -148,6 +149,15 @@ export function ExperienceCard({
           className="object-cover"
           sizes="(max-width: 640px) 280px, (max-width: 768px) 330px, 50vw"
         />
+      )}
+
+      {/* "New" badge – top-left. Same isNew predicate that powers the
+          New this week section in DiscoverPage, so the badge and the
+          section show/hide in sync. */}
+      {isNew(experience) && (
+        <span className="absolute top-3 left-3 z-[2] bg-[#FB6983] text-white text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full shadow-sm">
+          New
+        </span>
       )}
 
       {/* Save button – top-right */}
