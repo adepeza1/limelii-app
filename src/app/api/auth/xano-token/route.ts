@@ -15,7 +15,14 @@ export async function POST() {
     await refreshXanoToken();
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("[xano-token] Token exchange failed:", error);
+    let kindeId: string | undefined;
+    try {
+      const u = await getKindeServerSession().getUser();
+      kindeId = u?.id ?? undefined;
+    } catch {}
+    console.error(
+      `[token-fail] step=xano-token-route kindeId=${kindeId ?? "?"} err=${error instanceof Error ? error.message : String(error)}`
+    );
     return NextResponse.json(
       { error: "Token exchange failed" },
       { status: 502 }

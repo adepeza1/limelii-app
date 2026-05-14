@@ -107,8 +107,18 @@ export async function apiFetch(
     try {
       xanoToken = await refreshXanoToken();
       return makeRequest(xanoToken);
-    } catch {
-      // Refresh failed — return the original 401
+    } catch (err) {
+      // Refresh failed — log so we can identify affected users in Vercel
+      // logs, then return the original 401. Most callers swallow this
+      // silently, which is why users get stuck on broken-looking pages.
+      let kindeId: string | undefined;
+      try {
+        const u = await getKindeServerSession().getUser();
+        kindeId = u?.id ?? undefined;
+      } catch {}
+      console.error(
+        `[token-fail] step=api-fetch-retry path=${path} kindeId=${kindeId ?? "?"} err=${err instanceof Error ? err.message : String(err)}`
+      );
       return response;
     }
   }

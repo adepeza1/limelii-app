@@ -31,6 +31,14 @@ export default async function ProfilePage({
       });
       if (res.status === 401 || res.status === 403) {
         authError = true;
+        let kindeId: string | undefined;
+        try {
+          const u = await getKindeServerSession().getUser();
+          kindeId = u?.id ?? undefined;
+        } catch {}
+        console.error(
+          `[token-fail] step=profile-probe status=${res.status} kindeId=${kindeId ?? "?"}`
+        );
       }
     } catch {
       // Network failure; let the client handle it.

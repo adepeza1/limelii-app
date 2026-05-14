@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { track } from "@/lib/mixpanel";
 
 // How long the app can be backgrounded before we proactively refresh the
 // Xano token on foreground. Xano tokens appear to expire after ~1-2 hours,
@@ -40,6 +41,11 @@ export function SessionRefresher() {
         try {
           const res = await fetch("/api/auth/xano-token", { method: "POST" });
           if (!res.ok) {
+            track("token_error", {
+              step: "foreground_refresh",
+              status: res.status,
+              idle_ms: elapsed,
+            });
             // Kinde session is also gone — send through full re-auth
             const params = new URLSearchParams(window.location.search);
             const current = window.location.pathname + (params.toString() ? `?${params}` : "");
