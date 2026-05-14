@@ -4,6 +4,18 @@ import { xanoTokenMaxAge } from "@/lib/api";
 
 const XANO_TOKEN_EXCHANGE_URL = `${XANO_DOMAIN}/api:J86-AUyj/external_token/exchange`;
 
+function kindeSubFromIdToken(idToken: string): string | undefined {
+  try {
+    const payload = idToken.split(".")[1];
+    if (!payload) return undefined;
+    const padded = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const claims = JSON.parse(Buffer.from(padded, "base64").toString("utf-8"));
+    return typeof claims.sub === "string" ? claims.sub : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function POST(req: NextRequest) {
   const { code } = await req.json();
   if (!code) {
@@ -24,14 +36,16 @@ export async function POST(req: NextRequest) {
 
   if (!tokenRes.ok) {
     const err = await tokenRes.json().catch(() => ({}));
-    console.error("[mobile-exchange] Kinde token exchange failed:", err);
+    console.error(
+      `[token-fail] step=mobile-kinde-exchange status=${tokenRes.status} err=${JSON.stringify(err)}`
+    );
     return NextResponse.json({ error: "Kinde exchange failed", detail: err }, { status: 400 });
   }
 
   const tokenBody = await tokenRes.json();
   const { id_token } = tokenBody;
   if (!id_token) {
-    console.error("[mobile-exchange] No id_token in Kinde response:", tokenBody);
+    console.error(`[token-fail] step=mobile-no-id-token body=${JSON.stringify(tokenBody)}`);
     return NextResponse.json({ error: "No id_token returned", detail: tokenBody }, { status: 400 });
   }
 
@@ -43,7 +57,9 @@ export async function POST(req: NextRequest) {
   });
 
   if (!xanoRes.ok) {
-    console.error("[mobile-exchange] Xano exchange failed:", xanoRes.status);
+    console.error(
+      `[token-fail] step=mobile-xano-exchange status=${xanoRes.status} kindeSub=${kindeSubFromIdToken(id_token) ?? "?"}`
+    );
     return NextResponse.json({ error: "Xano exchange failed" }, { status: 502 });
   }
 

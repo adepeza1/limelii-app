@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { track } from "@/lib/mixpanel";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -27,6 +28,11 @@ export default function AuthCallbackPage() {
           const exchangeRes = await fetch("/api/auth/xano-token", { method: "POST" });
           if (!exchangeRes.ok) {
             const data = await exchangeRes.json().catch(() => ({}));
+            track("token_error", {
+              step: "auth_callback_exchange",
+              status: exchangeRes.status,
+              error_message: data.error,
+            });
             setError(data.error || "Token exchange failed");
             return;
           }

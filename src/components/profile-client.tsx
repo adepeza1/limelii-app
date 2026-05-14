@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { haptic } from "@/lib/haptics";
 import { useRouter } from "next/navigation";
 import { useBackHandler } from "@/hooks/useBackHandler";
-import { reset as mixpanelReset } from "@/lib/mixpanel";
+import { reset as mixpanelReset, track } from "@/lib/mixpanel";
 import {
   Settings,
   MapPin,
@@ -255,6 +255,10 @@ export function ProfileClient({ authError = false, initialTab = "created", initi
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [showSettings, showAccountSettings]);
+
+  useEffect(() => {
+    if (authError) track("reauth_banner_shown");
+  }, [authError]);
 
   async function fetchSaved() {
     setSavedLoading(true);
