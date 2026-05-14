@@ -111,14 +111,31 @@ export async function apiFetch(
       // Refresh failed — log so we can identify affected users in Vercel
       // logs, then return the original 401. Most callers swallow this
       // silently, which is why users get stuck on broken-looking pages.
+      const errMsg = err instanceof Error ? err.message : String(err);
       let kindeId: string | undefined;
       try {
         const u = await getKindeServerSession().getUser();
         kindeId = u?.id ?? undefined;
       } catch {}
       console.error(
-        `[token-fail] step=api-fetch-retry path=${path} kindeId=${kindeId ?? "?"} err=${err instanceof Error ? err.message : String(err)}`
+        `[token-fail] step=api-fetch-retry path=${path} kindeId=${kindeId ?? "?"} err=${errMsg}`
       );
+
+      // If the auth chain is structurally broken (no Kinde session to
+      // refresh from, or Xano rejected the id_token), the cookie is
+      // unrecoverable. Clear it so middleware redirects cleanly to login
+      // on the next nav instead of letting the user sit on a page making
+      // API calls that 401 forever. Skip clearing for transient errors
+      // like network failures — those can recover on the next call.
+      const isAuthChainBroken =
+        errMsg.includes("No Kinde ID token available") ||
+        errMsg.includes("Xano token exchange failed") ||
+        errMsg.includes("No access_token in Xano exchange response");
+      if (isAuthChainBroken) {
+        cookieStore.delete("xano_token");
+        cookieStore.delete("mobile_authed");
+      }
+
       return response;
     }
   }
