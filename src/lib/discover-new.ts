@@ -2,13 +2,9 @@ import type { Experience } from "@/app/page";
 
 const SEVEN_DAYS_MS = 7 * 86400 * 1000;
 
-// Kill switch — set true to re-enable. Currently OFF because newly
-// uploaded experiences point at fake place #314 and have missing
-// neighborhood data; surfacing them in the "New this week" section
-// or marking them with a "New" badge would just point users at
-// broken-looking cards. Re-enable once the upload pipeline produces
-// clean place data (fix in create_new_location).
-const NEW_FEATURE_ENABLED = false;
+// Kill switch — flip to false to hide the section and badge if data
+// quality regresses.
+const NEW_FEATURE_ENABLED = true;
 
 // Single source of truth for "new" — the section filter and the card badge
 // both call this so their definitions can't drift apart.
