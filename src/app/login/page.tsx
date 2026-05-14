@@ -58,8 +58,13 @@ export default function LoginPage() {
           const body = await exchangeRes.json();
 
           if (exchangeRes.ok) {
+            // Route through /auth/callback so the username gate fires:
+            // if the user has no username yet (new account or abandoned
+            // signup), the callback redirects them to /onboarding instead
+            // of letting them land on / without one. Mirrors the web flow.
             const params = new URLSearchParams(window.location.search);
-            window.location.href = params.get("redirect_to") || "/";
+            const redirectTo = params.get("redirect_to") || "/";
+            window.location.href = `/auth/callback?redirect_to=${encodeURIComponent(redirectTo)}`;
           } else {
             setError(`Exchange failed: ${body.error} — ${JSON.stringify(body.detail)}`);
           }
