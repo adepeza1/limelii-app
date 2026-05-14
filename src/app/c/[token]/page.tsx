@@ -7,6 +7,7 @@ import type { Collection } from "@/lib/collections";
 import type { Experience, DiscoveryResponse } from "@/app/page";
 import { API_BASE } from "@/lib/xano";
 import { saveSharedCollection } from "@/lib/collections";
+import { getPlaceLocation } from "@/lib/place-location";
 
 type SharedCollectionData = Collection;
 
@@ -233,10 +234,10 @@ export default function SharedCollectionPage() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                         <div className="absolute bottom-0 left-0 right-0 p-3">
                           <p className="text-white text-xs font-semibold leading-tight line-clamp-2">{exp.title}</p>
-                          {exp.places_id?.[0]?.neighborhood && (
+                          {exp.places_id?.[0] && getPlaceLocation(exp.places_id[0]) && (
                             <div className="flex items-center gap-0.5 mt-0.5">
                               <MapPin size={9} className="text-white/70" />
-                              <p className="text-white/70 text-[10px]">{exp.places_id[0].neighborhood}</p>
+                              <p className="text-white/70 text-[10px]">{getPlaceLocation(exp.places_id[0])}</p>
                             </div>
                           )}
                         </div>
