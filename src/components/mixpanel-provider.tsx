@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
-import { initMixpanel, identify, optInMixpanel } from "@/lib/mixpanel";
+import { initMixpanel, identify, optInMixpanel, track } from "@/lib/mixpanel";
 
 export function MixpanelProvider() {
   const { user } = useKindeAuth();
@@ -50,6 +50,15 @@ export function MixpanelProvider() {
       });
     }
   }, [optedIn, user?.id, user?.email, user?.given_name, user?.family_name]);
+
+  useEffect(() => {
+    if (!optedIn) return;
+    const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+    track("App Opened", {
+      platform: isNative ? "native" : "web",
+      entry_path: window.location.pathname,
+    });
+  }, [optedIn]);
 
   return null;
 }
