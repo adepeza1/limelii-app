@@ -46,10 +46,15 @@ export function SessionRefresher() {
               status: res.status,
               idle_ms: elapsed,
             });
-            // Kinde session is also gone — send through full re-auth
+            // Kinde session is also gone — kick the user into the full
+            // login flow. /login (not /auth/callback) is the entry point:
+            // for web it auto-redirects to Kinde; for mobile it shows the
+            // Continue button that opens SFSafariViewController. Routing
+            // to /auth/callback instead just rendered an error screen
+            // because that page expects an active session.
             const params = new URLSearchParams(window.location.search);
             const current = window.location.pathname + (params.toString() ? `?${params}` : "");
-            window.location.href = `/auth/callback?redirect_to=${encodeURIComponent(current)}`;
+            window.location.href = `/login?redirect_to=${encodeURIComponent(current)}`;
           }
         } catch {
           // Network error — don't redirect, let the next API call handle it
