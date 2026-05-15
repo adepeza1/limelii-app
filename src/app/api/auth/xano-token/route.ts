@@ -1,14 +1,25 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { refreshXanoToken } from "@/lib/api";
 
 export async function POST() {
-  const { isAuthenticated } = getKindeServerSession();
-  const authenticated = await isAuthenticated();
+  const cookieStore = await cookies();
+  const hasMobileRefresh = !!cookieStore.get("kinde_refresh")?.value;
 
-  if (!authenticated) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Mobile users authenticate in SFSafariViewController, so the Kinde SDK
+  // has no session cookies in the WebView — their durable auth state lives
+  // in kinde_refresh (set by /api/auth/mobile-exchange). Only fall back to
+  // the SDK's isAuthenticated() check when that cookie is absent.
+  if (!hasMobileRefresh) {
+    const { isAuthenticated } = getKindeServerSession();
+    if (!(await isAuthenticated())) {
+      console.error(
+        "[token-fail] step=xano-token-gate hasMobileRefresh=false sdkAuth=false"
+      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   try {
@@ -21,7 +32,7 @@ export async function POST() {
       kindeId = u?.id ?? undefined;
     } catch {}
     console.error(
-      `[token-fail] step=xano-token-route kindeId=${kindeId ?? "?"} err=${error instanceof Error ? error.message : String(error)}`
+      `[token-fail] step=xano-token-route hasMobileRefresh=${hasMobileRefresh} kindeId=${kindeId ?? "?"} err=${error instanceof Error ? error.message : String(error)}`
     );
     return NextResponse.json(
       { error: "Token exchange failed" },
