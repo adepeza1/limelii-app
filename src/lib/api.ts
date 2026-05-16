@@ -54,6 +54,15 @@ async function refreshKindeIdTokenFromCookie(refreshToken: string): Promise<stri
   });
 
   if (!res.ok) {
+    let bodyText = "";
+    try {
+      bodyText = await res.text();
+    } catch {}
+    // Log Kinde's response so we can tell transient errors (5xx, 429, timeout)
+    // from permanent ones (400 invalid_grant). Truncated to keep logs sane.
+    console.error(
+      `[token-fail] step=kinde-refresh-response status=${res.status} body=${bodyText.slice(0, 300).replace(/\s+/g, " ")}`
+    );
     throw new Error(`Kinde refresh failed: ${res.status}`);
   }
 
@@ -172,8 +181,9 @@ export async function apiFetch(
         const u = await getKindeServerSession().getUser();
         kindeId = u?.id ?? undefined;
       } catch {}
+      const hadKindeRefresh = !!cookieStore.get("kinde_refresh")?.value;
       console.error(
-        `[token-fail] step=api-fetch-retry path=${path} kindeId=${kindeId ?? "?"} err=${errMsg}`
+        `[token-fail] step=api-fetch-retry path=${path} kindeId=${kindeId ?? "?"} hadKindeRefresh=${hadKindeRefresh} err=${errMsg}`
       );
 
       // If the auth chain is structurally broken (no Kinde session to
@@ -189,6 +199,12 @@ export async function apiFetch(
         errMsg.includes("Xano token exchange failed") ||
         errMsg.includes("No access_token in Xano exchange response");
       if (isAuthChainBroken) {
+        // Separate log so the cookie-deletion event is easy to grep in
+        // Vercel. If users start getting permanently signed out, this is
+        // the line we want to see in production logs.
+        console.error(
+          `[token-fail] step=cookies-deleted path=${path} hadKindeRefresh=${hadKindeRefresh} err=${errMsg}`
+        );
         cookieStore.delete("xano_token");
         cookieStore.delete("mobile_authed");
         cookieStore.delete("kinde_refresh");
