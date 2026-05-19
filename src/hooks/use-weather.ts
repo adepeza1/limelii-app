@@ -26,8 +26,20 @@ function writeCache(s: WeatherState) {
 }
 
 async function getCoords(): Promise<{ lat: number; lon: number }> {
+  if (!navigator?.geolocation) return NYC;
+  // Don't trigger the iOS location prompt for background weather lookups.
+  // Only read the precise location when the user has already granted
+  // permission. Otherwise (denied / prompt / Permissions API absent) fall
+  // back to NYC silently so the prompt is reserved for user gestures —
+  // namely the "Locate me" button on /plan.
+  if (!navigator.permissions?.query) return NYC;
+  try {
+    const result = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+    if (result.state !== "granted") return NYC;
+  } catch {
+    return NYC;
+  }
   return new Promise((resolve) => {
-    if (!navigator?.geolocation) { resolve(NYC); return; }
     navigator.geolocation.getCurrentPosition(
       (p) => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }),
       () => resolve(NYC),
