@@ -459,6 +459,18 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
             </section>
           )}
 
+          {/* Great for today — weather-driven, cross-category; shown on the All tab above the category tabs */}
+          {activeCategory === 0 && greatToday.length > 0 && (
+            <section className="mb-2 mt-4">
+              <h2 className="text-base font-medium text-black px-4 mb-4">{greatTodayTitle}</h2>
+              <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:pl-4 md:overflow-x-visible">
+                {greatToday.map((exp) => (
+                  <ExperienceCard key={exp.id} experience={exp} onClick={() => openExperience(exp)} />
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Category Navigation */}
           <nav className="px-4 py-3">
             <div className="flex gap-6 overflow-x-auto hide-scrollbar">
@@ -480,18 +492,6 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
 
           {/* Content Sections */}
           <main className="pb-8">
-            {/* Great for today — weather-driven, shown to all users on the All tab */}
-            {activeCategory === 0 && !isSearching && greatToday.length > 0 && (
-              <section className="mb-8">
-                <h2 className="text-base font-medium text-black px-4 mb-4">{greatTodayTitle}</h2>
-                <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4">
-                  {greatToday.map((exp) => (
-                    <ExperienceCard key={exp.id} experience={exp} onClick={() => openExperience(exp)} />
-                  ))}
-                </div>
-              </section>
-            )}
-
             {/* Suggested for you */}
             {activeCategory === 0 && !isSearching && prefsChecked && (
               <section className="mb-8">
