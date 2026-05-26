@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { WeatherCondition } from "@/lib/atmosphere-config";
+import { getCurrentCoords, getLocationPermission } from "@/lib/geolocation";
 
 const CACHE_KEY = "limelii_weather_v1";
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -17,6 +18,10 @@ function readCache(): WeatherState | null {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const { condition, tempF, ts } = JSON.parse(raw);
+    // Treat a null temp as a miss so we re-fetch. This self-heals stale caches
+    // from before the WeatherKit repoint, when the dead OpenWeather path
+    // returned (and cached) tempF: null for up to 30 minutes.
+    if (tempF == null) return null;
     return Date.now() - ts < CACHE_TTL ? { condition, tempF } : null;
   } catch { return null; }
 }
@@ -26,14 +31,15 @@ function writeCache(s: WeatherState) {
 }
 
 async function getCoords(): Promise<{ lat: number; lon: number }> {
-  return new Promise((resolve) => {
-    if (!navigator?.geolocation) { resolve(NYC); return; }
-    navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }),
-      () => resolve(NYC),
-      { timeout: 5000, maximumAge: 300_000 }
-    );
-  });
+  try {
+    // Weather is passive — only use device location if it's ALREADY granted,
+    // never prompt for it. Otherwise fall back to NYC.
+    if ((await getLocationPermission()) !== "granted") return NYC;
+    const { lat, lng } = await getCurrentCoords({ timeout: 5000 });
+    return { lat, lon: lng };
+  } catch {
+    return NYC;
+  }
 }
 
 async function fetchFresh(): Promise<WeatherState> {

@@ -1,5 +1,5 @@
 export type TimeSlot = "morning" | "day" | "sunset" | "night" | "lateNight" | "dawn";
-export type WeatherCondition = "clear" | "rain" | "snow";
+export type WeatherCondition = "clear" | "clouds" | "rain" | "snow" | "fog";
 
 export function getTimeSlot(hour: number): TimeSlot {
   if (hour >= 23 || hour < 2)  return "lateNight"; // 11pm–1:59am
@@ -31,4 +31,6 @@ export const TINT_GRADIENTS: Record<TimeSlot | Exclude<WeatherCondition, "clear"
   dawn:      "radial-gradient(ellipse 80% 55% at 50% 0%, rgba(255, 205, 196, 0.10) 0%, transparent 100%)",
   rain:      "radial-gradient(ellipse 100% 80% at 50% 0%, rgba(48, 62, 88, 0.17) 0%, transparent 100%)",
   snow:      "radial-gradient(ellipse 100% 80% at 50% 0%, rgba(176, 204, 234, 0.14) 0%, transparent 100%)",
+  clouds:    "radial-gradient(ellipse 100% 80% at 50% 0%, rgba(120, 130, 145, 0.10) 0%, transparent 100%)",
+  fog:       "radial-gradient(ellipse 100% 90% at 50% 0%, rgba(180, 185, 192, 0.13) 0%, transparent 100%)",
 };
