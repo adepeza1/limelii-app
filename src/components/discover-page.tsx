@@ -122,6 +122,16 @@ function omitBlocked(
   return result;
 }
 
+/** Shuffle the experiences within each section (new arrays; inputs untouched).
+ *  Called on mount so the browse shelves are freshly ordered each cold start. */
+function shuffleSections(
+  sections: Record<string, Experience[]>
+): Record<string, Experience[]> {
+  const out: Record<string, Experience[]> = {};
+  for (const [key, exps] of Object.entries(sections)) out[key] = shuffle(exps);
+  return out;
+}
+
 export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const { timeSlot, condition, tempF } = useAtmosphere();
   const greeting = GREETING_COPY[timeSlot];
@@ -131,8 +141,8 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const [activeCategory, setActiveCategory] = useState<number>(0);
   const [blockedIds, setBlockedIds] = useState<number[]>(() => getCachedBlockedIds());
   const visibleData = useMemo(() => omitBlocked(data.experiences, blockedIds), [data.experiences, blockedIds]);
-  const [baseSections, setBaseSections] = useState<Record<string, Experience[]>>(visibleData);
-  const [sections, setSections] = useState<Record<string, Experience[]>>(visibleData);
+  const [baseSections, setBaseSections] = useState<Record<string, Experience[]>>(() => shuffleSections(visibleData));
+  const [sections, setSections] = useState<Record<string, Experience[]>>(() => shuffleSections(visibleData));
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const savedScrollY = useRef(0);
 
@@ -141,12 +151,14 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
     fetchBlockedIds().then((ids) => setBlockedIds(ids));
   }, []);
 
-  // When the visible (post-block-filter) data changes, refresh both
-  // baseSections and the currently-displayed sections, preserving the
-  // user's active category.
+  // When the visible (post-block-filter) data changes, re-shuffle and refresh
+  // both baseSections and the currently-displayed sections, preserving the
+  // user's active category. Shuffling here means each cold start (and each
+  // block-list update) reorders the shelves so the feed doesn't feel static.
   useEffect(() => {
-    setBaseSections(visibleData);
-    setSections(filterByCategory(activeCategory, visibleData));
+    const shuffledData = shuffleSections(visibleData);
+    setBaseSections(shuffledData);
+    setSections(filterByCategory(activeCategory, shuffledData));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleData]);
 
