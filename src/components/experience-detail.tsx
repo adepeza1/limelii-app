@@ -197,7 +197,10 @@ export function ExperienceDetail({
     track("Experience Viewed", { experience_id: experience.id, title: experience.title });
   }, [experience.id]);
 
-  const placesWithImages = experience.places_id.filter(
+  // Coerce to an array — a malformed places_id (null or a single object)
+  // would otherwise crash the whole detail view.
+  const places = Array.isArray(experience.places_id) ? experience.places_id : [];
+  const placesWithImages = places.filter(
     (p) => (p.display_images?.length ?? 0) > 0 || (p.images?.length ?? 0) > 0
   );
 
@@ -396,7 +399,7 @@ export function ExperienceDetail({
           {/* Map */}
           <div className="relative">
             <div className="bg-white rounded-2xl shadow-[0px_4px_32px_0px_rgba(0,0,0,0.07)] overflow-hidden">
-              <ExperienceMap places={experience.places_id} />
+              <ExperienceMap places={places} />
             </div>
             <button
               onClick={() => setMapExpanded(true)}
@@ -419,7 +422,7 @@ export function ExperienceDetail({
       {/* Fullscreen map overlay */}
       {mapExpanded && (
         <FullscreenMap
-          places={experience.places_id}
+          places={places}
           onClose={() => setMapExpanded(false)}
         />
       )}
