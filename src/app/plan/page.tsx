@@ -14,6 +14,7 @@ import { ExperienceDetail } from "@/components/experience-detail";
 import type { Experience } from "@/app/page";
 import { API_BASE } from "@/lib/xano";
 import { fetchBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
+import { getCurrentCoords, getLocationPermission } from "@/lib/geolocation";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -326,26 +327,25 @@ function PlanPageInner() {
     setLocation("__current__");
     setSelectedNeighborhoods([]);
     setOutsideNYC(false);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude: lat, longitude: lng } = pos.coords;
-          const inNYC = lat >= 40.4774 && lat <= 40.9176 && lng >= -74.2591 && lng <= -73.7004;
-          if (inNYC) { setUserCoords({ lat, lng }); }
-          else { setOutsideNYC(true); setLocation("All NYC"); setUserCoords(null); }
-        },
-        () => { setLocation("All NYC"); setUserCoords(null); },
-        { timeout: 10000 }
-      );
-    } else {
-      setLocation("All NYC");
-    }
+    getCurrentCoords()
+      .then(({ lat, lng }) => {
+        const inNYC = lat >= 40.4774 && lat <= 40.9176 && lng >= -74.2591 && lng <= -73.7004;
+        if (inNYC) { setUserCoords({ lat, lng }); }
+        else { setOutsideNYC(true); setLocation("All NYC"); setUserCoords(null); }
+      })
+      .catch(() => { setLocation("All NYC"); setUserCoords(null); });
   }
 
-  // Auto-select Current Location on initial load
+  // Auto-select Current Location on initial load — only if permission is
+  // ALREADY granted, so opening Plan never triggers an unsolicited prompt.
+  // First-time users default to "All NYC" and opt in via the Current Location button.
   const handleCurrentLocationRef = useRef(handleCurrentLocation);
   handleCurrentLocationRef.current = handleCurrentLocation;
-  useEffect(() => { handleCurrentLocationRef.current(); }, []);
+  useEffect(() => {
+    getLocationPermission().then((state) => {
+      if (state === "granted") handleCurrentLocationRef.current();
+    });
+  }, []);
 
   function handleSelectLocation(loc: string) {
     setLocation(location === loc ? "All NYC" : loc);

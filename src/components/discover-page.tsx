@@ -18,6 +18,13 @@ import { searchAndRank, type RankedResult } from "@/lib/discover-search";
 import { useAtmosphere } from "@/hooks/use-atmosphere";
 import { GREETING_COPY, type WeatherCondition } from "@/lib/atmosphere-config";
 import { isNew } from "@/lib/discover-new";
+import {
+  weatherFitMultiplier,
+  greatForToday,
+  greatForTodayTitle,
+  describeWeather,
+} from "@/lib/weather";
+import { WeatherAttribution } from "@/components/weather-attribution";
 
 
 // ─── Suggestion logic ─────────────────────────────────────────────────────────
@@ -78,15 +85,7 @@ function scoreExperience(
 
   // Weather weighting — only applied when there's a positive base score
   if (score > 0 && weather) {
-    const tags = (exp.indoor_outdoor ?? []).map(t => t.toLowerCase());
-    const isPrimarilyOutdoor = tags.includes("outdoor") && !tags.includes("indoor");
-    const hasOutdoorComponent = tags.some(t => ["outdoor", "both", "mixed"].includes(t));
-
-    if ((weather === "rain" || weather === "snow") && isPrimarilyOutdoor) {
-      score *= 0.825; // ~17.5% penalty for primarily-outdoor when precipitating
-    } else if (weather === "clear" && tempF != null && tempF >= 60 && tempF <= 80 && hasOutdoorComponent) {
-      score *= 1.125; // ~12.5% boost for outdoor/mixed on a nice clear day
-    }
+    score *= weatherFitMultiplier(exp.indoor_outdoor, weather, tempF ?? null);
   }
 
   return score;
@@ -126,6 +125,8 @@ function omitBlocked(
 export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
   const { timeSlot, condition, tempF } = useAtmosphere();
   const greeting = GREETING_COPY[timeSlot];
+  const weatherLine = describeWeather(condition, tempF);
+  const greatTodayTitle = greatForTodayTitle(condition, tempF);
 
   const [activeCategory, setActiveCategory] = useState<number>(0);
   const [blockedIds, setBlockedIds] = useState<number[]>(() => getCachedBlockedIds());
@@ -189,6 +190,12 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
       .filter(isNew)
       .sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
   }, [allExperiences]);
+
+  // ── Great for today — weather-driven, visible to everyone (no prefs needed) ──
+  const greatToday = useMemo(
+    () => greatForToday(allExperiences, condition, tempF),
+    [allExperiences, condition, tempF]
+  );
 
   // ── Suggested for you ───────────────────────────────────────────────────────
   const [suggestions, setSuggestions] = useState<Experience[]>([]);
@@ -420,9 +427,12 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
         </main>
       ) : (
         <>
-          {/* Time-of-day greeting */}
+          {/* Time-of-day greeting + live weather */}
           <div className="px-4 pt-4 pb-1">
             <p className="text-base font-medium text-gray-900">{greeting}</p>
+            {weatherLine && (
+              <p className="text-sm text-gray-500 mt-0.5">{weatherLine}</p>
+            )}
           </div>
 
           {/* New this week — cross-category; hidden entirely when empty */}
@@ -458,6 +468,18 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
 
           {/* Content Sections */}
           <main className="pb-8">
+            {/* Great for today — weather-driven, shown to all users on the All tab */}
+            {activeCategory === 0 && !isSearching && greatToday.length > 0 && (
+              <section className="mb-8">
+                <h2 className="text-base font-medium text-black px-4 mb-4">{greatTodayTitle}</h2>
+                <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4">
+                  {greatToday.map((exp) => (
+                    <ExperienceCard key={exp.id} experience={exp} onClick={() => openExperience(exp)} />
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Suggested for you */}
             {activeCategory === 0 && !isSearching && prefsChecked && (
               <section className="mb-8">
@@ -501,6 +523,8 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
                 </div>
               </section>
             ))}
+            {/* Apple WeatherKit attribution — required wherever weather data is shown */}
+            {tempF != null && <WeatherAttribution className="pt-2 pb-6" />}
           </main>
         </>
       )}

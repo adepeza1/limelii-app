@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { WeatherCondition } from "@/lib/atmosphere-config";
+import { getCurrentCoords, getLocationPermission } from "@/lib/geolocation";
 
 const CACHE_KEY = "limelii_weather_v1";
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -17,6 +18,10 @@ function readCache(): WeatherState | null {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const { condition, tempF, ts } = JSON.parse(raw);
+    // Treat a null temp as a miss so we re-fetch. This self-heals stale caches
+    // from before the WeatherKit repoint, when the dead OpenWeather path
+    // returned (and cached) tempF: null for up to 30 minutes.
+    if (tempF == null) return null;
     return Date.now() - ts < CACHE_TTL ? { condition, tempF } : null;
   } catch { return null; }
 }
@@ -26,26 +31,19 @@ function writeCache(s: WeatherState) {
 }
 
 async function getCoords(): Promise<{ lat: number; lon: number }> {
-  if (!navigator?.geolocation) return NYC;
-  // Don't trigger the iOS location prompt for background weather lookups.
-  // Only read the precise location when the user has already granted
-  // permission. Otherwise (denied / prompt / Permissions API absent) fall
-  // back to NYC silently so the prompt is reserved for user gestures —
-  // namely the "Locate me" button on /plan.
-  if (!navigator.permissions?.query) return NYC;
   try {
-    const result = await navigator.permissions.query({ name: "geolocation" as PermissionName });
-    if (result.state !== "granted") return NYC;
+    // Weather is passive: only use device location if it's ALREADY granted —
+    // never prompt for it, so the prompt stays reserved for explicit user
+    // gestures (the "Current Location" button on /plan). Fall back to NYC
+    // otherwise. The shared helper uses native @capacitor/geolocation when the
+    // plugin is in the running binary (persisted permission), and
+    // navigator.geolocation everywhere else.
+    if ((await getLocationPermission()) !== "granted") return NYC;
+    const { lat, lng } = await getCurrentCoords({ timeout: 5000 });
+    return { lat, lon: lng };
   } catch {
     return NYC;
   }
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }),
-      () => resolve(NYC),
-      { timeout: 5000, maximumAge: 300_000 }
-    );
-  });
 }
 
 async function fetchFresh(): Promise<WeatherState> {
