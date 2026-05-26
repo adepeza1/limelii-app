@@ -32,8 +32,12 @@ function writeCache(s: WeatherState) {
 
 async function getCoords(): Promise<{ lat: number; lon: number }> {
   try {
-    // Weather is passive — only use device location if it's ALREADY granted,
-    // never prompt for it. Otherwise fall back to NYC.
+    // Weather is passive: only use device location if it's ALREADY granted —
+    // never prompt for it, so the prompt stays reserved for explicit user
+    // gestures (the "Current Location" button on /plan). Fall back to NYC
+    // otherwise. The shared helper uses native @capacitor/geolocation when the
+    // plugin is in the running binary (persisted permission), and
+    // navigator.geolocation everywhere else.
     if ((await getLocationPermission()) !== "granted") return NYC;
     const { lat, lng } = await getCurrentCoords({ timeout: 5000 });
     return { lat, lon: lng };

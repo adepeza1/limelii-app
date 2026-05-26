@@ -54,10 +54,24 @@ export function MixpanelProvider() {
   useEffect(() => {
     if (!optedIn) return;
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
-    track("App Opened", {
-      platform: isNative ? "native" : "web",
-      entry_path: window.location.pathname,
-    });
+    (async () => {
+      // Snapshot which auth cookies the server can see at app open. This
+      // is the data we need to confirm whether WKWebView is dropping
+      // cookies between sessions: a user with hasKindeRefresh=false on
+      // an App Opened event has lost their long-lived auth cookie.
+      let cookieState: Record<string, boolean> = {};
+      try {
+        const res = await fetch("/api/auth/cookie-state", { cache: "no-store" });
+        if (res.ok) cookieState = await res.json();
+      } catch {
+        // Network blip — fall through without cookie properties.
+      }
+      track("App Opened", {
+        platform: isNative ? "native" : "web",
+        entry_path: window.location.pathname,
+        ...cookieState,
+      });
+    })();
   }, [optedIn]);
 
   return null;

@@ -12,6 +12,7 @@ import { ReportModal } from "@/components/report-modal";
 import { track } from "@/lib/mixpanel";
 import type { Experience } from "@/app/page";
 import type { Collection } from "@/lib/collections";
+import { getPlaceLocation } from "@/lib/place-location";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -97,9 +98,9 @@ export function getCollectionLocationHint(
   for (const exp of pool) {
     if (!ids.has(exp.id)) continue;
     for (const place of exp.places_id ?? []) {
-      const loc = (place.neighborhood || place.borough)?.trim();
-      const key = loc?.toLowerCase();
-      if (loc && key && !seen.has(key)) { seen.add(key); neighborhoods.push(loc); }
+      const loc = getPlaceLocation(place);
+      const key = loc.toLowerCase();
+      if (loc && !seen.has(key)) { seen.add(key); neighborhoods.push(loc); }
     }
   }
   return neighborhoods.length > 0 ? neighborhoods.join(" · ") : null;
