@@ -34,7 +34,12 @@ export function ExperienceCard({
   initialPlaceId?: number;
 }) {
   const { toast } = useToast();
-  const placesWithImages = experience.places_id.filter(
+  // Guard against malformed data: the API should return places_id as an
+  // array, but a bad record (null, or a single object) would crash the
+  // whole render — and during prerender, the whole build. Coerce to an
+  // array so bad data degrades to an empty card instead of throwing.
+  const places = Array.isArray(experience.places_id) ? experience.places_id : [];
+  const placesWithImages = places.filter(
     (p) => (p.display_images?.length ?? 0) > 0 || (p.images?.length ?? 0) > 0
   );
   const initialIndex = (() => {
@@ -124,10 +129,10 @@ export function ExperienceCard({
   }, []);
 
   const activePlace =
-    placesWithImages[activeIndex] ?? experience.places_id[0];
+    placesWithImages[activeIndex] ?? places[0];
   const mainImage = activePlace ? getPlaceImage(activePlace) : null;
   const location = activePlace ? getPlaceLocation(activePlace) : "";
-  const placeCount = experience.places_id.length;
+  const placeCount = places.length;
 
   return (
     <div
