@@ -17,6 +17,7 @@
     "@capacitor/geolocation": "^8.2.0",
     "@capacitor/ios": "^8.3.1",
     "@capacitor/keyboard": "^8.0.0",
+    "@capacitor/preferences": "^8.0.1",
     "@capgo/capacitor-app-tracking-transparency": "^8.1.6",
     "@fontsource/mona-sans": "^5.2.8",
     "@kinde-oss/kinde-auth-nextjs": "^2.11.0",
