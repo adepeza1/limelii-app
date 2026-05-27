@@ -54,12 +54,13 @@ export interface DiscoveryResponse {
 }
 
 async function getDiscoveryData(): Promise<DiscoveryResponse> {
-  // Always fetch fresh. The discovery endpoint is cached on the Xano side,
-  // so this stays cheap, but it avoids Next.js's Data Cache + Full Route
-  // Cache pinning a stale snapshot that survives redeploys and cache
-  // purges (which is what made newly-uploaded experiences fail to appear).
+  // Cached for performance; cleared on demand via POST /api/revalidate
+  // (which calls revalidatePath("/")) right after an upload. The 300s
+  // revalidate is a safety net: if the upload-side trigger ever fails to
+  // fire, the page still self-heals within 5 minutes instead of serving
+  // stale data indefinitely.
   const res = await fetch(`${API_BASE}/discovery`, {
-    cache: "no-store",
+    next: { revalidate: 300 },
   });
   if (!res.ok) throw new Error("Failed to fetch discovery data");
   return res.json();
