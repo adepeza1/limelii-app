@@ -3,24 +3,63 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LimeliiLogo } from "@/components/limelii-logo";
+import { storeRefreshToken, getStoredRefreshToken, clearStoredRefreshToken } from "@/lib/native-auth-store";
+
+function postLoginDestination(): string {
+  const params = new URLSearchParams(window.location.search);
+  const dest = params.get("redirect_to") || params.get("post_login_redirect_url") || "/";
+  return dest.startsWith("/") ? dest : "/";
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const [isCapacitor, setIsCapacitor] = useState(false);
+  const [bootstrapping, setBootstrapping] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listenerRef = useRef<{ remove: () => void } | null>(null);
 
   useEffect(() => {
     const capacitor = (window as any).Capacitor;
-    if (capacitor?.isNativePlatform?.()) {
-      setIsCapacitor(true);
-    } else {
+    if (!capacitor?.isNativePlatform?.()) {
       const params = new URLSearchParams(window.location.search);
       const redirectTo = params.get("redirect_to") || "/";
       const postLogin = encodeURIComponent(`/auth/callback?redirect_to=${encodeURIComponent(redirectTo)}`);
       window.location.href = `/api/auth/login?post_login_redirect_url=${postLogin}`;
+      return;
     }
+    setIsCapacitor(true);
+
+    // Native: before showing the login button, try to silently restore the
+    // session from the refresh token in native storage. WKWebView may have
+    // evicted the auth cookies even though the user never logged out —
+    // rehydrate re-sets the cookies without a re-login. If there's no stored
+    // token (web, older binary, or genuinely logged out) or it's been
+    // revoked, fall through to the login UI.
+    (async () => {
+      try {
+        const token = await getStoredRefreshToken();
+        if (token) {
+          const res = await fetch("/api/auth/mobile-rehydrate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh_token: token }),
+          });
+          if (res.ok) {
+            const body = await res.json().catch(() => ({}));
+            if (body.refresh_token) await storeRefreshToken(body.refresh_token);
+            window.location.href = postLoginDestination();
+            return;
+          }
+          // 401 = refresh token is dead; drop it so we don't retry it.
+          if (res.status === 401) await clearStoredRefreshToken();
+        }
+      } catch {
+        /* fall through to the login UI */
+      }
+      setBootstrapping(false);
+    })();
+
     return () => { listenerRef.current?.remove(); };
   }, []);
 
@@ -58,8 +97,10 @@ export default function LoginPage() {
           const body = await exchangeRes.json();
 
           if (exchangeRes.ok) {
-            const params = new URLSearchParams(window.location.search);
-            window.location.href = params.get("redirect_to") || "/";
+            // Mirror the refresh token into native storage so the session
+            // survives WKWebView cookie eviction (rehydrated on next launch).
+            if (body.refresh_token) await storeRefreshToken(body.refresh_token);
+            window.location.href = postLoginDestination();
           } else {
             setError(`Exchange failed: ${body.error} — ${JSON.stringify(body.detail)}`);
           }
@@ -78,7 +119,7 @@ export default function LoginPage() {
     }
   };
 
-  if (!isCapacitor) return null;
+  if (!isCapacitor || bootstrapping) return null;
 
   return (
     <div style={{

@@ -66,7 +66,10 @@ export async function POST(req: NextRequest) {
   const { access_token } = await xanoRes.json();
 
   const cookieMaxAge = xanoTokenMaxAge(access_token);
-  const response = NextResponse.json({ success: true });
+  // Return refresh_token in the body (additive) so the native client can
+  // mirror it into Capacitor Preferences — durable across WKWebView cookie
+  // eviction. Old clients ignore the extra field.
+  const response = NextResponse.json({ success: true, refresh_token: refresh_token ?? null });
   response.cookies.set("xano_token", access_token, {
     httpOnly: true,
     secure: true,

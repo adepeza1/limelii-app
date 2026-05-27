@@ -30,6 +30,7 @@ import { listSavedExperiences } from "@/lib/saved";
 import { API_BASE } from "@/lib/xano";
 import type { DiscoveryResponse } from "@/app/page";
 import { getCachedBlockedUser, clearCachedBlockedUser, setCachedBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
+import { clearStoredRefreshToken } from "@/lib/native-auth-store";
 
 // ─── localStorage keys ────────────────────────────────────────────────────────
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -651,6 +652,9 @@ export function ProfileClient({ authError = false, initialTab = "created", initi
                     className="w-full flex items-center px-4 py-3.5 rounded-xl hover:bg-gray-50 transition-colors text-left"
                     onClick={async () => {
                       mixpanelReset();
+                      // Clear the native-stored refresh token too, or the
+                      // /login rehydrate would silently log the user back in.
+                      await clearStoredRefreshToken();
                       await fetch("/api/user/logout", { method: "POST" });
                       const isCapacitor = (window as any).Capacitor?.isNativePlatform?.();
                       if (isCapacitor) {
@@ -937,6 +941,7 @@ export function ProfileClient({ authError = false, initialTab = "created", initi
                       return;
                     }
                     mixpanelReset();
+                    await clearStoredRefreshToken();
                     window.location.href = "/api/user/logout?post_logout_redirect_url=%2Fapi%2Fauth%2Flogin";
                   } catch {
                     toast("Couldn't delete your account. Please check your connection.", "error");
