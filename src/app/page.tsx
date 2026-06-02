@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { DiscoverPage } from "@/components/discover-page";
+import { HomeTabs } from "@/components/home-tabs";
 import { API_BASE } from "@/lib/xano";
 
 export interface Place {
@@ -67,7 +67,7 @@ async function getDiscoveryData(): Promise<DiscoveryResponse> {
 
 async function DiscoverContent() {
   const data = await getDiscoveryData();
-  return <DiscoverPage data={data} />;
+  return <HomeTabs data={data} />;
 }
 
 function DiscoverSkeleton() {

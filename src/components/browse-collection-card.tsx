@@ -435,7 +435,7 @@ export function BrowseCollectionCard({
   const [deleted, setDeleted] = useState(false);
   const [showPrivacyConfirm, setShowPrivacyConfirm] = useState(false);
   const [togglingPrivacy, setTogglingPrivacy] = useState(false);
-  const planUrl = collection.id ? `/plan?collection_id=${collection.id}` : "/plan";
+  const planUrl = collection.id ? `/?view=explore&collection_id=${collection.id}` : "/?view=explore";
   const locationHint = getCollectionLocationHint(collection, allExperiences);
   const subtitle = locationHint ?? `${count} ${count === 1 ? "experience" : "experiences"}`;
 

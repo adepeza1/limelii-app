@@ -196,7 +196,7 @@ export function CollectionDetail({
               </div>
             </Link>
             <Link
-              href="/plan"
+              href="/?view=explore"
               className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-[#EAECF0] text-left"
             >
               <ClipboardList className="w-5 h-5 text-[#FB6983] shrink-0" />
