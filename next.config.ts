@@ -21,6 +21,17 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      // Explore was merged into the Discover home page as an in-page tab.
+      // Old /plan links (incl. /plan?collection_id=…) land on the Explore tab.
+      {
+        source: "/plan",
+        destination: "/?view=explore",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

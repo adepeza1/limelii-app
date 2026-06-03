@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import Script from "next/script";
 import { Inter, Poppins } from "next/font/google";
 import { KindeProvider } from "@kinde-oss/kinde-auth-nextjs";
@@ -55,7 +56,9 @@ export default function RootLayout({
           />
           <ToastProvider>
             <MixpanelProvider />
-            <PageViewTracker />
+            <Suspense fallback={null}>
+              <PageViewTracker />
+            </Suspense>
             <CapacitorClassMarker />
             <SessionRefresher />
             {children}

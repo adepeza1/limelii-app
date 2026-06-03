@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback, Suspense } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -11,6 +11,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { ExperienceCard } from "@/components/experience-card";
 import { ExperienceDetail } from "@/components/experience-detail";
+import { ViewToggle, type HomeView } from "@/components/view-toggle";
 import type { Experience } from "@/app/page";
 import { API_BASE } from "@/lib/xano";
 import { fetchBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
@@ -204,13 +205,19 @@ function getExpImage(exp: Experience): string | null {
 // ─── Map ──────────────────────────────────────────────────────────────────────
 
 const PlanBackgroundMap = dynamic(
-  () => import("./plan-map").then((m) => m.PlanMap),
+  () => import("@/components/plan-map").then((m) => m.PlanMap),
   { ssr: false, loading: () => <div className="w-full h-full bg-gray-100" /> }
 );
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-function PlanPageInner() {
+export function ExploreView({
+  view,
+  onSelectView,
+}: {
+  view?: HomeView;
+  onSelectView?: (v: HomeView) => void;
+}) {
   const searchParams = useSearchParams();
   const [allExperiences, setAllExperiences] = useState<Experience[]>([]);
   const [location, setLocation] = useState("All NYC");
@@ -235,7 +242,6 @@ function PlanPageInner() {
   // Filters drawer drag-to-dismiss
   const filtersDragStartY = useRef<number | null>(null);
   const [filtersDragY, setFiltersDragY] = useState(0);
-  const resetExploreRef = useRef<() => void>(() => {});
   // Stores parsed collection data so the second effect can merge once allExperiences loads
   const [pendingCollection, setPendingCollection] = useState<{
     idSet: Set<number>;
@@ -247,6 +253,7 @@ function PlanPageInner() {
   useEffect(() => {
     fetchBlockedIds().then((ids) => setBlockedIds(ids));
   }, []);
+
 
   useEffect(() => {
     Promise.all([
@@ -402,30 +409,6 @@ function PlanPageInner() {
     }
   }
 
-  function resetExplore() {
-    setSelectedExperience(null);
-    setVenueTypes([]);
-    setBudgets([]);
-    setSettings([]);
-    setLocation("All NYC");
-    setSelectedNeighborhoods([]);
-    setResults(null);
-    setResultsOpen(false);
-    setPreviewExperience(null);
-    setFallbackMessage(null);
-    setUserCoords(null);
-  }
-
-  // Keep ref current so the event listener always calls the latest version
-  resetExploreRef.current = resetExplore;
-
-  // Listen for bottom-nav Explore tab taps to reset page state then re-select current location
-  useEffect(() => {
-    const handler = () => { resetExploreRef.current(); handleCurrentLocationRef.current(); };
-    window.addEventListener("explore-tab-clicked", handler);
-    return () => window.removeEventListener("explore-tab-clicked", handler);
-  }, []);
-
   if (selectedExperience) {
     return (
       <ExperienceDetail
@@ -451,14 +434,17 @@ function PlanPageInner() {
         />
       </div>
 
-      {/* ── Title ── */}
-      <div
-        className="absolute left-0 right-0 z-10 flex flex-col items-center pointer-events-none"
-        style={{ top: "calc(env(safe-area-inset-top, 44px) + 10px)" }}
-      >
-        <h1 className="text-2xl font-bold text-gray-900" style={{ textShadow: "0 1px 6px rgba(255,255,255,0.9)" }}>Explore</h1>
-        <p className="text-sm text-gray-600 mt-0.5" style={{ textShadow: "0 1px 4px rgba(255,255,255,0.9)" }}>Find the perfect match</p>
-      </div>
+      {/* ── Feed/Map toggle ── */}
+      {view && onSelectView && (
+        <div
+          className="absolute left-0 right-0 z-30 flex justify-center pointer-events-none"
+          style={{ top: "calc(env(safe-area-inset-top, 44px) + 8px)" }}
+        >
+          <div className="pointer-events-auto rounded-full shadow-md">
+            <ViewToggle value={view} onChange={onSelectView} />
+          </div>
+        </div>
+      )}
 
       {/* ── Locate Me button ── */}
       {userCoords && (
@@ -723,13 +709,5 @@ function PlanPageInner() {
         </div>
       )}
     </div>
-  );
-}
-
-export default function PlanPage() {
-  return (
-    <Suspense fallback={<div className="bg-white min-h-screen" />}>
-      <PlanPageInner />
-    </Suspense>
   );
 }

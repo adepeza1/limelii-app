@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Search, X } from "lucide-react";
 import Image from "next/image";
 import { LimeliiLogo } from "@/components/limelii-logo";
+import { ViewToggle, type HomeView } from "@/components/view-toggle";
 import type {
   DiscoveryResponse,
   Experience,
@@ -132,7 +133,16 @@ function shuffleSections(
   return out;
 }
 
-export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
+export function DiscoverPage({
+  data,
+  view,
+  onSelectView,
+}: {
+  data: DiscoveryResponse;
+  /** Current home view + setter, so the Feed/Map toggle can live in the header. */
+  view?: HomeView;
+  onSelectView?: (v: HomeView) => void;
+}) {
   const { timeSlot, condition, tempF } = useAtmosphere();
   const greeting = GREETING_COPY[timeSlot];
   const weatherLine = describeWeather(condition, tempF);
@@ -373,10 +383,18 @@ export function DiscoverPage({ data }: { data: DiscoveryResponse }) {
           </span>
         </div>
 
-        {/* Logo + persistent search bar on the same row */}
-        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100">
+        {/* Logo + Feed/Map toggle on the top row */}
+        <div className="flex items-center gap-3 px-4 pt-2.5 pb-2">
           <LimeliiLogo width={64} height={22} />
-          <div className="flex-1 relative">
+          <div className="flex-1" />
+          {view && onSelectView && (
+            <ViewToggle value={view} onChange={onSelectView} />
+          )}
+        </div>
+
+        {/* Persistent search bar */}
+        <div className="px-4 pb-2.5 border-b border-gray-100">
+          <div className="relative">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
               strokeWidth={1.8}

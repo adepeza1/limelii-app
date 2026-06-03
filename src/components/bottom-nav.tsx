@@ -30,7 +30,7 @@ type Tab = ImageTab | IconTab;
 const tabs: Tab[] = [
   { label: "Discover", iconSrc: "/images/Search.svg", href: "/" },
   { label: "limelii AI", icon: ClipboardList, href: "/create" },
-  { label: "Explore", iconSrc: "/images/limeliFavicon.png", href: "/plan", center: true },
+  { label: "Right Now", iconSrc: "/images/limeliFavicon.png", href: "/right-now", center: true },
   { label: "Collections", iconSrc: "/images/heart-alt.svg", href: "/saved" },
   { label: "Profile", icon: User, href: "/profile" },
 ];
@@ -133,7 +133,6 @@ export function BottomNav() {
               aria-current={isActive ? "page" : undefined}
               className="flex flex-col items-center gap-1 min-w-[56px] cursor-pointer"
               style={{ touchAction: "manipulation" }}
-              onClick={tab.href === "/plan" && pathname.startsWith("/plan") ? () => window.dispatchEvent(new CustomEvent("explore-tab-clicked")) : undefined}
             >
               {tab.href === "/" ? (
                 <DiscoverIcon color={color} />
