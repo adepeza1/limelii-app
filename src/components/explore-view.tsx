@@ -214,9 +214,16 @@ const PlanBackgroundMap = dynamic(
 export function ExploreView({
   view,
   onSelectView,
+  openTick = 0,
 }: {
   view?: HomeView;
   onSelectView?: (v: HomeView) => void;
+  /** Incremented by the parent each time the user explicitly taps the Map
+   *  toggle. A value > 0 means this open was an explicit user gesture, so we
+   *  prompt for + acquire location (restoring the blue dot). 0 means a passive
+   *  / deep-link open, where we only auto-locate if permission is already
+   *  granted. */
+  openTick?: number;
 }) {
   const searchParams = useSearchParams();
   const [allExperiences, setAllExperiences] = useState<Experience[]>([]);
@@ -343,16 +350,29 @@ export function ExploreView({
       .catch(() => { setLocation("All NYC"); setUserCoords(null); });
   }
 
-  // Auto-select Current Location on initial load — only if permission is
-  // ALREADY granted, so opening Plan never triggers an unsolicited prompt.
-  // First-time users default to "All NYC" and opt in via the Current Location button.
+  // Auto-select Current Location on PASSIVE load (deep link / the /plan
+  // redirect) — only if permission is ALREADY granted, so a passive open never
+  // triggers an unsolicited prompt. First-time users default to "All NYC".
+  // Explicit Map-toggle opens are handled by the openTick effect below.
   const handleCurrentLocationRef = useRef(handleCurrentLocation);
   handleCurrentLocationRef.current = handleCurrentLocation;
   useEffect(() => {
+    if (openTick > 0) return; // explicit open — handled below, don't double-fire
     getLocationPermission().then((state) => {
       if (state === "granted") handleCurrentLocationRef.current();
     });
+  // openTick is only read once on mount to classify this open; we intentionally
+  // don't re-run this passive effect when it later changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Explicit Map-toggle taps are the successor to the old bottom-nav "Explore"
+  // tab tap, which prompted for + acquired the user's location. Re-acquire on
+  // each explicit open so the blue dot shows (prompting if not yet granted).
+  useEffect(() => {
+    if (openTick === 0) return;
+    handleCurrentLocationRef.current();
+  }, [openTick]);
 
   function handleSelectLocation(loc: string) {
     setLocation(location === loc ? "All NYC" : loc);

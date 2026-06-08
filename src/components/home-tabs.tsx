@@ -19,11 +19,20 @@ export function HomeTabs({ data }: { data: DiscoveryResponse }) {
   const [view, setView] = useState<HomeView>(initial);
   // Explore loads Leaflet + its own fetch — only mount it once it's first opened.
   const [exploreMounted, setExploreMounted] = useState(initial === "explore");
+  // Bumped each time the user explicitly taps the Map toggle. This is the
+  // direct successor to the old bottom-nav "Explore" tab tap: it's an explicit
+  // user gesture, so ExploreView uses it to prompt for + acquire location
+  // (and show the blue dot). Passive/deep-link opens (?view=explore) leave it
+  // at 0, so a passive load still never triggers an unsolicited prompt.
+  const [exploreOpenTick, setExploreOpenTick] = useState(0);
 
   const selectView = useCallback(
     (next: HomeView) => {
       setView(next);
-      if (next === "explore") setExploreMounted(true);
+      if (next === "explore") {
+        setExploreMounted(true);
+        setExploreOpenTick((t) => t + 1);
+      }
       const params = new URLSearchParams(searchParams.toString());
       if (next === "explore") params.set("view", "explore");
       else params.delete("view");
@@ -54,7 +63,7 @@ export function HomeTabs({ data }: { data: DiscoveryResponse }) {
       {exploreMounted && (
         <div style={{ visibility: view === "explore" ? "visible" : "hidden" }}>
           <Suspense fallback={<div className="bg-white min-h-screen" />}>
-            <ExploreView view={view} onSelectView={selectView} />
+            <ExploreView view={view} onSelectView={selectView} openTick={exploreOpenTick} />
           </Suspense>
         </div>
       )}
