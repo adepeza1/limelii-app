@@ -343,9 +343,11 @@ export function ExploreView({
       .catch(() => { setLocation("All NYC"); setUserCoords(null); });
   }
 
-  // Auto-select Current Location on initial load — only if permission is
-  // ALREADY granted, so opening Plan never triggers an unsolicited prompt.
-  // First-time users default to "All NYC" and opt in via the Current Location button.
+  // Auto-show the blue dot on load ONLY if permission is already granted, so a
+  // user who has previously shared their location sees it without being asked
+  // again, while a passive load never triggers an unsolicited prompt. Users who
+  // haven't shared yet opt in explicitly via the Locate-me button (which
+  // prompts) — see the button's onClick below.
   const handleCurrentLocationRef = useRef(handleCurrentLocation);
   handleCurrentLocationRef.current = handleCurrentLocation;
   useEffect(() => {
@@ -446,18 +448,24 @@ export function ExploreView({
         </div>
       )}
 
-      {/* ── Locate Me button ── */}
-      {userCoords && (
-        <button
-          type="button"
-          onClick={() => setLocateTrigger((n) => n + 1)}
-          aria-label="Go to my location"
-          className="fixed z-20 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-lg active:opacity-70 transition-opacity"
-          style={{ top: "calc(env(safe-area-inset-top, 44px) + 10px)", right: "16px" }}
-        >
-          <LocateFixed className="w-5 h-5 text-[#4285F4]" strokeWidth={2} />
-        </button>
-      )}
+      {/* ── Locate Me button ──
+          Always visible so a user who hasn't shared location yet can opt in.
+          When we already have coords (permission granted earlier) it simply
+          re-centers; otherwise handleCurrentLocation() prompts for permission
+          and acquires the position. Once a user has shared, this never
+          re-prompts (the OS/browser returns the location silently). */}
+      <button
+        type="button"
+        onClick={() => {
+          if (userCoords) setLocateTrigger((n) => n + 1);
+          else handleCurrentLocation();
+        }}
+        aria-label="Go to my location"
+        className="fixed z-20 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-lg active:opacity-70 transition-opacity"
+        style={{ top: "calc(env(safe-area-inset-top, 44px) + 10px)", right: "16px" }}
+      >
+        <LocateFixed className="w-5 h-5 text-[#4285F4]" strokeWidth={2} />
+      </button>
 
       {/* ── Content overlay — bottom half ── */}
       <div
