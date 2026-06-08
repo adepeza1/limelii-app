@@ -214,16 +214,9 @@ const PlanBackgroundMap = dynamic(
 export function ExploreView({
   view,
   onSelectView,
-  openTick = 0,
 }: {
   view?: HomeView;
   onSelectView?: (v: HomeView) => void;
-  /** Incremented by the parent each time the user explicitly taps the Map
-   *  toggle. A value > 0 means this open was an explicit user gesture, so we
-   *  prompt for + acquire location (restoring the blue dot). 0 means a passive
-   *  / deep-link open, where we only auto-locate if permission is already
-   *  granted. */
-  openTick?: number;
 }) {
   const searchParams = useSearchParams();
   const [allExperiences, setAllExperiences] = useState<Experience[]>([]);
@@ -350,29 +343,18 @@ export function ExploreView({
       .catch(() => { setLocation("All NYC"); setUserCoords(null); });
   }
 
-  // Auto-select Current Location on PASSIVE load (deep link / the /plan
-  // redirect) — only if permission is ALREADY granted, so a passive open never
-  // triggers an unsolicited prompt. First-time users default to "All NYC".
-  // Explicit Map-toggle opens are handled by the openTick effect below.
+  // Auto-show the blue dot on load ONLY if permission is already granted, so a
+  // user who has previously shared their location sees it without being asked
+  // again, while a passive load never triggers an unsolicited prompt. Users who
+  // haven't shared yet opt in explicitly via the Locate-me button (which
+  // prompts) — see the button's onClick below.
   const handleCurrentLocationRef = useRef(handleCurrentLocation);
   handleCurrentLocationRef.current = handleCurrentLocation;
   useEffect(() => {
-    if (openTick > 0) return; // explicit open — handled below, don't double-fire
     getLocationPermission().then((state) => {
       if (state === "granted") handleCurrentLocationRef.current();
     });
-  // openTick is only read once on mount to classify this open; we intentionally
-  // don't re-run this passive effect when it later changes.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Explicit Map-toggle taps are the successor to the old bottom-nav "Explore"
-  // tab tap, which prompted for + acquired the user's location. Re-acquire on
-  // each explicit open so the blue dot shows (prompting if not yet granted).
-  useEffect(() => {
-    if (openTick === 0) return;
-    handleCurrentLocationRef.current();
-  }, [openTick]);
 
   function handleSelectLocation(loc: string) {
     setLocation(location === loc ? "All NYC" : loc);
@@ -466,18 +448,24 @@ export function ExploreView({
         </div>
       )}
 
-      {/* ── Locate Me button ── */}
-      {userCoords && (
-        <button
-          type="button"
-          onClick={() => setLocateTrigger((n) => n + 1)}
-          aria-label="Go to my location"
-          className="fixed z-20 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-lg active:opacity-70 transition-opacity"
-          style={{ top: "calc(env(safe-area-inset-top, 44px) + 10px)", right: "16px" }}
-        >
-          <LocateFixed className="w-5 h-5 text-[#4285F4]" strokeWidth={2} />
-        </button>
-      )}
+      {/* ── Locate Me button ──
+          Always visible so a user who hasn't shared location yet can opt in.
+          When we already have coords (permission granted earlier) it simply
+          re-centers; otherwise handleCurrentLocation() prompts for permission
+          and acquires the position. Once a user has shared, this never
+          re-prompts (the OS/browser returns the location silently). */}
+      <button
+        type="button"
+        onClick={() => {
+          if (userCoords) setLocateTrigger((n) => n + 1);
+          else handleCurrentLocation();
+        }}
+        aria-label="Go to my location"
+        className="fixed z-20 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-lg active:opacity-70 transition-opacity"
+        style={{ top: "calc(env(safe-area-inset-top, 44px) + 10px)", right: "16px" }}
+      >
+        <LocateFixed className="w-5 h-5 text-[#4285F4]" strokeWidth={2} />
+      </button>
 
       {/* ── Content overlay — bottom half ── */}
       <div
