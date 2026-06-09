@@ -1,6 +1,12 @@
 import Image from "next/image";
+import { RightNowFeed } from "@/components/right-now/right-now-feed";
 
 export default function RightNowPage() {
+  // Behind a flag so production keeps the "Coming soon" placeholder until launch.
+  if (process.env.NEXT_PUBLIC_RIGHT_NOW === "1") {
+    return <RightNowFeed />;
+  }
+
   return (
     <div className="bg-white min-h-screen max-w-5xl mx-auto flex flex-col">
       <div className="h-[env(safe-area-inset-top,44px)]" />
