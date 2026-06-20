@@ -4,6 +4,7 @@ import { withAuth } from "@kinde-oss/kinde-auth-nextjs/middleware";
 // Routes that must remain accessible without an account.
 // The token (or the public discoverability of the resource) is the access grant.
 function isPublicPath(pathname: string): boolean {
+  if (pathname === "/googlef24cb0a7ce2a619b.html") return true; // Google Search Console verification
   if (pathname.startsWith("/c/")) return true; // shared collection pages
   if (pathname.startsWith("/experience/")) return true; // experience deep links
   if (pathname.startsWith("/api/c/")) return true; // public share API
