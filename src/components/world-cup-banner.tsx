@@ -136,27 +136,33 @@ export function WorldCupBanner() {
             >
               <div className="relative aspect-[33/20] bg-gray-100">
                 {flags ? (
-                  /* Half-and-half team flags */
+                  /* Half-and-half team flags. Each half shows the full flag
+                     (object-contain so nothing is cropped) over a blurred,
+                     zoomed copy of itself that fills the leftover space. */
                   <div className="absolute inset-0 flex">
-                    <div className="relative w-1/2 overflow-hidden">
-                      <Image
-                        src={flagUrl(flags.a)}
-                        alt={flags.teamA}
-                        fill
-                        sizes="165px"
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="relative w-1/2 overflow-hidden">
-                      <Image
-                        src={flagUrl(flags.b)}
-                        alt={flags.teamB}
-                        fill
-                        sizes="165px"
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-white/50" />
+                    {[
+                      { code: flags.a, team: flags.teamA },
+                      { code: flags.b, team: flags.teamB },
+                    ].map((f, i) => (
+                      <div key={i} className="relative w-1/2 overflow-hidden">
+                        <Image
+                          src={flagUrl(f.code)}
+                          alt=""
+                          aria-hidden
+                          fill
+                          sizes="165px"
+                          className="object-cover scale-125 blur-lg"
+                        />
+                        <Image
+                          src={flagUrl(f.code)}
+                          alt={f.team}
+                          fill
+                          sizes="165px"
+                          className="object-contain"
+                        />
+                      </div>
+                    ))}
+                    <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-white/60" />
                   </div>
                 ) : img ? (
                   <Image
