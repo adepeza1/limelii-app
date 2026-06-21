@@ -24,6 +24,45 @@ interface FeaturedResponse {
   matches: FeaturedMatch[];
 }
 
+// Team name (as it appears in the "[Team A] vs [Team B]" title) → ISO
+// 3166-1 alpha-2 code for flagcdn.com. Keys are lowercase; lookup is
+// case-insensitive. Unmapped teams fall back to the venue photo.
+const FLAG_CODES: Record<string, string> = {
+  argentina: "ar", australia: "au", austria: "at", belgium: "be",
+  brazil: "br", cameroon: "cm", canada: "ca", "cape verde": "cv",
+  chile: "cl", colombia: "co", "costa rica": "cr", croatia: "hr",
+  denmark: "dk", ecuador: "ec", egypt: "eg", england: "gb-eng",
+  france: "fr", germany: "de", ghana: "gh", greece: "gr",
+  honduras: "hn", iran: "ir", italy: "it", "ivory coast": "ci",
+  jamaica: "jm", japan: "jp", mexico: "mx", morocco: "ma",
+  netherlands: "nl", "new zealand": "nz", nigeria: "ng", norway: "no",
+  panama: "pa", paraguay: "py", peru: "pe", poland: "pl",
+  portugal: "pt", qatar: "qa", "saudi arabia": "sa", scotland: "gb-sct",
+  senegal: "sn", serbia: "rs", "south africa": "za", "south korea": "kr",
+  spain: "es", sweden: "se", switzerland: "ch", tunisia: "tn",
+  turkey: "tr", ukraine: "ua", "united states": "us", uruguay: "uy",
+  usa: "us", wales: "gb-wls",
+};
+
+function flagUrl(code: string): string {
+  return `https://flagcdn.com/h240/${code}.png`;
+}
+
+// Split "Team A vs Team B" and resolve both flags. Returns null if the
+// title isn't a matchup or either team can't be mapped to a flag.
+function matchupFlags(
+  title: string
+): { a: string; b: string; teamA: string; teamB: string } | null {
+  const parts = title.split(/\s+vs\.?\s+/i);
+  if (parts.length !== 2) return null;
+  const teamA = parts[0].trim();
+  const teamB = parts[1].trim();
+  const a = FLAG_CODES[teamA.toLowerCase()];
+  const b = FLAG_CODES[teamB.toLowerCase()];
+  if (!a || !b) return null;
+  return { a, b, teamA, teamB };
+}
+
 function placeImage(place: Place): string | null {
   return (
     (place.display_images ?? []).find((img) => img.url)?.url ??
@@ -81,7 +120,8 @@ export function WorldCupBanner() {
       <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:pl-4 md:overflow-x-visible">
         {matches.map((m) => {
           const title = m.headline?.trim() || m.experience.title;
-          const img = matchImage(m.experience);
+          const flags = matchupFlags(title);
+          const img = flags ? null : matchImage(m.experience);
           return (
             <Link
               key={m.experience_id}
@@ -95,7 +135,30 @@ export function WorldCupBanner() {
               className="shrink-0 w-[280px] sm:w-[330px] md:w-auto rounded-[20px] overflow-hidden border border-black/10 relative"
             >
               <div className="relative aspect-[33/20] bg-gray-100">
-                {img ? (
+                {flags ? (
+                  /* Half-and-half team flags */
+                  <div className="absolute inset-0 flex">
+                    <div className="relative w-1/2 overflow-hidden">
+                      <Image
+                        src={flagUrl(flags.a)}
+                        alt={flags.teamA}
+                        fill
+                        sizes="165px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="relative w-1/2 overflow-hidden">
+                      <Image
+                        src={flagUrl(flags.b)}
+                        alt={flags.teamB}
+                        fill
+                        sizes="165px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-white/50" />
+                  </div>
+                ) : img ? (
                   <Image
                     src={img}
                     alt={title}
@@ -109,7 +172,7 @@ export function WorldCupBanner() {
                     style={{ background: "linear-gradient(135deg, #FB6983 0%, #FF9A56 100%)" }}
                   />
                 )}
-                {/* Bottom scrim so white text stays legible over any photo */}
+                {/* Bottom scrim so white text stays legible over any cover */}
                 <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/70 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-3.5">
                   <p className="text-white font-semibold text-[15px] leading-tight line-clamp-2">
