@@ -26,6 +26,7 @@ import {
   describeWeather,
 } from "@/lib/weather";
 import { WeatherAttribution } from "@/components/weather-attribution";
+import { WorldCupBanner } from "@/components/world-cup-banner";
 
 
 // ─── Suggestion logic ─────────────────────────────────────────────────────────
@@ -464,6 +465,10 @@ export function DiscoverPage({
               <p className="text-sm text-gray-500 mt-0.5">{weatherLine}</p>
             )}
           </div>
+
+          {/* World Cup — today's matches; hides itself on off days / failures.
+              Self-rotates because the endpoint returns only today's set. */}
+          <WorldCupBanner />
 
           {/* New this week — cross-category; hidden entirely when empty */}
           {newThisWeek.length > 0 && (
