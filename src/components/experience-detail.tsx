@@ -8,7 +8,7 @@ import { ReportModal } from "./report-modal";
 import { track } from "@/lib/mixpanel";
 import { useToast } from "@/components/toast";
 import { getPlaceLocation } from "@/lib/place-location";
-import { parseMatchup, teamForStop, flagUrl } from "@/lib/world-cup";
+import { parseMatchup, teamForStop, flagUrl, flagForTeam, stopTypeLabel } from "@/lib/world-cup";
 
 const SAVED_KEY = "limelii_saved";
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -205,10 +205,12 @@ export function ExperienceDetail({
     (p) => (p.display_images?.length ?? 0) > 0 || (p.images?.length ?? 0) > 0
   );
 
-  // World Cup experiences (those with a match date) split their stops between
-  // the two teams: first half = Team A, second half = Team B. Each stop gets a
-  // team badge so the matchup grouping is obvious as you swipe through.
-  const matchup = experience.match_date ? parseMatchup(experience.title) : null;
+  // World Cup experiences (those with a match date) label each stop with its
+  // team + role. Preferred source is the per-stop `team`/`stop_type` fields
+  // from the upload sheet; when those aren't present we fall back to the older
+  // positional convention (first half of stops = Team A, second half = Team B).
+  const isWorldCup = !!experience.match_date;
+  const matchup = isWorldCup ? parseMatchup(experience.title) : null;
 
   // Track active slide via scroll position
   useEffect(() => {
@@ -318,14 +320,24 @@ export function ExperienceDetail({
           {placesWithImages.map((place, index) => {
             const details = place._location_details;
             const address = getFullAddress(place);
-            const team = matchup
+            // Prefer the explicit per-stop fields; fall back to the positional
+            // convention for experiences uploaded before they existed.
+            const explicitTeam = place.team?.trim();
+            const team = explicitTeam
+              ? { name: explicitTeam, code: flagForTeam(explicitTeam) }
+              : matchup
               ? teamForStop(index, placesWithImages.length, matchup)
               : null;
-            const posInTeam = matchup
-              ? index % Math.ceil(placesWithImages.length / 2)
-              : -1;
+            const explicitLabel = stopTypeLabel(place.stop_type);
+            const posInTeam =
+              !explicitLabel && matchup
+                ? index % Math.ceil(placesWithImages.length / 2)
+                : -1;
             const purposeLabel =
-              posInTeam === 0 ? "Watch here" : posInTeam === 1 ? "Afters" : null;
+              explicitLabel ??
+              (posInTeam === 0 ? "Watch here" : posInTeam === 1 ? "Afters" : null);
+            // "Watch here" is the main event → highlighted; the rest are muted.
+            const purposeHighlighted = purposeLabel === "Watch here";
             return (
               <div key={place.id} className="snap-start shrink-0 w-full flex flex-col px-[22px]">
                 {team && (
@@ -348,14 +360,14 @@ export function ExperienceDetail({
                       <div
                         className="inline-flex items-center rounded-full px-2.5 py-1"
                         style={
-                          posInTeam === 0
+                          purposeHighlighted
                             ? { background: "linear-gradient(90deg, #FB6983 0%, #FF9A56 100%)" }
                             : { background: "#f3f4f6" }
                         }
                       >
                         <span
                           className="text-xs font-semibold"
-                          style={{ color: posInTeam === 0 ? "#fff" : "#111" }}
+                          style={{ color: purposeHighlighted ? "#fff" : "#111" }}
                         >
                           {purposeLabel}
                         </span>

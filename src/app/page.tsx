@@ -15,6 +15,10 @@ export interface Place {
   latlong?: { type: string; data: { lat: number; lng: number } } | null;
   images: { url: string }[] | null;
   display_images: { url: string }[] | null;
+  // World Cup stops carry which team they belong to and their role in the
+  // itinerary ("pre_game" | "watch" | "afters"). Null on normal experiences.
+  team?: string | null;
+  stop_type?: string | null;
   _location_details: {
     Description: string;
     location_type: string[];

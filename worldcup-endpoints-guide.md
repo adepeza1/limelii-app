@@ -109,16 +109,41 @@ dated experiences — nothing to turn off.
 
 ## Step 4 — Upload each day's matches
 
-Your sheet is your existing format **plus a date** (see
-`worldcup_experiences_seed.csv`):
+The sheet is now **one row per stop** (see `worldcup_experiences_seed.csv`):
 
 ```
-match_date, itinerary_name, location1, location2, location3, location4 [, kickoff_local, venue]
+itinerary_name, match_date, kickoff_local, sort_order, team, location, stop_type
 ```
 
-For each row, create an experience the normal way (the 4 locations resolve to
-real places) and set its `match_date` (+ optional `headline`/`kickoff_local`/
-`venue`). `headline` can just equal `itinerary_name`.
+| Column | Purpose |
+|--------|---------|
+| `itinerary_name` | groups rows into one experience ("Belgium vs Iran") |
+| `match_date` | the day it shows in the banner (`YYYY-MM-DD`, NY) |
+| `kickoff_local` | banner subtitle (`3:00 PM`) |
+| `sort_order` | order the matches appear in the banner that day |
+| `team` | which side this stop belongs to (`Belgium`) |
+| `location` | the place name to resolve |
+| `stop_type` | `pre_game` \| `watch` \| `afters` |
+
+Rows that share an `itinerary_name` + `match_date` make up one experience; the
+**stop order is the row order**. A team can have any number of stops (just a
+`watch`, or `pre_game`→`watch`, or `watch`→`afters`, etc.).
+
+### The per-stop fields the app needs back
+
+The detail view labels each stop from two fields **on the place as returned in
+`places_id[]`**:
+
+- **`team`** — drives the flag + team-name badge.
+- **`stop_type`** — drives the label at the top of the stop:
+  `pre_game` → **Pregame**, `watch` → **Watch here**, `afters` → **Afters**.
+
+So the upload must persist `team` + `stop_type` **per stop** (on the
+experience↔place join, in row order), and `GET /experiences/{id}` (the endpoint
+the banner deep-links to) must include them on each entry of `places_id[]`. If
+they're absent the app still renders — it falls back to the old positional guess
+(first half of stops = Team A / "Watch here", second half = Team B / "Afters") —
+but uneven stop counts (1 vs 2) only label correctly with the explicit fields.
 
 You can:
 - upload **today's** matches each morning, **or**
