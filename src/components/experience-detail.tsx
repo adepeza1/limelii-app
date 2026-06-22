@@ -321,22 +321,46 @@ export function ExperienceDetail({
             const team = matchup
               ? teamForStop(index, placesWithImages.length, matchup)
               : null;
+            const posInTeam = matchup
+              ? index % Math.ceil(placesWithImages.length / 2)
+              : -1;
+            const purposeLabel =
+              posInTeam === 0 ? "Watch here" : posInTeam === 1 ? "Eat or drink here after" : null;
             return (
               <div key={place.id} className="snap-start shrink-0 w-full flex flex-col px-[22px]">
                 {team && (
-                  <div className="mb-2 inline-flex items-center gap-1.5 self-start rounded-full bg-gray-100 px-2.5 py-1">
-                    {team.code && (
-                      <Image
-                        src={flagUrl(team.code)}
-                        alt=""
-                        width={18}
-                        height={13}
-                        className="rounded-[2px] object-cover"
-                      />
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1">
+                      {team.code && (
+                        <Image
+                          src={flagUrl(team.code)}
+                          alt=""
+                          width={18}
+                          height={13}
+                          className="rounded-[2px] object-cover"
+                        />
+                      )}
+                      <span className="text-xs font-semibold text-black">
+                        {team.name}
+                      </span>
+                    </div>
+                    {purposeLabel && (
+                      <div
+                        className="inline-flex items-center rounded-full px-2.5 py-1"
+                        style={
+                          posInTeam === 0
+                            ? { background: "linear-gradient(90deg, #FB6983 0%, #FF9A56 100%)" }
+                            : { background: "#f3f4f6" }
+                        }
+                      >
+                        <span
+                          className="text-xs font-semibold"
+                          style={{ color: posInTeam === 0 ? "#fff" : "#111" }}
+                        >
+                          {purposeLabel}
+                        </span>
+                      </div>
                     )}
-                    <span className="text-xs font-semibold text-black">
-                      {team.name}
-                    </span>
                   </div>
                 )}
                 <PlaceImageCard place={place} />
