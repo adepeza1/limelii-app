@@ -1,5 +1,9 @@
-match_date,itinerary_name,location1,location2,location3,location4,kickoff_local,venue
-2026-06-21,Spain vs Saudi Arabia,Boqueria W40th,Mercado Little Spain,Smithfield Hall NYC,Ravagh Persian Grill,,
-2026-06-21,Belgium vs Iran,BXL Cafe,Beer Authority,Smithfield Hall NYC,Shiraz Kitchen & Wine Bar,,
-2026-06-21,Uruguay vs Cape Verde,Friends Tavern,La Gran Uruguaya Restaurant,Native Harlem,La Savane d'Afrique,,
-2026-06-21,Egypt vs New Zealand,Layaly Cafe,Ashour Restaurant,Old Mates Pub,Ulysses Folk House,,
+itinerary_name,match_date,kickoff_local,sort_order,team,location,stop_type
+Belgium vs Iran,2026-06-21,3:00 PM,2,Belgium,Wafels & Dinges,pre_game
+Belgium vs Iran,2026-06-21,3:00 PM,2,Belgium,BXL Cafe,watch
+Belgium vs Iran,2026-06-21,3:00 PM,2,Iran,Oasis Cafe,pre_game
+Belgium vs Iran,2026-06-21,3:00 PM,2,Iran,The Winslow,watch
+New Zealand vs Egypt,2026-06-21,9:00 PM,4,New Zealand,Carraghers,watch
+New Zealand vs Egypt,2026-06-21,9:00 PM,4,New Zealand,Old Mates Pub,afters
+New Zealand vs Egypt,2026-06-21,9:00 PM,4,Egypt,Al-Sham Sweets & Pastries,pre_game
+New Zealand vs Egypt,2026-06-21,9:00 PM,4,Egypt,Mum Feteer,watch

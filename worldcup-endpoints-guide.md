@@ -109,16 +109,54 @@ dated experiences — nothing to turn off.
 
 ## Step 4 — Upload each day's matches
 
-Your sheet is your existing format **plus a date** (see
-`worldcup_experiences_seed.csv`):
+The sheet is now **one row per stop** (see `worldcup_experiences_seed.csv`):
 
 ```
-match_date, itinerary_name, location1, location2, location3, location4 [, kickoff_local, venue]
+itinerary_name, match_date, kickoff_local, sort_order, team, location, stop_type
 ```
 
-For each row, create an experience the normal way (the 4 locations resolve to
-real places) and set its `match_date` (+ optional `headline`/`kickoff_local`/
-`venue`). `headline` can just equal `itinerary_name`.
+| Column | Purpose |
+|--------|---------|
+| `itinerary_name` | groups rows into one experience ("Belgium vs Iran") |
+| `match_date` | the day it shows in the banner (`YYYY-MM-DD`, NY) |
+| `kickoff_local` | banner subtitle (`3:00 PM`) |
+| `sort_order` | order the matches appear in the banner that day |
+| `team` | which side this stop belongs to (`Belgium`) |
+| `location` | the place name to resolve |
+| `stop_type` | `pre_game` \| `watch` \| `afters` |
+
+Rows that share an `itinerary_name` + `match_date` make up one experience; the
+**stop order is the row order**. A team can have any number of stops (just a
+`watch`, or `pre_game`→`watch`, or `watch`→`afters`, etc.).
+
+### The per-stop fields the app needs back
+
+The detail view labels each stop from two values:
+
+- **`team`** — drives the flag + team-name badge.
+- **`stop_type`** — drives the label at the top of the stop:
+  `pre_game` → **Pregame**, `watch` → **Watch here**, `afters` → **Afters**.
+
+`places_id` is a plain list of place ids (no per-stop join row), and the same
+venue can appear twice in one match (e.g. Smithfield Hall for both teams), so
+this metadata is stored in a separate **`stops`** JSON field on `experiences`,
+in carousel order, keyed by place id:
+
+```json
+"stops": [
+  { "place_id": 812, "team": "Belgium", "stop_type": "pre_game" },
+  { "place_id": 540, "team": "Belgium", "stop_type": "watch" },
+  { "place_id": 318, "team": "Iran",    "stop_type": "pre_game" },
+  { "place_id": 540, "team": "Iran",    "stop_type": "watch" }
+]
+```
+
+The app reads `experience.stops`, looks each place up by `place_id`, and renders
+them in order — so duplicates stay distinct and a stop whose place has no photos
+drops out cleanly. `stops` is a native field, so `GET /experiences/{id}` returns
+it automatically (no addon needed). If it's absent the app still renders — it
+falls back to the old positional guess (first half of stops = Team A /
+"Watch here", second half = Team B / "Afters").
 
 You can:
 - upload **today's** matches each morning, **or**

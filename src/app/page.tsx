@@ -27,6 +27,13 @@ export interface Place {
   } | null;
 }
 
+export interface WorldCupStop {
+  place_id: number;
+  team?: string | null;
+  // "pre_game" | "watch" | "afters"
+  stop_type?: string | null;
+}
+
 export interface Experience {
   id: number;
   created_at?: number;
@@ -40,6 +47,9 @@ export interface Experience {
   // World Cup experiences carry a match date (NY, YYYY-MM-DD) + kickoff label.
   match_date?: string | null;
   kickoff_local?: string | null;
+  // Per-stop World Cup metadata, in carousel order (parallel to places_id but
+  // keyed by place id so it survives duplicate venues). Null on normal ones.
+  stops?: WorldCupStop[] | null;
   neighborhoods: string[];
   activities: string[];
   budget: string[];

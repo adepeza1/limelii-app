@@ -6,24 +6,52 @@
 // Team name (as written in the title) → ISO 3166-1 alpha-2 code for
 // flagcdn.com. Keys are lowercase; lookup is case-insensitive.
 export const FLAG_CODES: Record<string, string> = {
-  argentina: "ar", australia: "au", austria: "at", belgium: "be",
+  algeria: "dz", argentina: "ar", australia: "au", austria: "at",
+  belgium: "be", "bosnia & herzegovina": "ba", "bosnia and herzegovina": "ba",
   brazil: "br", cameroon: "cm", canada: "ca", "cape verde": "cv",
   chile: "cl", colombia: "co", "costa rica": "cr", croatia: "hr",
-  denmark: "dk", ecuador: "ec", egypt: "eg", england: "gb-eng",
-  france: "fr", germany: "de", ghana: "gh", greece: "gr",
-  honduras: "hn", iran: "ir", italy: "it", "ivory coast": "ci",
-  jamaica: "jm", japan: "jp", mexico: "mx", morocco: "ma",
+  curacao: "cw", "curaçao": "cw", czechia: "cz", "czech republic": "cz",
+  denmark: "dk", "dr congo": "cd", ecuador: "ec", egypt: "eg",
+  england: "gb-eng", france: "fr", germany: "de", ghana: "gh",
+  greece: "gr", haiti: "ht", honduras: "hn", iran: "ir",
+  iraq: "iq", italy: "it", "ivory coast": "ci", jamaica: "jm",
+  japan: "jp", jordan: "jo", mexico: "mx", morocco: "ma",
   netherlands: "nl", "new zealand": "nz", nigeria: "ng", norway: "no",
   panama: "pa", paraguay: "py", peru: "pe", poland: "pl",
   portugal: "pt", qatar: "qa", "saudi arabia": "sa", scotland: "gb-sct",
   senegal: "sn", serbia: "rs", "south africa": "za", "south korea": "kr",
   spain: "es", sweden: "se", switzerland: "ch", tunisia: "tn",
-  turkey: "tr", ukraine: "ua", "united states": "us", uruguay: "uy",
-  usa: "us", wales: "gb-wls",
+  turkey: "tr", turkiye: "tr", "türkiye": "tr", ukraine: "ua",
+  "united states": "us", uruguay: "uy", usa: "us", uzbekistan: "uz",
+  wales: "gb-wls",
 };
 
 export function flagUrl(code: string): string {
   return `https://flagcdn.com/h240/${code}.png`;
+}
+
+// Look up a team's flag code by name (case-insensitive). Returns undefined
+// if the team isn't mapped, in which case the badge renders without a flag.
+export function flagForTeam(team: string): string | undefined {
+  return FLAG_CODES[team.trim().toLowerCase()];
+}
+
+// Map an upload-sheet `stop_type` to the label shown at the top of a stop.
+// Unknown / empty types return null (no label).
+export function stopTypeLabel(stopType: string | null | undefined): string | null {
+  switch ((stopType ?? "").trim().toLowerCase()) {
+    case "pre_game":
+    case "pregame":
+    case "pre-game":
+      return "Pregame";
+    case "watch":
+      return "Watch here";
+    case "afters":
+    case "after":
+      return "Afters";
+    default:
+      return null;
+  }
 }
 
 export interface Matchup {
