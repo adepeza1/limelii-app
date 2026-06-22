@@ -6,6 +6,7 @@ import Image from "next/image";
 import { MapPin, Clock } from "lucide-react";
 import type { Experience, Place } from "@/app/page";
 import { track } from "@/lib/mixpanel";
+import { flagUrl, parseMatchup } from "@/lib/world-cup";
 
 // One match = one Experience (named "[Team A] vs [Team B]"). A single
 // calendar day can carry several matches; the banner shows them as a
@@ -24,43 +25,15 @@ interface FeaturedResponse {
   matches: FeaturedMatch[];
 }
 
-// Team name (as it appears in the "[Team A] vs [Team B]" title) → ISO
-// 3166-1 alpha-2 code for flagcdn.com. Keys are lowercase; lookup is
-// case-insensitive. Unmapped teams fall back to the venue photo.
-const FLAG_CODES: Record<string, string> = {
-  argentina: "ar", australia: "au", austria: "at", belgium: "be",
-  brazil: "br", cameroon: "cm", canada: "ca", "cape verde": "cv",
-  chile: "cl", colombia: "co", "costa rica": "cr", croatia: "hr",
-  denmark: "dk", ecuador: "ec", egypt: "eg", england: "gb-eng",
-  france: "fr", germany: "de", ghana: "gh", greece: "gr",
-  honduras: "hn", iran: "ir", italy: "it", "ivory coast": "ci",
-  jamaica: "jm", japan: "jp", mexico: "mx", morocco: "ma",
-  netherlands: "nl", "new zealand": "nz", nigeria: "ng", norway: "no",
-  panama: "pa", paraguay: "py", peru: "pe", poland: "pl",
-  portugal: "pt", qatar: "qa", "saudi arabia": "sa", scotland: "gb-sct",
-  senegal: "sn", serbia: "rs", "south africa": "za", "south korea": "kr",
-  spain: "es", sweden: "se", switzerland: "ch", tunisia: "tn",
-  turkey: "tr", ukraine: "ua", "united states": "us", uruguay: "uy",
-  usa: "us", wales: "gb-wls",
-};
-
-function flagUrl(code: string): string {
-  return `https://flagcdn.com/h240/${code}.png`;
-}
-
 // Split "Team A vs Team B" and resolve both flags. Returns null if the
-// title isn't a matchup or either team can't be mapped to a flag.
+// title isn't a matchup or either team can't be mapped to a flag (in which
+// case the card falls back to the venue photo).
 function matchupFlags(
   title: string
 ): { a: string; b: string; teamA: string; teamB: string } | null {
-  const parts = title.split(/\s+vs\.?\s+/i);
-  if (parts.length !== 2) return null;
-  const teamA = parts[0].trim();
-  const teamB = parts[1].trim();
-  const a = FLAG_CODES[teamA.toLowerCase()];
-  const b = FLAG_CODES[teamB.toLowerCase()];
-  if (!a || !b) return null;
-  return { a, b, teamA, teamB };
+  const m = parseMatchup(title);
+  if (!m || !m.codeA || !m.codeB) return null;
+  return { a: m.codeA, b: m.codeB, teamA: m.teamA, teamB: m.teamB };
 }
 
 function placeImage(place: Place): string | null {
