@@ -325,7 +325,7 @@ export function ExperienceDetail({
               ? index % Math.ceil(placesWithImages.length / 2)
               : -1;
             const purposeLabel =
-              posInTeam === 0 ? "Watch here" : posInTeam === 1 ? "Eat or drink here after" : null;
+              posInTeam === 0 ? "Watch here" : posInTeam === 1 ? "Afters" : null;
             return (
               <div key={place.id} className="snap-start shrink-0 w-full flex flex-col px-[22px]">
                 {team && (
