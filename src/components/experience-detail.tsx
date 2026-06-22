@@ -8,7 +8,7 @@ import { ReportModal } from "./report-modal";
 import { track } from "@/lib/mixpanel";
 import { useToast } from "@/components/toast";
 import { getPlaceLocation } from "@/lib/place-location";
-import { parseMatchup, teamForStop, flagUrl, flagForTeam, stopTypeLabel } from "@/lib/world-cup";
+import { parseMatchup, teamForStop, flagUrl, flagForTeam, stopTypeLabel, type Matchup } from "@/lib/world-cup";
 
 const SAVED_KEY = "limelii_saved";
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -54,7 +54,7 @@ function toggleSaved(experience: Experience): boolean {
   return saving;
 }
 import dynamic from "next/dynamic";
-import type { Experience, Place } from "@/app/page";
+import type { Experience, Place, WorldCupStop } from "@/app/page";
 import { AddToCollectionSheet } from "./add-to-collection-sheet";
 import { saveExperience, unsaveExperience } from "@/lib/saved";
 
@@ -82,6 +82,54 @@ function getFullAddress(place: Place): string {
 
 function hasValue(val: string | null | undefined): val is string {
   return !!val && val.trim() !== "" && val.trim().toUpperCase() !== "NA";
+}
+
+function placeHasImages(p: Place): boolean {
+  return (p.display_images?.length ?? 0) > 0 || (p.images?.length ?? 0) > 0;
+}
+
+// One carousel slide: a place plus its optional World Cup team badge + label.
+interface RenderStop {
+  place: Place;
+  teamName?: string;
+  teamCode?: string;
+  label?: string | null;
+}
+
+// Build the ordered list of slides. Prefers the per-stop `stops` list (driven
+// by place id so duplicate venues stay distinct and missing-image stops drop
+// out cleanly); falls back to the positional convention for experiences
+// uploaded before `stops` existed, and to a plain place list otherwise.
+function buildRenderStops(
+  experience: Experience,
+  places: Place[],
+  placesWithImages: Place[],
+  matchup: Matchup | null
+): RenderStop[] {
+  const stops = experience.stops;
+  if (Array.isArray(stops) && stops.length > 0) {
+    return stops
+      .map((s) => ({ s, place: places.find((p) => p.id === s.place_id) }))
+      .filter((x): x is { s: WorldCupStop; place: Place } => !!x.place && placeHasImages(x.place))
+      .map(({ s, place }) => ({
+        place,
+        teamName: s.team?.trim() || undefined,
+        teamCode: s.team ? flagForTeam(s.team) : undefined,
+        label: stopTypeLabel(s.stop_type),
+      }));
+  }
+
+  return placesWithImages.map((place, index) => {
+    if (!matchup) return { place };
+    const team = teamForStop(index, placesWithImages.length, matchup);
+    const posInTeam = index % Math.ceil(placesWithImages.length / 2);
+    return {
+      place,
+      teamName: team.name,
+      teamCode: team.code,
+      label: posInTeam === 0 ? "Watch here" : posInTeam === 1 ? "Afters" : null,
+    };
+  });
 }
 
 
@@ -201,16 +249,17 @@ export function ExperienceDetail({
   // Coerce to an array — a malformed places_id (null or a single object)
   // would otherwise crash the whole detail view.
   const places = Array.isArray(experience.places_id) ? experience.places_id : [];
-  const placesWithImages = places.filter(
-    (p) => (p.display_images?.length ?? 0) > 0 || (p.images?.length ?? 0) > 0
-  );
+  const placesWithImages = places.filter(placeHasImages);
 
   // World Cup experiences (those with a match date) label each stop with its
-  // team + role. Preferred source is the per-stop `team`/`stop_type` fields
-  // from the upload sheet; when those aren't present we fall back to the older
-  // positional convention (first half of stops = Team A, second half = Team B).
+  // team + role. Preferred source is the per-stop `stops` list (team +
+  // stop_type, keyed by place id so duplicate venues stay distinct); when it's
+  // absent we fall back to the older positional convention (first half of
+  // stops = Team A / "Watch here", second half = Team B / "Afters").
   const isWorldCup = !!experience.match_date;
   const matchup = isWorldCup ? parseMatchup(experience.title) : null;
+  const renderStops = buildRenderStops(experience, places, placesWithImages, matchup);
+  const stopCount = renderStops.length;
 
   // Track active slide via scroll position
   useEffect(() => {
@@ -223,11 +272,11 @@ export function ExperienceDetail({
         : 1;
       // Carousel has no gap between slides, so divide by cardWidth alone.
       const index = Math.round(scrollLeft / cardWidth);
-      setActiveSlide(Math.min(index, placesWithImages.length - 1));
+      setActiveSlide(Math.min(index, stopCount - 1));
     };
     el.addEventListener("scroll", handleScroll, { passive: true });
     return () => el.removeEventListener("scroll", handleScroll);
-  }, [placesWithImages.length]);
+  }, [stopCount]);
 
 
   return (
@@ -317,35 +366,19 @@ export function ExperienceDetail({
           ref={scrollRef}
           className="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory"
         >
-          {placesWithImages.map((place, index) => {
+          {renderStops.map(({ place, teamName, teamCode, label }, index) => {
             const details = place._location_details;
             const address = getFullAddress(place);
-            // Prefer the explicit per-stop fields; fall back to the positional
-            // convention for experiences uploaded before they existed.
-            const explicitTeam = place.team?.trim();
-            const team = explicitTeam
-              ? { name: explicitTeam, code: flagForTeam(explicitTeam) }
-              : matchup
-              ? teamForStop(index, placesWithImages.length, matchup)
-              : null;
-            const explicitLabel = stopTypeLabel(place.stop_type);
-            const posInTeam =
-              !explicitLabel && matchup
-                ? index % Math.ceil(placesWithImages.length / 2)
-                : -1;
-            const purposeLabel =
-              explicitLabel ??
-              (posInTeam === 0 ? "Watch here" : posInTeam === 1 ? "Afters" : null);
             // "Watch here" is the main event → highlighted; the rest are muted.
-            const purposeHighlighted = purposeLabel === "Watch here";
+            const purposeHighlighted = label === "Watch here";
             return (
-              <div key={place.id} className="snap-start shrink-0 w-full flex flex-col px-[22px]">
-                {team && (
+              <div key={`${place.id}-${index}`} className="snap-start shrink-0 w-full flex flex-col px-[22px]">
+                {teamName && (
                   <div className="mb-2 flex flex-wrap items-center gap-2">
                     <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1">
-                      {team.code && (
+                      {teamCode && (
                         <Image
-                          src={flagUrl(team.code)}
+                          src={flagUrl(teamCode)}
                           alt=""
                           width={18}
                           height={13}
@@ -353,10 +386,10 @@ export function ExperienceDetail({
                         />
                       )}
                       <span className="text-xs font-semibold text-black">
-                        {team.name}
+                        {teamName}
                       </span>
                     </div>
-                    {purposeLabel && (
+                    {label && (
                       <div
                         className="inline-flex items-center rounded-full px-2.5 py-1"
                         style={
@@ -369,7 +402,7 @@ export function ExperienceDetail({
                           className="text-xs font-semibold"
                           style={{ color: purposeHighlighted ? "#fff" : "#111" }}
                         >
-                          {purposeLabel}
+                          {label}
                         </span>
                       </div>
                     )}
@@ -440,9 +473,9 @@ export function ExperienceDetail({
         </div>
 
         {/* Dot indicators */}
-        {placesWithImages.length > 1 && (
+        {stopCount > 1 && (
           <div className="flex items-center justify-center gap-1.5 py-3">
-            {placesWithImages.map((_, i) => (
+            {renderStops.map((_, i) => (
               <div
                 key={i}
                 className={`rounded-full transition-all ${

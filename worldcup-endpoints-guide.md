@@ -131,19 +131,32 @@ Rows that share an `itinerary_name` + `match_date` make up one experience; the
 
 ### The per-stop fields the app needs back
 
-The detail view labels each stop from two fields **on the place as returned in
-`places_id[]`**:
+The detail view labels each stop from two values:
 
 - **`team`** — drives the flag + team-name badge.
 - **`stop_type`** — drives the label at the top of the stop:
   `pre_game` → **Pregame**, `watch` → **Watch here**, `afters` → **Afters**.
 
-So the upload must persist `team` + `stop_type` **per stop** (on the
-experience↔place join, in row order), and `GET /experiences/{id}` (the endpoint
-the banner deep-links to) must include them on each entry of `places_id[]`. If
-they're absent the app still renders — it falls back to the old positional guess
-(first half of stops = Team A / "Watch here", second half = Team B / "Afters") —
-but uneven stop counts (1 vs 2) only label correctly with the explicit fields.
+`places_id` is a plain list of place ids (no per-stop join row), and the same
+venue can appear twice in one match (e.g. Smithfield Hall for both teams), so
+this metadata is stored in a separate **`stops`** JSON field on `experiences`,
+in carousel order, keyed by place id:
+
+```json
+"stops": [
+  { "place_id": 812, "team": "Belgium", "stop_type": "pre_game" },
+  { "place_id": 540, "team": "Belgium", "stop_type": "watch" },
+  { "place_id": 318, "team": "Iran",    "stop_type": "pre_game" },
+  { "place_id": 540, "team": "Iran",    "stop_type": "watch" }
+]
+```
+
+The app reads `experience.stops`, looks each place up by `place_id`, and renders
+them in order — so duplicates stay distinct and a stop whose place has no photos
+drops out cleanly. `stops` is a native field, so `GET /experiences/{id}` returns
+it automatically (no addon needed). If it's absent the app still renders — it
+falls back to the old positional guess (first half of stops = Team A /
+"Watch here", second half = Team B / "Afters").
 
 You can:
 - upload **today's** matches each morning, **or**

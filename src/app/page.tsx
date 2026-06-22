@@ -15,10 +15,6 @@ export interface Place {
   latlong?: { type: string; data: { lat: number; lng: number } } | null;
   images: { url: string }[] | null;
   display_images: { url: string }[] | null;
-  // World Cup stops carry which team they belong to and their role in the
-  // itinerary ("pre_game" | "watch" | "afters"). Null on normal experiences.
-  team?: string | null;
-  stop_type?: string | null;
   _location_details: {
     Description: string;
     location_type: string[];
@@ -29,6 +25,13 @@ export interface Place {
     operating_hours?: string;
     photo: { url: string | null } | null;
   } | null;
+}
+
+export interface WorldCupStop {
+  place_id: number;
+  team?: string | null;
+  // "pre_game" | "watch" | "afters"
+  stop_type?: string | null;
 }
 
 export interface Experience {
@@ -44,6 +47,9 @@ export interface Experience {
   // World Cup experiences carry a match date (NY, YYYY-MM-DD) + kickoff label.
   match_date?: string | null;
   kickoff_local?: string | null;
+  // Per-stop World Cup metadata, in carousel order (parallel to places_id but
+  // keyed by place id so it survives duplicate venues). Null on normal ones.
+  stops?: WorldCupStop[] | null;
   neighborhoods: string[];
   activities: string[];
   budget: string[];
