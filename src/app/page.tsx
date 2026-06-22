@@ -37,6 +37,9 @@ export interface Experience {
   category_id: number;
   creator_user_id?: number | null;
   status?: "generating" | "done";
+  // World Cup experiences carry a match date (NY, YYYY-MM-DD) + kickoff label.
+  match_date?: string | null;
+  kickoff_local?: string | null;
   neighborhoods: string[];
   activities: string[];
   budget: string[];

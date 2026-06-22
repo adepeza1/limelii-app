@@ -8,6 +8,7 @@ import { ReportModal } from "./report-modal";
 import { track } from "@/lib/mixpanel";
 import { useToast } from "@/components/toast";
 import { getPlaceLocation } from "@/lib/place-location";
+import { parseMatchup, teamForStop, flagUrl } from "@/lib/world-cup";
 
 const SAVED_KEY = "limelii_saved";
 const SAVED_ITEMS_KEY = "limelii_saved_items";
@@ -204,6 +205,11 @@ export function ExperienceDetail({
     (p) => (p.display_images?.length ?? 0) > 0 || (p.images?.length ?? 0) > 0
   );
 
+  // World Cup experiences (those with a match date) split their stops between
+  // the two teams: first half = Team A, second half = Team B. Each stop gets a
+  // team badge so the matchup grouping is obvious as you swipe through.
+  const matchup = experience.match_date ? parseMatchup(experience.title) : null;
+
   // Track active slide via scroll position
   useEffect(() => {
     const el = scrollRef.current;
@@ -309,11 +315,30 @@ export function ExperienceDetail({
           ref={scrollRef}
           className="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory"
         >
-          {placesWithImages.map((place) => {
+          {placesWithImages.map((place, index) => {
             const details = place._location_details;
             const address = getFullAddress(place);
+            const team = matchup
+              ? teamForStop(index, placesWithImages.length, matchup)
+              : null;
             return (
               <div key={place.id} className="snap-start shrink-0 w-full flex flex-col px-[22px]">
+                {team && (
+                  <div className="mb-2 inline-flex items-center gap-1.5 self-start rounded-full bg-gray-100 px-2.5 py-1">
+                    {team.code && (
+                      <Image
+                        src={flagUrl(team.code)}
+                        alt=""
+                        width={18}
+                        height={13}
+                        className="rounded-[2px] object-cover"
+                      />
+                    )}
+                    <span className="text-xs font-semibold text-black">
+                      {team.name}
+                    </span>
+                  </div>
+                )}
                 <PlaceImageCard place={place} />
                 <div className="mt-2 px-1">
                   <h3 className="text-base font-medium text-black">{place.name}</h3>
