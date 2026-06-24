@@ -110,6 +110,31 @@ function formatSectionTitle(key: string): string {
     .join(" ");
 }
 
+// A real, finished experience always has a title and at least one place.
+// The backend can briefly hold placeholder rows — a freshly-created row
+// before its content is generated (status ""), or one still "generating" —
+// and those have an empty title and no places, so ExperienceCard renders
+// them as blank gray boxes. Filter them out everywhere so they never surface
+// as empty cards (this is what made "New this week" appear with nothing in it).
+function hasContent(e: Experience): boolean {
+  return (
+    e.title.trim().length > 0 &&
+    Array.isArray(e.places_id) &&
+    e.places_id.length > 0
+  );
+}
+
+function omitEmpty(
+  sections: Record<string, Experience[]>
+): Record<string, Experience[]> {
+  const result: Record<string, Experience[]> = {};
+  for (const [key, exps] of Object.entries(sections)) {
+    const kept = exps.filter(hasContent);
+    if (kept.length > 0) result[key] = kept;
+  }
+  return result;
+}
+
 function omitBlocked(
   sections: Record<string, Experience[]>,
   blockedIds: number[]
@@ -151,7 +176,7 @@ export function DiscoverPage({
 
   const [activeCategory, setActiveCategory] = useState<number>(0);
   const [blockedIds, setBlockedIds] = useState<number[]>(() => getCachedBlockedIds());
-  const visibleData = useMemo(() => omitBlocked(data.experiences, blockedIds), [data.experiences, blockedIds]);
+  const visibleData = useMemo(() => omitBlocked(omitEmpty(data.experiences), blockedIds), [data.experiences, blockedIds]);
   const [baseSections, setBaseSections] = useState<Record<string, Experience[]>>(() => shuffleSections(visibleData));
   const [sections, setSections] = useState<Record<string, Experience[]>>(() => shuffleSections(visibleData));
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
@@ -200,12 +225,10 @@ export function DiscoverPage({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSearching = searchQuery.trim().length > 0;
 
-  const allExperiences = useMemo(() => {
-    const blocked = new Set(blockedIds);
-    return Object.values(data.experiences)
-      .flat()
-      .filter((e) => !(e.creator_user_id != null && blocked.has(e.creator_user_id)));
-  }, [data.experiences, blockedIds]);
+  // Cross-category flat list for New this week, Great for today, and search.
+  // Derived from visibleData so it inherits the same block + empty-row filters
+  // (visibleData keeps every category key, including "uncategorized").
+  const allExperiences = useMemo(() => Object.values(visibleData).flat(), [visibleData]);
 
   // ── New this week — flatten everything, filter by isNew, sort newest-first ──
   const newThisWeek = useMemo(() => {
