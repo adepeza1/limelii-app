@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { SafeImage } from "./safe-image";
 import { ChevronLeft, Send, Maximize2, MoreVertical } from "lucide-react";
 import { ShareSheet } from "./collection-share-sheet";
 import { ReportModal } from "./report-modal";
@@ -145,7 +146,7 @@ function PlaceImageCard({
   return (
     <div className="w-full aspect-[33/38] rounded-2xl overflow-hidden relative bg-gray-200">
       {images.length === 1 ? (
-        <Image
+        <SafeImage
           src={images[0]}
           alt={place.name}
           fill
@@ -158,7 +159,7 @@ function PlaceImageCard({
           onClick={() => setExpandedIndex(null)}
           aria-label="Collapse photo"
         >
-          <Image
+          <SafeImage
             src={images[expandedIndex]}
             alt={`${place.name} ${expandedIndex + 1}`}
             fill
@@ -175,7 +176,7 @@ function PlaceImageCard({
               onClick={() => setExpandedIndex(i)}
               aria-label={`Expand photo ${i + 1}`}
             >
-              <Image
+              <SafeImage
                 src={url}
                 alt={`${place.name} ${i + 1}`}
                 fill

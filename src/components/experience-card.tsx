@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
+import { SafeImage, PhotoFallback } from "./safe-image";
 import type { Experience, Place } from "@/app/page";
 import { AddToCollectionSheet } from "./add-to-collection-sheet";
 import { saveExperience, unsaveExperience } from "@/lib/saved";
@@ -140,16 +140,20 @@ export function ExperienceCard({
       className={`shrink-0 aspect-[33/38] rounded-[20px] overflow-hidden relative bg-gray-200 cursor-pointer ${compact ? "w-full" : "w-[280px] sm:w-[330px] md:w-full"} ${className}`}
       onClick={showCollectionSheet ? undefined : onClick}
     >
-      {/* Main image – only rendered when near viewport */}
-      {visible && mainImage && (
-        <Image
-          src={mainImage}
-          alt={experience.title}
-          fill
-          className="object-cover"
-          sizes="(max-width: 640px) 280px, (max-width: 768px) 330px, 50vw"
-        />
-      )}
+      {/* Main image – only rendered when near viewport. Falls back to a
+          placeholder when the source is missing or 404s (e.g. dead vault). */}
+      {visible &&
+        (mainImage ? (
+          <SafeImage
+            src={mainImage}
+            alt={experience.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 280px, (max-width: 768px) 330px, 50vw"
+          />
+        ) : (
+          <PhotoFallback fill />
+        ))}
 
       {/* "New" badge – top-left */}
       {isNew(experience) && (
@@ -189,7 +193,7 @@ export function ExperienceCard({
                 onClick={(e) => { e.stopPropagation(); setActiveIndex(i); }}
                 className={`${compact ? "w-8 h-8" : "w-10 h-10 sm:w-[52px] sm:h-[52px]"} rounded-lg overflow-hidden border-2 shadow-md relative ${i === activeIndex ? "border-white" : "border-white/60"}`}
               >
-                <Image
+                <SafeImage
                   src={thumbUrl}
                   alt={place.name}
                   width={52}
