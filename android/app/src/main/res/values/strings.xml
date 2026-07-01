@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">limelii</string>
+    <string name="title_activity_main">limelii</string>
+    <string name="package_name">com.limelii.app</string>
+    <string name="custom_url_scheme">com.limelii.app</string>
+</resources>
