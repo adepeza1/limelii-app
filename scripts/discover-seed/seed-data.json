@@ -1,0 +1,337 @@
+{
+  "$comment": "Seed content for the Discover screen. Categories are created first (existing ones are reused by name, not duplicated). Experiences reference EXISTING place ids already in the Xano `places` table, so no new place records are created. Run with scripts/discover-seed/seed-discover.mjs — see README.md.",
+
+  "categories": [
+    { "name": "Date Night" },
+    { "name": "Late Night" },
+    { "name": "Budget-Friendly" }
+  ],
+
+  "experiences": [
+    {
+      "category": "Good For Groups",
+      "title": "Williamsburg Night Out",
+      "description": "Bowl a few frames with live music at Brooklyn Bowl, then keep the crew moving between a cozy cocktail den and a rowdy back-patio bar. Built for a group that wants dinner, drinks, and a dance floor in walking distance.",
+      "place_ids": [9, 169, 196],
+      "neighborhoods": ["Williamsburg"],
+      "activities": ["Food", "Drink", "Nightlife", "Entertainment"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["evening", "night"]
+    },
+    {
+      "category": "Good For Groups",
+      "title": "Ping Pong & Rooftop in Flatiron",
+      "description": "Warm up over ping pong tables at SPiN, graze the food stalls at Eataly, then cap the night with skyline cocktails at 230 Fifth. An easy crowd-pleaser that scales from four to a dozen.",
+      "place_ids": [25, 157, 26],
+      "neighborhoods": ["Flatiron District", "Flatiron"],
+      "activities": ["Entertainment", "Food", "Drink", "Indoor Activity"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["evening"]
+    },
+    {
+      "category": "Good For Groups",
+      "title": "Koreatown BBQ & Karaoke",
+      "description": "Grill your own Korean BBQ at Baekjeong, chase it with shaved-ice dessert, then belt it out in a private karaoke room. The classic group-dinner-to-late-night pipeline.",
+      "place_ids": [17, 18, 19],
+      "neighborhoods": ["Koreatown", "Midtown", "East Village"],
+      "activities": ["Food", "Nightlife", "Entertainment"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["evening", "night"]
+    },
+    {
+      "category": "Good For Groups",
+      "title": "Chelsea Market Graze & Stroll",
+      "description": "Split small plates across the vendors at Chelsea Market, browse the makers at Artists & Fleas, then walk it off along the High Line. Low-commitment, easy to wander, great for mixed groups.",
+      "place_ids": [14, 79, 15],
+      "neighborhoods": ["Chelsea"],
+      "activities": ["Food", "Shopping", "Outdoor Activity", "Recreation Activity"],
+      "budget": ["USD 10 to USD 20"],
+      "indoor_outdoor": ["indoor", "outdoor"],
+      "time_of_day": ["afternoon"]
+    },
+
+    {
+      "category": "Cultural Experiences",
+      "title": "Harlem Renaissance Trail",
+      "description": "Trace Harlem's cultural legacy from the Studio Museum's contemporary galleries to a gospel service at Abyssinian Baptist Church, then soul food at Sylvia's. A living history of Black art and community uptown.",
+      "place_ids": [45, 43, 44],
+      "neighborhoods": ["Harlem"],
+      "activities": ["Cultural", "Experience", "Food"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["morning", "afternoon"]
+    },
+    {
+      "category": "Cultural Experiences",
+      "title": "Museum Mile Afternoon",
+      "description": "Pair the sprawling collections of the Met with the intimate Klimt-and-Schiele rooms of the Neue Galerie, then take a Viennese coffee break at Café Sabarsky. Two very different ways to see Old-World art on Fifth Avenue.",
+      "place_ids": [40, 41, 234],
+      "neighborhoods": ["Upper East Side"],
+      "activities": ["Cultural", "Indoor Activity", "Food"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["afternoon"]
+    },
+    {
+      "category": "Cultural Experiences",
+      "title": "Lower East Side Immigrant Heritage",
+      "description": "Step inside a preserved tenement apartment, tour the ornate Eldridge Street Synagogue, then eat like it's 1914 at Russ & Daughters. The immigrant story of the Lower East Side told through three landmarks.",
+      "place_ids": [90, 91, 145],
+      "neighborhoods": ["Lower East Side"],
+      "activities": ["Cultural", "Indoor Activity", "Food"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["morning", "afternoon"]
+    },
+    {
+      "category": "Cultural Experiences",
+      "title": "Long Island City Art Day",
+      "description": "Cross the river for cutting-edge shows at MoMA PS1, the stone-and-garden calm of the Noguchi Museum, and monumental outdoor works at Socrates Sculpture Park. A quieter, more contemporary museum day in Queens.",
+      "place_ids": [65, 67, 66],
+      "neighborhoods": ["Long Island City", "Astoria"],
+      "activities": ["Cultural", "Entertainment", "Outdoor Activity"],
+      "budget": ["USD 10 to USD 20"],
+      "indoor_outdoor": ["indoor", "outdoor"],
+      "time_of_day": ["afternoon"]
+    },
+
+    {
+      "category": "Staff Picks",
+      "title": "West Village Classic Evening",
+      "description": "Our go-to Village night: green-market Italian at Via Carota, a nightcap at the historic White Horse Tavern, and a table at the perennially charming Little Owl. Timeless, walkable, hard to get wrong.",
+      "place_ids": [202, 96, 212],
+      "neighborhoods": ["West Village", "Greenwich Village"],
+      "activities": ["Food", "Drink", "Nightlife"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["evening"]
+    },
+    {
+      "category": "Staff Picks",
+      "title": "Red Hook Waterfront Day",
+      "description": "A staff favorite off the beaten path: lobster rolls by the water, a legendary slice of key lime pie, and a tasting at Red Hook Winery on the pier. Cobblestones, harbor views, and no subway stop in sight.",
+      "place_ids": [142, 141, 231],
+      "neighborhoods": ["Red Hook"],
+      "activities": ["Food", "Drink", "Outdoor Activity"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["outdoor"],
+      "time_of_day": ["afternoon"]
+    },
+    {
+      "category": "Staff Picks",
+      "title": "Nolita Italian Icons",
+      "description": "The vodka-sauce pizza at Rubirosa, a coal-oven pie at Lombardi's, and a proper espresso at Café Integral. Three Nolita institutions we send everyone to, in one short loop.",
+      "place_ids": [220, 222, 210],
+      "neighborhoods": ["Nolita"],
+      "activities": ["Food", "Drink"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["afternoon", "evening"]
+    },
+    {
+      "category": "Staff Picks",
+      "title": "Greenwich Village Jazz & Bites",
+      "description": "Dinner at the beloved Jack's Wife Freda, a slow coffee at century-old Cafe Reggio, then a late set at the Blue Note. Our favorite way to spend a jazz-forward night below 14th.",
+      "place_ids": [34, 84, 53],
+      "neighborhoods": ["Greenwich Village"],
+      "activities": ["Food", "Drink", "Nightlife", "Entertainment"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["evening", "night"]
+    },
+
+    {
+      "category": "Hidden Gems",
+      "title": "Governors Island Escape",
+      "description": "A short ferry ride delivers you to car-free lawns, the panoramic climb up The Hills, and a soak with skyline views at QC NY Spa. A whole island of quiet, minutes from Lower Manhattan.",
+      "place_ids": [146, 147, 148],
+      "neighborhoods": ["Governors Island", "Financial District"],
+      "activities": ["Outdoor Activity", "Recreation Activity", "Wellness"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["outdoor"],
+      "time_of_day": ["morning", "afternoon"]
+    },
+    {
+      "category": "Hidden Gems",
+      "title": "Fort Tryon & The Cloisters",
+      "description": "Uptown and far from the crowds: medieval art and cloistered gardens at The Cloisters, wandering paths through Fort Tryon Park, and a garden-side meal at New Leaf. Manhattan at its most tranquil.",
+      "place_ids": [129, 130, 131],
+      "neighborhoods": ["Washington Heights", "Fort Tryon Park"],
+      "activities": ["Cultural", "Outdoor Activity", "Recreation Activity", "Food"],
+      "budget": ["USD 10 to USD 20"],
+      "indoor_outdoor": ["indoor", "outdoor"],
+      "time_of_day": ["afternoon"]
+    },
+    {
+      "category": "Hidden Gems",
+      "title": "Secret Midtown Pocket Parks",
+      "description": "Duck off the avenues into three hidden oases: the waterfall wall at Greenacre Park, the tucked-away Paley Park, and the indoor jungle of the Ford Foundation Atrium. A stealth reset in the middle of Midtown.",
+      "place_ids": [101, 135, 134],
+      "neighborhoods": ["Turtle Bay", "Midtown", "Midtown East"],
+      "activities": ["Outdoor Activity", "Recreation Activity", "Indoor Activity"],
+      "budget": ["Free"],
+      "indoor_outdoor": ["outdoor", "indoor"],
+      "time_of_day": ["morning", "afternoon"]
+    },
+    {
+      "category": "Hidden Gems",
+      "title": "Chinatown Off the Beaten Path",
+      "description": "Skip the tourist blocks for the golden Buddhas of the Mahayana Temple, the morning tai-chi and card games of Columbus Park, and a scoop at the original Chinatown Ice Cream Factory. The neighborhood locals actually use.",
+      "place_ids": [61, 151, 190],
+      "neighborhoods": ["Chinatown"],
+      "activities": ["Cultural", "Outdoor Activity", "Food"],
+      "budget": ["USD 10 to USD 20"],
+      "indoor_outdoor": ["indoor", "outdoor"],
+      "time_of_day": ["morning", "afternoon"]
+    },
+
+    {
+      "category": "Date Night",
+      "title": "Rooftop Sunset for Two",
+      "description": "Time it for golden hour: cocktails as the skyline lights up at 230 Fifth, then a candlelit table at the Refinery Rooftop. High-romance, low-effort, all views.",
+      "place_ids": [26, 27],
+      "neighborhoods": ["Flatiron", "Midtown West"],
+      "activities": ["Drink", "Food", "Nightlife"],
+      "budget": ["USD 50 to USD 100"],
+      "indoor_outdoor": ["outdoor"],
+      "time_of_day": ["evening"]
+    },
+    {
+      "category": "Date Night",
+      "title": "West Village Romance",
+      "description": "A slow West Village evening: handmade pasta at Via Carota, a hidden cocktail at Employees Only, and a riverfront walk out to Pier 45 to watch the sun set over the Hudson.",
+      "place_ids": [202, 223, 213],
+      "neighborhoods": ["West Village"],
+      "activities": ["Food", "Drink", "Outdoor Activity"],
+      "budget": ["USD 50 to USD 100"],
+      "indoor_outdoor": ["indoor", "outdoor"],
+      "time_of_day": ["evening"]
+    },
+    {
+      "category": "Date Night",
+      "title": "DUMBO Waterfront Date",
+      "description": "Postcard New York for two: dinner with the skyline at The River Cafe, a stroll under the Brooklyn Bridge in the park, and a nightcap at Cecconi's. Bring a camera.",
+      "place_ids": [154, 21, 214],
+      "neighborhoods": ["DUMBO", "Brooklyn Heights"],
+      "activities": ["Food", "Drink", "Outdoor Activity", "Recreation Activity"],
+      "budget": ["USD 50 to USD 100"],
+      "indoor_outdoor": ["indoor", "outdoor"],
+      "time_of_day": ["evening"]
+    },
+    {
+      "category": "Date Night",
+      "title": "Speakeasy Cocktail Crawl",
+      "description": "For a couple who loves a secret door: start at the phone-booth entrance of PDT, move to the craft cocktails at Death & Co, and end at the hushed, hidden Angel's Share. Intimate all the way through.",
+      "place_ids": [13, 181, 108],
+      "neighborhoods": ["East Village", "West Village"],
+      "activities": ["Drink", "Nightlife"],
+      "budget": ["USD 50 to USD 100"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["evening", "night"]
+    },
+    {
+      "category": "Date Night",
+      "title": "Candlelit Williamsburg Evening",
+      "description": "A relaxed Brooklyn date: a romantic pasta dinner at Misi, then low-lit cocktails in the antique-mirrored back room of Hotel Delmano. Close together, no rush.",
+      "place_ids": [171, 169],
+      "neighborhoods": ["Williamsburg"],
+      "activities": ["Food", "Drink"],
+      "budget": ["USD 50 to USD 100"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["evening"]
+    },
+
+    {
+      "category": "Late Night",
+      "title": "East Village After Dark",
+      "description": "When the night's just getting started: craft cocktails at Death & Co, a dive-bar detour to Doc Holliday's, and pierogi at Veselka whenever hunger hits — it's open till late.",
+      "place_ids": [181, 173, 177],
+      "neighborhoods": ["East Village"],
+      "activities": ["Drink", "Nightlife", "Food"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["night"]
+    },
+    {
+      "category": "Late Night",
+      "title": "Lower East Side Late Night",
+      "description": "Live bands at Pianos, an award-winning nightcap at the no-menu Attaboy, and a pastrami sandwich at Katz's to close it out. The LES doing what it does best after midnight.",
+      "place_ids": [191, 106, 176],
+      "neighborhoods": ["Lower East Side"],
+      "activities": ["Drink", "Nightlife", "Entertainment", "Food"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["night"]
+    },
+    {
+      "category": "Late Night",
+      "title": "Bushwick Warehouse Night",
+      "description": "Go big in Bushwick: circus-cabaret and a packed dance floor at House of Yes, then bar-hop between The Three Diamond Door and Lovejoys until the trains start running again.",
+      "place_ids": [150, 471, 472],
+      "neighborhoods": ["Bushwick"],
+      "activities": ["Nightlife", "Entertainment", "Drink"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["night"]
+    },
+    {
+      "category": "Late Night",
+      "title": "Midnight Jazz in the Village",
+      "description": "Chase the late sets: intimate, no-phones jazz at Smalls, a legendary basement show at the Village Vanguard, and the folk-rock history of Café Wha?. Music until the small hours.",
+      "place_ids": [55, 54, 204],
+      "neighborhoods": ["Greenwich Village"],
+      "activities": ["Nightlife", "Entertainment", "Music"],
+      "budget": ["USD 20 to USD 50"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["night"]
+    },
+
+    {
+      "category": "Budget-Friendly",
+      "title": "Free Manhattan Green Spaces",
+      "description": "Zero-dollar New York: walk the elevated gardens of the High Line, catch free programming on the lawn at Bryant Park, and people-watch at the fountain in Washington Square. All free, all day.",
+      "place_ids": [15, 208, 298],
+      "neighborhoods": ["Chelsea", "Midtown", "Greenwich Village"],
+      "activities": ["Outdoor Activity", "Recreation Activity"],
+      "budget": ["Free"],
+      "indoor_outdoor": ["outdoor"],
+      "time_of_day": ["morning", "afternoon"]
+    },
+    {
+      "category": "Budget-Friendly",
+      "title": "Cheap Eats Chinatown",
+      "description": "Eat well for next to nothing: soup dumplings at Vanessa's, dim sum at century-old Nom Wah, and an unusual scoop at the Chinatown Ice Cream Factory. Hard to spend twenty dollars.",
+      "place_ids": [180, 24, 190],
+      "neighborhoods": ["Chinatown"],
+      "activities": ["Food"],
+      "budget": ["USD 10 to USD 20"],
+      "indoor_outdoor": ["indoor"],
+      "time_of_day": ["afternoon"]
+    },
+    {
+      "category": "Budget-Friendly",
+      "title": "Free Art in Chelsea",
+      "description": "Gallery-hop the Chelsea art scene for free — blue-chip shows at Gagosian and David Zwirner — then walk the High Line between them. World-class art, no admission.",
+      "place_ids": [206, 216, 15],
+      "neighborhoods": ["Chelsea"],
+      "activities": ["Cultural", "Outdoor Activity"],
+      "budget": ["Free"],
+      "indoor_outdoor": ["indoor", "outdoor"],
+      "time_of_day": ["afternoon"]
+    },
+    {
+      "category": "Budget-Friendly",
+      "title": "Slice & Stroll in the Village",
+      "description": "A classic cheap day out: browse the miles of shelves at The Strand, nurse a cappuccino at old-school Cafe Reggio, and land in Washington Square Park for the street performers. Small change, big afternoon.",
+      "place_ids": [71, 84, 298],
+      "neighborhoods": ["Greenwich Village", "East Village"],
+      "activities": ["Shopping", "Food", "Outdoor Activity"],
+      "budget": ["USD 10 to USD 20"],
+      "indoor_outdoor": ["indoor", "outdoor"],
+      "time_of_day": ["afternoon"]
+    }
+  ]
+}
