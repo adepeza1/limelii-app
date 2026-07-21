@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { haptic } from "@/lib/haptics";
-import { Search, X, SlidersHorizontal } from "lucide-react";
+import { Search, X, SlidersHorizontal, Users } from "lucide-react";
 import type { Experience, DiscoveryResponse } from "@/app/page";
 import type { Collection, SharedCollection, SharedExperience } from "@/lib/collections";
 import { listPublicCollections, listSharedCollections } from "@/lib/collections";
@@ -579,6 +579,14 @@ export default function CollectionsPage() {
           <div className="flex items-center justify-between">
             <h1 className="text-[#101828] text-lg font-medium">Collections</h1>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => router.push("/plans")}
+                aria-label="Plans"
+                className="flex items-center gap-1.5 h-9 pl-2.5 pr-3 rounded-full border border-[#EAECF0] text-[#FB6983]"
+              >
+                <Users size={16} />
+                <span className="text-sm font-semibold">Plans</span>
+              </button>
               <button
                 onClick={() => { setSearchOpen(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}
                 className="w-9 h-9 rounded-full border border-[#EAECF0] flex items-center justify-center"
