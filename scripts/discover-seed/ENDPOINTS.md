@@ -76,6 +76,30 @@ same value to the script as `SEED_ADMIN_SECRET`.
 
 ---
 
+## `PATCH /admin/experiences/{id}` — Update an experience's category
+
+Used by `classify-experiences.mjs` to set `category_id` on existing rows.
+
+**Headers:** `X-Admin-Secret: <secret>`
+
+**Inputs:**
+
+- `id` (path param, integer)
+- `category_id` (integer)
+
+**Function stack:**
+
+1. Precondition: `X-Admin-Secret` header == `env ADMIN_SEED_SECRET`, else Error 401.
+2. `Edit Record` in `experiences` by `id`: set `category_id = input.category_id`.
+3. `Return` the updated record.
+
+> The classifier only ever sends `category_id`, so this endpoint can be minimal.
+> If you'd rather reuse a general-purpose edit endpoint, point the script at it
+> with `SEED_ADMIN_BASE` and make sure a `PATCH …/experiences/{id}` route
+> accepts `category_id`.
+
+---
+
 ## After seeding
 
 `GET /discovery` is cached on the Xano side and the app fetches it with
