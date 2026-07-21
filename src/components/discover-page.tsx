@@ -10,8 +10,11 @@ import { ViewToggle, type HomeView } from "@/components/view-toggle";
 import type {
   DiscoveryResponse,
   Experience,
-  ExperienceCategory,
 } from "@/app/page";
+import {
+  DISCOVER_CATEGORIES,
+  matchesByKeywords,
+} from "@/lib/discover-categories";
 import { ExperienceCard } from "./experience-card";
 import { ExperienceDetail } from "./experience-detail";
 import { fetchBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
@@ -149,7 +152,7 @@ export function DiscoverPage({
   const weatherLine = describeWeather(condition, tempF);
   const greatTodayTitle = greatForTodayTitle(condition, tempF);
 
-  const [activeCategory, setActiveCategory] = useState<number>(0);
+  const [activeCategory, setActiveCategory] = useState<string>("All");
   const [blockedIds, setBlockedIds] = useState<number[]>(() => getCachedBlockedIds());
   const visibleData = useMemo(() => omitBlocked(data.experiences, blockedIds), [data.experiences, blockedIds]);
   const [baseSections, setBaseSections] = useState<Record<string, Experience[]>>(() => shuffleSections(visibleData));
@@ -244,26 +247,47 @@ export function DiscoverPage({
     setPrefsChecked(true);
   }, [allExperiences, condition, tempF]);
 
-  const categories: ExperienceCategory[] = [
-    { id: 0, name: "All" },
-    ...[...data.experience_categories]
-      .filter((c) => c.name?.trim().toLowerCase() !== "uncategorized")
-      .sort((a, b) => a.id - b.id),
-  ];
+  // Tab bar: "All" plus the frontend-derived categories. Editorial tabs
+  // (Staff Picks, Hidden Gems) resolve to their existing Xano category id by
+  // name so already-assigned experiences still show; the rest match by keyword.
+  const categories = useMemo(
+    () => ["All", ...DISCOVER_CATEGORIES.map((c) => c.name)],
+    []
+  );
+  const xanoIdByName = useMemo(
+    () => new Map(data.experience_categories.map((c) => [c.name, c.id])),
+    [data.experience_categories]
+  );
 
-  function filterByCategory(categoryId: number, base: Record<string, Experience[]>): Record<string, Experience[]> {
-    if (categoryId === 0) return base;
-    const result: Record<string, Experience[]> = {};
-    for (const [key, exps] of Object.entries(base)) {
-      const matching = exps.filter((exp) => exp.category_id === categoryId);
-      if (matching.length > 0) result[key] = matching;
+  // Build a single synthetic shelf for a selected category by filtering every
+  // loaded experience (deduped) through that category's matcher. "All" keeps
+  // the original Xano-grouped shelves. Because these are filters, an experience
+  // can appear under multiple category tabs.
+  function filterByCategory(
+    categoryName: string,
+    base: Record<string, Experience[]>
+  ): Record<string, Experience[]> {
+    if (categoryName === "All") return base;
+    const def = DISCOVER_CATEGORIES.find((c) => c.name === categoryName);
+    const xanoId = def?.xanoName ? xanoIdByName.get(def.xanoName) : undefined;
+    const seen = new Set<number>();
+    const matched: Experience[] = [];
+    for (const exp of allExperiences) {
+      if (seen.has(exp.id)) continue;
+      const isMatch =
+        (xanoId != null && exp.category_id === xanoId) ||
+        (def?.keyworded === true && matchesByKeywords(exp, categoryName));
+      if (isMatch) {
+        seen.add(exp.id);
+        matched.push(exp);
+      }
     }
-    return result;
+    return matched.length > 0 ? { [categoryName]: shuffle(matched) } : {};
   }
 
-  function handleCategoryChange(categoryId: number) {
-    setActiveCategory(categoryId);
-    setSections(filterByCategory(categoryId, baseSections));
+  function handleCategoryChange(categoryName: string) {
+    setActiveCategory(categoryName);
+    setSections(filterByCategory(categoryName, baseSections));
   }
 
   const doRefresh = useCallback(() => {
@@ -483,7 +507,7 @@ export function DiscoverPage({
           )}
 
           {/* Great for today — weather-driven, cross-category; shown on the All tab above the category tabs */}
-          {activeCategory === 0 && greatToday.length > 0 && (
+          {activeCategory === "All" && greatToday.length > 0 && (
             <section className="mb-2 mt-4">
               <h2 className="text-base font-medium text-black px-4 mb-4">{greatTodayTitle}</h2>
               <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:pl-4 md:overflow-x-visible">
@@ -499,15 +523,15 @@ export function DiscoverPage({
             <div className="flex gap-6 overflow-x-auto hide-scrollbar">
               {categories.map((cat) => (
                 <button
-                  key={cat.id}
-                  onClick={() => handleCategoryChange(cat.id)}
+                  key={cat}
+                  onClick={() => handleCategoryChange(cat)}
                   className={`shrink-0 text-sm font-medium pb-2 transition-colors ${
-                    activeCategory === cat.id
+                    activeCategory === cat
                       ? "text-[#FB6983] border-b-2 border-[#FB6983]"
                       : "text-gray-500"
                   }`}
                 >
-                  {cat.name}
+                  {cat}
                 </button>
               ))}
             </div>
@@ -516,7 +540,7 @@ export function DiscoverPage({
           {/* Content Sections */}
           <main className="pb-8">
             {/* Suggested for you */}
-            {activeCategory === 0 && !isSearching && prefsChecked && (
+            {activeCategory === "All" && !isSearching && prefsChecked && (
               <section className="mb-8">
                 <h2 className="text-base font-medium text-black px-4 mb-4">✦ Suggested for you</h2>
                 {suggestions.length > 0 ? (
