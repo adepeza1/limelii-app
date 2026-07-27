@@ -13,6 +13,7 @@ import type {
   ExperienceCategory,
 } from "@/app/page";
 import { ExperienceCard } from "./experience-card";
+import { dedupeCardImages } from "@/lib/card-images";
 import { ExperienceDetail } from "./experience-detail";
 import { fetchBlockedIds, getCachedBlockedIds } from "@/lib/blocked";
 import { searchAndRank, type RankedResult } from "@/lib/discover-search";
@@ -475,9 +476,12 @@ export function DiscoverPage({
             <section className="mb-2 mt-4">
               <h2 className="text-base font-medium text-black px-4 mb-4">New this week</h2>
               <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:pl-4 md:overflow-x-visible">
-                {newThisWeek.map((exp) => (
-                  <ExperienceCard key={exp.id} experience={exp} onClick={() => openExperience(exp)} />
-                ))}
+                {(() => {
+                  const initialIds = dedupeCardImages(newThisWeek);
+                  return newThisWeek.map((exp) => (
+                    <ExperienceCard key={exp.id} experience={exp} initialPlaceId={initialIds.get(exp.id)} onClick={() => openExperience(exp)} />
+                  ));
+                })()}
               </div>
             </section>
           )}
@@ -487,9 +491,12 @@ export function DiscoverPage({
             <section className="mb-2 mt-4">
               <h2 className="text-base font-medium text-black px-4 mb-4">{greatTodayTitle}</h2>
               <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:pl-4 md:overflow-x-visible">
-                {greatToday.map((exp) => (
-                  <ExperienceCard key={exp.id} experience={exp} onClick={() => openExperience(exp)} />
-                ))}
+                {(() => {
+                  const initialIds = dedupeCardImages(greatToday);
+                  return greatToday.map((exp) => (
+                    <ExperienceCard key={exp.id} experience={exp} initialPlaceId={initialIds.get(exp.id)} onClick={() => openExperience(exp)} />
+                  ));
+                })()}
               </div>
             </section>
           )}
@@ -521,9 +528,12 @@ export function DiscoverPage({
                 <h2 className="text-base font-medium text-black px-4 mb-4">✦ Suggested for you</h2>
                 {suggestions.length > 0 ? (
                   <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4">
-                    {suggestions.map((exp) => (
-                      <ExperienceCard key={exp.id} experience={exp} onClick={() => openExperience(exp)} />
-                    ))}
+                    {(() => {
+                      const initialIds = dedupeCardImages(suggestions);
+                      return suggestions.map((exp) => (
+                        <ExperienceCard key={exp.id} experience={exp} initialPlaceId={initialIds.get(exp.id)} onClick={() => openExperience(exp)} />
+                      ));
+                    })()}
                   </div>
                 ) : (
                   <div className="mx-4 px-4 py-5 rounded-2xl bg-[#FFF8F4] border border-[#FF9A56]/20 flex items-center justify-between gap-3">
@@ -552,9 +562,12 @@ export function DiscoverPage({
                   {formatSectionTitle(key)}
                 </h2>
                 <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:pl-4 md:overflow-x-visible">
-                  {experiences.map((exp) => (
-                    <ExperienceCard key={exp.id} experience={exp} onClick={() => openExperience(exp)} />
-                  ))}
+                  {(() => {
+                    const initialIds = dedupeCardImages(experiences);
+                    return experiences.map((exp) => (
+                      <ExperienceCard key={exp.id} experience={exp} initialPlaceId={initialIds.get(exp.id)} onClick={() => openExperience(exp)} />
+                    ));
+                  })()}
                 </div>
               </section>
             ))}
