@@ -11,11 +11,17 @@
 // Nothing here is committed — all secrets come from the environment.
 //
 // Usage:
+//   # 1. List your saved funnels and their ids (no MIXPANEL_FUNNELS needed):
+//   MIXPANEL_SA_USER=... MIXPANEL_SA_SECRET=... MIXPANEL_PROJECT_ID=... \
+//   MIXPANEL_REGION=us node scripts/mixpanel-funnels.mjs --list
+//
+//   # 2. Pull conversion tables for the ids you got from --list:
 //   MIXPANEL_SA_USER=... MIXPANEL_SA_SECRET=... MIXPANEL_PROJECT_ID=... \
 //   MIXPANEL_REGION=us MIXPANEL_FUNNELS="12345:Core loop,12346:AI create" \
 //   node scripts/mixpanel-funnels.mjs 2026-06-27 2026-07-27
 //
 // Args: [from_date] [to_date]  (YYYY-MM-DD; default = last 30 days ending today)
+//       --list                 print saved funnel ids + names, then exit
 
 const {
   MIXPANEL_SA_USER,
@@ -35,6 +41,8 @@ if (!MIXPANEL_SA_USER || !MIXPANEL_SA_SECRET) {
 }
 if (!MIXPANEL_PROJECT_ID) die("Set MIXPANEL_PROJECT_ID (numeric project id).");
 
+const listMode = process.argv.includes("--list");
+
 const funnels = MIXPANEL_FUNNELS.split(",")
   .map((s) => s.trim())
   .filter(Boolean)
@@ -42,8 +50,10 @@ const funnels = MIXPANEL_FUNNELS.split(",")
     const [id, ...rest] = pair.split(":");
     return { id: id.trim(), label: rest.join(":").trim() || id.trim() };
   });
-if (!funnels.length) {
-  die('Set MIXPANEL_FUNNELS="id:label,id:label" (saved funnel ids from the UI).');
+if (!listMode && !funnels.length) {
+  die(
+    'Set MIXPANEL_FUNNELS="id:label,id:label", or run with --list to discover saved funnel ids.'
+  );
 }
 
 // Default window: trailing 30 days ending today (system date; args override).
@@ -58,6 +68,19 @@ const host =
 const auth =
   "Basic " +
   Buffer.from(`${MIXPANEL_SA_USER}:${MIXPANEL_SA_SECRET}`).toString("base64");
+
+async function listFunnels() {
+  const url =
+    `https://${host}/api/query/funnels/list?project_id=${encodeURIComponent(MIXPANEL_PROJECT_ID)}`;
+  const res = await fetch(url, {
+    headers: { Authorization: auth, Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status}: ${body.slice(0, 300)}`);
+  }
+  return res.json();
+}
 
 async function fetchFunnel({ id, label }) {
   const url =
@@ -115,6 +138,25 @@ function printTable(label, steps) {
 
 (async () => {
   console.log(`Mixpanel funnels · project ${MIXPANEL_PROJECT_ID} · ${host}`);
+
+  if (listMode) {
+    try {
+      const rows = await listFunnels();
+      if (!Array.isArray(rows) || !rows.length) {
+        console.log("\n(no saved funnels — build them in Mixpanel → Funnels first)");
+        return;
+      }
+      console.log("\nSaved funnels (copy id:name into MIXPANEL_FUNNELS):\n");
+      for (const r of rows) {
+        console.log(`  ${String(r.funnel_id).padStart(8)}  ${r.name}`);
+      }
+    } catch (err) {
+      console.log(`\n✗ ${err.message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
   for (const f of funnels) {
     try {
       const json = await fetchFunnel(f);
