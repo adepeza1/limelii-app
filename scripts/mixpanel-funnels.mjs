@@ -22,6 +22,8 @@
 //
 // Args: [from_date] [to_date]  (YYYY-MM-DD; default = last 30 days ending today)
 //       --list                 print saved funnel ids + names, then exit
+//       --events               print total count per known event, then exit
+//                              (diagnostic: is the pipeline wired? which events land?)
 
 const {
   MIXPANEL_SA_USER,
@@ -42,6 +44,21 @@ if (!MIXPANEL_SA_USER || !MIXPANEL_SA_SECRET) {
 if (!MIXPANEL_PROJECT_ID) die("Set MIXPANEL_PROJECT_ID (numeric project id).");
 
 const listMode = process.argv.includes("--list");
+const eventsMode = process.argv.includes("--events");
+
+// Every event name emitted by the app (from src/**; keep in sync with track()).
+const KNOWN_EVENTS = [
+  "App Opened",
+  "Page Viewed",
+  "Experience Viewed",
+  "Experience Saved",
+  "Experience Unsaved",
+  "Collection Viewed",
+  "AI Itinerary Generated",
+  "World Cup Banner Tapped",
+  "reauth_banner_shown",
+  "token_error",
+];
 
 const funnels = MIXPANEL_FUNNELS.split(",")
   .map((s) => s.trim())
@@ -50,7 +67,7 @@ const funnels = MIXPANEL_FUNNELS.split(",")
     const [id, ...rest] = pair.split(":");
     return { id: id.trim(), label: rest.join(":").trim() || id.trim() };
   });
-if (!listMode && !funnels.length) {
+if (!listMode && !eventsMode && !funnels.length) {
   die(
     'Set MIXPANEL_FUNNELS="id:label,id:label", or run with --list to discover saved funnel ids.'
   );
@@ -72,6 +89,22 @@ const auth =
 async function listFunnels() {
   const url =
     `https://${host}/api/query/funnels/list?project_id=${encodeURIComponent(MIXPANEL_PROJECT_ID)}`;
+  const res = await fetch(url, {
+    headers: { Authorization: auth, Accept: "application/json" },
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status}: ${body.slice(0, 300)}`);
+  }
+  return res.json();
+}
+
+async function fetchEventCounts() {
+  const url =
+    `https://${host}/api/query/events` +
+    `?project_id=${encodeURIComponent(MIXPANEL_PROJECT_ID)}` +
+    `&event=${encodeURIComponent(JSON.stringify(KNOWN_EVENTS))}` +
+    `&type=general&unit=day&from_date=${fromDate}&to_date=${toDate}`;
   const res = await fetch(url, {
     headers: { Authorization: auth, Accept: "application/json" },
   });
@@ -138,6 +171,35 @@ function printTable(label, steps) {
 
 (async () => {
   console.log(`Mixpanel funnels · project ${MIXPANEL_PROJECT_ID} · ${host}`);
+
+  if (eventsMode) {
+    try {
+      const json = await fetchEventCounts();
+      const values = json?.data?.values ?? {};
+      console.log(`\nEvent counts  (${fromDate} → ${toDate}):\n`);
+      const rows = KNOWN_EVENTS.map((name) => {
+        const byDay = values[name] ?? {};
+        const total = Object.values(byDay).reduce((a, b) => a + (b ?? 0), 0);
+        return { name, total };
+      }).sort((a, b) => b.total - a.total);
+      const grand = rows.reduce((a, r) => a + r.total, 0);
+      for (const r of rows) {
+        console.log(`  ${String(r.total).padStart(8)}  ${r.name}`);
+      }
+      console.log(`  ${"-".repeat(8)}`);
+      console.log(`  ${String(grand).padStart(8)}  (total across known events)`);
+      if (grand === 0) {
+        console.log(
+          "\n  Zero events in range. Check: token set in prod, ATT granted on iOS,\n" +
+          "  and that you widened the date range past first deploy."
+        );
+      }
+    } catch (err) {
+      console.log(`\n✗ ${err.message}`);
+      process.exit(1);
+    }
+    return;
+  }
 
   if (listMode) {
     try {
