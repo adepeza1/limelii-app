@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ExperienceCard } from "@/components/experience-card";
+import { dedupeCardImages } from "@/lib/card-images";
 import { ExperienceDetail } from "@/components/experience-detail";
 import { ViewToggle, type HomeView } from "@/components/view-toggle";
 import type { Experience } from "@/app/page";
@@ -685,6 +686,9 @@ export function ExploreView({
                 miles: userCoords ? minDistanceToExp(exp, userCoords.lat, userCoords.lng) : null,
               }));
               if (userCoords) withDist.sort((a, b) => (a.miles ?? Infinity) - (b.miles ?? Infinity));
+              // Dedupe card photos across the full sorted list before it's split
+              // into columns, so the same reused venue doesn't repeat on screen.
+              const initialIds = dedupeCardImages(withDist.map((d) => d.exp));
               return (
                 // Two independent flex columns so cards flow without row-aligned gaps
                 <div className="flex gap-0 items-start">
@@ -699,6 +703,7 @@ export function ExploreView({
                             experience={exp}
                             onClick={() => setSelectedExperience(exp)}
                             compact
+                            initialPlaceId={initialIds.get(exp.id)}
                             className={`!aspect-auto !rounded-none border border-black ${isTall ? "h-[220px]" : "h-[188px]"}`}
                             distanceMiles={miles ?? undefined}
                           />
