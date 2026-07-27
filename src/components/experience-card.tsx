@@ -212,7 +212,7 @@ export function ExperienceCard({
         <div className="flex items-center gap-2 mb-2">
           {placeCount > 0 && (
             <span className="text-white/80 text-xs">
-              {placeCount} {placeCount === 1 ? "option" : "options"}
+              {placeCount} {placeCount === 1 ? "stop" : "stops"}
             </span>
           )}
           {experience.rating > 0 && (
