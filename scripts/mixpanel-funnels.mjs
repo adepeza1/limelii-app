@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+// REQUIRES A PAID MIXPANEL PLAN. The free plan blocks the Query API and every
+// mode here returns HTTP 402 "Your plan does not allow API calls" — even with
+// valid Service Account credentials. On the free plan, build the reports in the
+// Mixpanel UI instead (see docs/mixpanel-funnels.md § "Free-plan UI walkthrough")
+// and export CSV. This script is ready for when the project is upgraded.
+//
 // Pulls saved Mixpanel funnels via the Query API and prints a conversion table.
 //
 // Why saved funnels: Mixpanel's /query/funnels endpoint reports on funnels you

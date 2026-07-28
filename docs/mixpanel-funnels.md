@@ -160,3 +160,56 @@ Add these `track()` calls to make the funnels above whole:
 - **Board 4 — Coverage & virality:** Funnel D and Funnel E side by side.
 
 Every board carries the §0 caveat banner: *native = ATT-authorized users only.*
+
+---
+
+## 9. Free-plan UI walkthrough (no API)
+
+The Query API — and therefore `scripts/mixpanel-funnels.mjs` — needs a **paid
+plan**; on the free plan every call returns HTTP 402. Everything below is built
+in the **web UI**, which is free. Nothing here needs Service Account credentials.
+
+All times are project timezone (**US/Pacific** for this project). Use a date
+range starting at the project's first data day (**2026-04-22**) until you have
+enough volume to narrow it.
+
+### 9.0 — Sanity check first: which events are landing?
+
+This is the free equivalent of `--events`. Do this before building any funnel —
+if events are missing or near-zero, funnels can't help yet.
+
+1. Left nav → **Board** (or **Reports → Insights**) → **+ New** → **Insights**.
+2. Under **Metrics**, click **+ Select event** and add **each** event once:
+   `App Opened`, `Page Viewed`, `Experience Viewed`, `Experience Saved`,
+   `Experience Unsaved`, `Collection Viewed`, `AI Itinerary Generated`,
+   `World Cup Banner Tapped`, `reauth_banner_shown`, `token_error`.
+3. Measurement: **Total** (count of events).
+4. Date range (top right): **Apr 22 2026 → today**.
+5. Chart type: switch to **Bar** or **Table** for a clean count list.
+6. Optional: **Breakdown → `platform`** to see web vs. native split.
+
+Read: any event at **0** = that code path isn't firing / not reached. Compare
+`Experience Viewed` vs `Experience Saved` for a first save-rate feel.
+
+### 9.1 — The four funnels
+
+**Reports → Funnels → + New Funnel.** Add events as ordered steps; for a step
+that needs a filter, click the **filter icon on that step** and set the `where`.
+For all four: set **Conversion window** (top of report) to **1 day**, date range
+**Apr 22 2026 → today**, optional **Breakdown → `platform`**, then **Save**.
+
+| Funnel | Steps (in order) | Step filter |
+|---|---|---|
+| **A · Core loop** | `App Opened` → `Page Viewed` → `Experience Viewed` → `Experience Saved` | on `Page Viewed`: `path` **equals** `/` |
+| **B · AI Create** | `Page Viewed` → `AI Itinerary Generated` → `Experience Saved` | on `Page Viewed`: `path` **equals** `/create` |
+| **D · Coverage** | `Page Viewed` → `Experience Viewed` | on `Page Viewed`: `path` **equals** `/` |
+| **E · Share link** | `Page Viewed` → `Experience Viewed` → `Experience Saved` | on `Page Viewed`: `path` **equals** `/c/:token` |
+
+**Auth health (Funnel C)** isn't a funnel — build it as **Insights**:
+`token_error` **Total**, broken down by `step`; plus `reauth_banner_shown`
+Total. Watch these as rates against `App Opened`.
+
+### 9.2 — Getting the numbers out
+
+Per report: **⋯ menu → Export → CSV**, or just screenshot the funnel bars.
+Either is enough to read the drop-offs — share it and we go from there.
