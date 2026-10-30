@@ -249,8 +249,14 @@ export function DiscoverPage({
     { id: 0, name: "All" },
     ...[...data.experience_categories]
       .filter((c) => c.name?.trim().toLowerCase() !== "uncategorized")
-      .sort((a, b) => a.id - b.id),
+      .sort((a, b) => (a.sort_order ?? Infinity) - (b.sort_order ?? Infinity) || a.id - b.id),
   ];
+
+  // Section keys are snake_case category names ("NYC_marathon" -> "NYC Marathon")
+  function categoryForSection(key: string): ExperienceCategory | undefined {
+    const title = formatSectionTitle(key).toLowerCase();
+    return data.experience_categories.find((c) => c.name?.trim().toLowerCase() === title);
+  }
 
   function filterByCategory(categoryId: number, base: Record<string, Experience[]>): Record<string, Experience[]> {
     if (categoryId === 0) return base;
@@ -341,6 +347,30 @@ export function DiscoverPage({
     ([key, exps]) =>
       exps.length > 0 && key.trim().toLowerCase() !== "uncategorized"
   );
+  // On the All tab, pinned categories render at the top of the page instead of in the list
+  const isPinned = (key: string) => categoryForSection(key)?.sort_order != null;
+  const pinnedSections = activeCategory === 0 ? nonEmptySections.filter(([key]) => isPinned(key)) : [];
+  const listedSections = activeCategory === 0 ? nonEmptySections.filter(([key]) => !isPinned(key)) : nonEmptySections;
+
+  function renderSection([key, experiences]: [string, Experience[]]) {
+    const description = categoryForSection(key)?.description?.trim();
+    return (
+      <section key={key} className="mb-8">
+        <h2 className={`text-base font-medium text-black px-4 ${description ? "mb-1" : "mb-4"}`}>
+          {formatSectionTitle(key)}
+        </h2>
+        {description && <p className="text-sm text-gray-500 px-4 mb-4">{description}</p>}
+        <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:pl-4 md:overflow-x-visible">
+          {(() => {
+            const initialIds = dedupeCardImages(experiences);
+            return experiences.map((exp) => (
+              <ExperienceCard key={exp.id} experience={exp} initialPlaceId={initialIds.get(exp.id)} onClick={() => openExperience(exp)} />
+            ));
+          })()}
+        </div>
+      </section>
+    );
+  }
 
   if (selectedExperience) {
     return (
@@ -501,6 +531,9 @@ export function DiscoverPage({
             </section>
           )}
 
+          {/* Pinned categories (e.g. a race day event) follow the cross-category rows on the All tab */}
+          {pinnedSections.length > 0 && <div className="mt-4">{pinnedSections.map(renderSection)}</div>}
+
           {/* Category Navigation */}
           <nav className="px-4 py-3">
             <div className="flex gap-6 overflow-x-auto hide-scrollbar">
@@ -556,21 +589,7 @@ export function DiscoverPage({
                 No experiences found for this category.
               </p>
             )}
-            {nonEmptySections.map(([key, experiences]) => (
-              <section key={key} className="mb-8">
-                <h2 className="text-base font-medium text-black px-4 mb-4">
-                  {formatSectionTitle(key)}
-                </h2>
-                <div className="flex gap-4 overflow-x-auto hide-scrollbar pl-[22px] pr-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:pl-4 md:overflow-x-visible">
-                  {(() => {
-                    const initialIds = dedupeCardImages(experiences);
-                    return experiences.map((exp) => (
-                      <ExperienceCard key={exp.id} experience={exp} initialPlaceId={initialIds.get(exp.id)} onClick={() => openExperience(exp)} />
-                    ));
-                  })()}
-                </div>
-              </section>
-            ))}
+            {listedSections.map(renderSection)}
             {/* Apple WeatherKit attribution — required wherever weather data is shown */}
             {tempF != null && <WeatherAttribution className="pt-2 pb-6" />}
           </main>
