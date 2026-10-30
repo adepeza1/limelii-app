@@ -501,9 +501,6 @@ export function DiscoverPage({
               Self-rotates because the endpoint returns only today's set. */}
           <WorldCupBanner />
 
-          {/* Pinned categories (e.g. a race day event) lead the All tab */}
-          {pinnedSections.length > 0 && <div className="mt-4">{pinnedSections.map(renderSection)}</div>}
-
           {/* New this week — cross-category; hidden entirely when empty */}
           {newThisWeek.length > 0 && (
             <section className="mb-2 mt-4">
@@ -533,6 +530,9 @@ export function DiscoverPage({
               </div>
             </section>
           )}
+
+          {/* Pinned categories (e.g. a race day event) follow the cross-category rows on the All tab */}
+          {pinnedSections.length > 0 && <div className="mt-4">{pinnedSections.map(renderSection)}</div>}
 
           {/* Category Navigation */}
           <nav className="px-4 py-3">
