@@ -188,12 +188,15 @@ export function PlanMap({
       zoom: 11,
     });
     // CARTO basemaps now require an API key (tiles render an "API KEY REQUIRED"
-    // watermark), so use the same Google tiles as the experience detail map.
-    L.tileLayer("https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
-      subdomains: "0123",
-      maxZoom: 20,
-      attribution: "&copy; Google",
+    // watermark). Esri's Light Gray Canvas keeps the same muted look: a base
+    // layer plus a separate labels layer on top.
+    const esri = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas";
+    const esriOptions = { maxZoom: 17, maxNativeZoom: 16, attribution: "Powered by Esri" };
+    L.tileLayer(`${esri}/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}`, {
+      ...esriOptions,
+      className: "plan-map-base",
     }).addTo(map);
+    L.tileLayer(`${esri}/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}`, esriOptions).addTo(map);
 
     map.on("zoomend", () => {
       redrawMarkers(map, expRef.current, markersRef, (exp) => clickRef.current(exp));
