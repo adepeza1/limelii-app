@@ -21,37 +21,49 @@ Anything still marked `DRAFT` stays private and can be reviewed later.
 
 1. Work in a scratch directory with this folder on `PYTHONPATH`.
    Run `build_pool.py`, which saves `xano_dump.json` as a backup and writes `pool.json`.
-2. Apply approvals. For each category with approved drafts:
-   - Move live experiences out of the category (`category_id` to 0) unless they
-     are popular: 3 or more saves in `saved_experiences`, or any share.
-     Experiences are never deleted.
-   - Set approved drafts to `public` with the category's id.
-   - Replace `DRAFT`/`APPROVED` in `Notes` with `PUBLISHED <date>`.
+2. Apply approvals: set approved drafts to `public` with their category's id,
+   and replace `APPROVED` in `Notes` with `PUBLISHED <date>`. Existing
+   experiences stay in their categories: Lex chose to grow categories rather
+   than rotate old ones out (Oct 30 2026). Experiences are never deleted.
 3. Expire special events: set `private` on any experience whose `Notes` has an
    `expires:` date in the past.
-4. Draft about 10 experiences per category, minus the popular ones that stay,
+4. Draft new experiences for each category (about 5 per category per week)
    using helper agents with `brief.md`. Each agent writes `drafts/<name>.json`.
    Then check every file with `validate.py`, and run `overlap.py drafts/*.json`
-   to catch drafts from different agents that share 2 or more stops.
+   to catch drafts that share 2 or more stops with each other or with any
+   public experience (public ones show on the map even without a category).
    Give agents different neighborhoods up front: in the first run, parallel
    agents drafted near copies of each other in Ditmars, Red Hook and Chinatown.
    Web searches are limited to about 200 per turn across all agents, so keep
    agents at 10 to 15 drafts each. Stops left unverified are marked
    `NOT VERIFIED OPEN` in `Notes`.
 5. Insert with `insert_drafts.py drafts/*.json`.
-6. Report what was drafted, published, rotated out and expired.
+6. Report what was drafted, published and expired.
 
-## New categories
+## Categories
 
-The Xano `discovery` endpoint (Limelii Endpoints, `GET discovery`) only has
-named buckets for categories 1 to 4. Everything else lands in `uncategorized`,
-which the app hides. A new category therefore needs two changes, and both should
-happen only when its first drafts are approved, or the app shows an empty chip:
+| id | Name | `discovery` bucket |
+|---|---|---|
+| 1 | Good For Groups | `good_for_groups` |
+| 2 | Cultural Experiences | `cultural_experiences` |
+| 3 | Staff Picks | `staff_picks` |
+| 4 | Hidden Gems | `hidden_gems` |
+| 6 | Date Night | `date_night` |
+| 7 | After Dark | `after_dark` |
+| 8 | Happy Hour | `happy_hour` |
+| 9 | NYC Marathon (temporary, removed after Nov 1 2026) | `NYC_marathon` |
+
+Anything else lands in `uncategorized`, which Discover hides. Public
+uncategorized experiences still show on the map and in search.
+
+A new category needs two changes, made only when its first drafts are
+approved, or the app shows an empty chip:
 
 1. Add a row to `experiences_categories`.
-2. Add a bucket for it in the `discovery` endpoint, keyed by the snake_case
-   name (the app titles sections from the key). The endpoint also treats
-   `category == 7` as "all", so check the new id does not collide.
+2. Add a bucket for it in the `discovery` endpoint (Limelii Endpoints,
+   `GET discovery`). The app titles sections from the key by capitalizing the
+   first letter of each word, so write acronyms in capitals (`NYC_marathon`).
+   The response is cached for an hour, so changes show up within that time.
 
 ## Places
 
