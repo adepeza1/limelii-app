@@ -59,6 +59,10 @@ export interface Experience {
 export interface ExperienceCategory {
   id: number;
   name: string;
+  // Optional line shown under the section title (e.g. what an event section is for)
+  description?: string | null;
+  // Set to pin a category: its chip comes first and its section sits at the top of All
+  sort_order?: number | null;
 }
 
 export interface DiscoveryResponse {
