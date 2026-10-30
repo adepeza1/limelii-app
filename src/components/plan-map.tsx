@@ -187,10 +187,12 @@ export function PlanMap({
       center: NYC_CENTER,
       zoom: 11,
     });
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-      subdomains: "abcd",
+    // CARTO basemaps now require an API key (tiles render an "API KEY REQUIRED"
+    // watermark), so use the same Google tiles as the experience detail map.
+    L.tileLayer("https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
+      subdomains: "0123",
       maxZoom: 20,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      attribution: "&copy; Google",
     }).addTo(map);
 
     map.on("zoomend", () => {
