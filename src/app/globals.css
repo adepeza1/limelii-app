@@ -83,7 +83,7 @@ html[data-capacitor] img {
   .atm-particles { display: none; }
 }
 
-/* Lift Esri's Light Gray Canvas base tiles closer to the near-white Map tab look */
+/* Fallback map tiles (no CARTO key): lift Esri's Light Gray Canvas closer to CARTO's near-white */
 .plan-map-base {
   filter: brightness(1.06);
 }
