@@ -63,7 +63,7 @@ approved, or the app shows an empty chip:
 2. Add a bucket for it in the `discovery` endpoint (Limelii Endpoints,
    `GET discovery`). The app titles sections from the key by capitalizing the
    first letter of each word, so write acronyms in capitals (`NYC_marathon`).
-   The response is cached for an hour, so changes show up within that time.
+   The response is cached for 5 minutes, so changes show up within that time.
 
 ## Places
 
