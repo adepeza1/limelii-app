@@ -187,16 +187,26 @@ export function PlanMap({
       center: NYC_CENTER,
       zoom: 11,
     });
-    // CARTO basemaps now require an API key (tiles render an "API KEY REQUIRED"
-    // watermark). Esri's Light Gray Canvas keeps the same muted look: a base
-    // layer plus a separate labels layer on top.
-    const esri = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas";
-    const esriOptions = { maxZoom: 17, maxNativeZoom: 16, attribution: "Powered by Esri" };
-    L.tileLayer(`${esri}/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}`, {
-      ...esriOptions,
-      className: "plan-map-base",
-    }).addTo(map);
-    L.tileLayer(`${esri}/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}`, esriOptions).addTo(map);
+    // CARTO basemaps require an API key (without one, tiles render an
+    // "API KEY REQUIRED" watermark).
+    const cartoKey = process.env.NEXT_PUBLIC_CARTO_KEY;
+    if (cartoKey) {
+      L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(cartoKey)}`, {
+        maxZoom: 20,
+        maxNativeZoom: 18,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      }).addTo(map);
+    } else {
+      // Fallback with no key: Esri's Light Gray Canvas keeps a similar muted
+      // look, as a base layer plus a separate labels layer on top.
+      const esri = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas";
+      const esriOptions = { maxZoom: 17, maxNativeZoom: 16, attribution: "Powered by Esri" };
+      L.tileLayer(`${esri}/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}`, {
+        ...esriOptions,
+        className: "plan-map-base",
+      }).addTo(map);
+      L.tileLayer(`${esri}/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}`, esriOptions).addTo(map);
+    }
 
     map.on("zoomend", () => {
       redrawMarkers(map, expRef.current, markersRef, (exp) => clickRef.current(exp));
