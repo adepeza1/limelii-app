@@ -82,3 +82,8 @@ html[data-capacitor] img {
 @media (prefers-reduced-motion: reduce) {
   .atm-particles { display: none; }
 }
+
+/* Lift Esri's Light Gray Canvas base tiles closer to the near-white Map tab look */
+.plan-map-base {
+  filter: brightness(1.06);
+}
