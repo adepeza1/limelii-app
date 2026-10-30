@@ -5,6 +5,7 @@ Writes inserted ids to inserted.json. Proposed category and review details go in
 """
 import datetime
 import json
+import re
 import sys
 
 from validate import check, pool
@@ -26,12 +27,16 @@ def notes_for(d):
     if d.get("rainy_day_swap"):
         swap = d["rainy_day_swap"]
         lines.append(f"Rainy day swap: {pool[swap]['name'] if swap in pool else swap}")
+    unverified = 0
     for n, s in enumerate(d.get("stops", []), 1):
         p = pool[s["place_id"]]
         backup = pool.get(s.get("backup_place_id"), {}).get("name", "none")
         flags = "reservation needed" if s.get("reservation") else "walk in"
+        if not re.match(r"\d{4}-\d{2}-\d{2}", str(s.get("verified") or "")):
+            flags += ", NOT VERIFIED OPEN"
+            unverified += 1
         lines.append(f"{n}. {p['name']} ({s.get('minutes')} min, {flags}, backup: {backup}). {s.get('note', '')}")
-    lines.append(f"Last verified {TODAY}")
+    lines.append(f"Last verified {TODAY}" + (f", except {unverified} stop(s) marked NOT VERIFIED OPEN" if unverified else ""))
     return "\n".join(lines)
 
 

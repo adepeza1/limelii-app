@@ -31,7 +31,13 @@ Anything still marked `DRAFT` stays private and can be reviewed later.
    `expires:` date in the past.
 4. Draft about 10 experiences per category, minus the popular ones that stay,
    using helper agents with `brief.md`. Each agent writes `drafts/<name>.json`.
-   Then check every file with `validate.py`.
+   Then check every file with `validate.py`, and run `overlap.py drafts/*.json`
+   to catch drafts from different agents that share 2 or more stops.
+   Give agents different neighborhoods up front: in the first run, parallel
+   agents drafted near copies of each other in Ditmars, Red Hook and Chinatown.
+   Web searches are limited to about 200 per turn across all agents, so keep
+   agents at 10 to 15 drafts each. Stops left unverified are marked
+   `NOT VERIFIED OPEN` in `Notes`.
 5. Insert with `insert_drafts.py drafts/*.json`.
 6. Report what was drafted, published, rotated out and expired.
 
