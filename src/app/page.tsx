@@ -30,7 +30,7 @@ export interface Place {
 export interface WorldCupStop {
   place_id: number;
   team?: string | null;
-  // "pre_game" | "watch" | "afters"
+  // World Cup: "pre_game" | "watch" | "afters". Curated: "main" | "before" | "after"
   stop_type?: string | null;
 }
 
@@ -47,13 +47,17 @@ export interface Experience {
   // World Cup experiences carry a match date (NY, YYYY-MM-DD) + kickoff label.
   match_date?: string | null;
   kickoff_local?: string | null;
-  // Per-stop World Cup metadata, in carousel order (parallel to places_id but
-  // keyed by place id so it survives duplicate venues). Null on normal ones.
+  // Per-stop metadata in carousel order, keyed by place id so it survives
+  // duplicate venues. World Cup plans carry teams; curated plans list the main
+  // stop first, then the "before" and "after" stops. places_id keeps walking order.
   stops?: WorldCupStop[] | null;
+  // Map filter tile, picked from the plan's main stop (e.g. "Bars & Drinks")
+  map_category?: string | null;
   neighborhoods: string[];
   activities: string[];
   budget: string[];
   indoor_outdoor: string[];
+  time_of_day?: string[];
 }
 
 export interface ExperienceCategory {

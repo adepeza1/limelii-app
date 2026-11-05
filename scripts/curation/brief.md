@@ -41,6 +41,9 @@ Write a JSON array to `drafts/<yourfile>.json`. Each draft:
   "budget": "$$",                      // $ <20pp, $$ 20 to 50, $$$ >50; excludes alcohol
   "duration_hours": 3,
   "indoor_outdoor": "Indoor",          // Indoor, Outdoor or Mixed
+  "main_place_id": 202,                // the stop the plan is built around (the play, not the dinner before it)
+  "map_category": "Live Music & Shows",  // from the main stop: Bars & Drinks, Food & Cafés, Museums & Art,
+                                         // Live Music & Shows, Parks & Outdoors, Shopping & Markets, Games & Activities
   "rainy_day_swap": null,              // pool id or text if mostly outdoors
   "tags": ["good for groups"],         // from: kid friendly, dog friendly, accessible, good for groups, cash only
   "stops": [

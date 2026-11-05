@@ -40,9 +40,30 @@ def notes_for(d):
     return "\n".join(lines)
 
 
+# Map filter tiles (explore-view.tsx MAP_CATEGORIES); a plan sits under one, picked from its main stop
+MAP_CATEGORIES = {"Bars & Drinks", "Food & Cafés", "Museums & Art", "Live Music & Shows",
+                  "Parks & Outdoors", "Shopping & Markets", "Games & Activities"}
+# The app's Setting filter reads lowercase values, with "both" for mixed plans
+SETTINGS = {"indoor": ["indoor"], "outdoor": ["outdoor"], "mixed": ["indoor", "outdoor", "both"]}
+
+
+def stops_for(d):
+    """Main stop first, then the others marked before/after it. places_id keeps walking order."""
+    ids = d["places_id"]
+    main = d.get("main_place_id")
+    if main not in ids:  # default to the stop people spend longest at
+        main = max(d.get("stops", []), key=lambda s: s.get("minutes") or 0, default={"place_id": ids[0]})["place_id"]
+    k = ids.index(main)
+    return ([{"place_id": main, "stop_type": "main"}]
+            + [{"place_id": i, "stop_type": "before"} for i in ids[:k]]
+            + [{"place_id": i, "stop_type": "after"} for i in ids[k + 1:]])
+
+
 def row_for(d):
     places = [pool[i] for i in d["places_id"]]
     activities = sorted({t for p in places for t in p["type"]})
+    if d.get("map_category") not in MAP_CATEGORIES:
+        raise ValueError(f"{d['title']}: map_category must be one of {sorted(MAP_CATEGORIES)}")
     return {
         "title": d["title"],
         "description": d["description"],
@@ -54,8 +75,10 @@ def row_for(d):
         "neighborhoods": sorted({p["nb"] for p in places if p["nb"]}),
         "activities": activities,
         "budget": [d.get("budget") or "NA"],
-        "indoor_outdoor": [d.get("indoor_outdoor") or "NA"],
+        "indoor_outdoor": SETTINGS.get((d.get("indoor_outdoor") or "").lower(), ["NA"]),
         "time_of_day": d.get("time_of_day") or [],
+        "stops": stops_for(d),
+        "map_category": d["map_category"],
         "Notes": notes_for(d),
     }
 

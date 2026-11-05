@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import {
   MapPin, SlidersHorizontal, X, LocateFixed,
-  UtensilsCrossed, Coffee, Wine, Building2, Music, Palette, Zap, Leaf, TreePine,
+  UtensilsCrossed, Wine, Music, Palette, Zap, TreePine, ShoppingBag,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ExperienceCard } from "@/components/experience-card";
@@ -25,16 +25,19 @@ const VALID_BOROUGHS = new Set(["Manhattan", "Brooklyn", "Queens", "Bronx", "Sta
 const BUDGETS = ["Free", "$", "$$", "$$$"];
 const SETTINGS = ["Indoor", "Outdoor"];
 
-const VENUE_GRID: { label: string; types: string[]; gradient: string; icon: LucideIcon; photo: string }[] = [
-  { label: "Dining",         types: ["Fine Dining","Casual Dining","Fast Casual","Food Hall","Food Truck","Food","Restaurant"],                          gradient: "from-orange-400 to-amber-500",  icon: UtensilsCrossed, photo: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80" },
-  { label: "Coffee & Cafe",  types: ["Traditional Cafe","Specialty Coffee","Work/Study Space","Cafe","Coffee"],                                           gradient: "from-amber-800 to-amber-600",   icon: Coffee,          photo: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=200&q=80" },
-  { label: "Bars",           types: ["Cocktail Bar","Wine Bar","Beer Bar/Brewery","Dive Bar","Lounge","Drink","Bar"],                                     gradient: "from-purple-600 to-indigo-500", icon: Wine,            photo: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=200&q=80" },
-  { label: "Rooftop",        types: ["Rooftop Bar","Rooftop Lounge","Rooftop Restaurant","Sky Bar","Rooftop"],                                            gradient: "from-sky-400 to-blue-600",      icon: Building2,       photo: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=200&q=80" },
-  { label: "Nightlife",      types: ["Dance Club","Live Music Club","Jazz Club","Comedy Club","Karaoke Bar","Nightlife"],                                  gradient: "from-fuchsia-600 to-pink-600",  icon: Music,           photo: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?auto=format&fit=crop&w=200&q=80" },
-  { label: "Arts & Culture", types: ["Museum","Art Gallery","Live Theater","Performance Space","Cultural","Arts","Culture","Gallery","Art"],               gradient: "from-rose-500 to-red-500",      icon: Palette,         photo: "https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=200&q=80" },
-  { label: "Activities",     types: ["Escape Room","Cooking Class","Paint & Sip","Board Game Cafe","Activity","Activities","Entertainment","Experience"],  gradient: "from-green-500 to-emerald-500", icon: Zap,             photo: "https://images.unsplash.com/photo-1525177089949-b1488a0ea5b6?auto=format&fit=crop&w=200&q=80" },
-  { label: "Wellness",       types: ["Spa","Yoga Studio","Meditation Center","Fitness Studio","Wellness","Health","Fitness"],                              gradient: "from-teal-400 to-cyan-500",     icon: Leaf,            photo: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=200&q=80" },
-  { label: "Outdoors",       types: ["Public Park","Botanical Garden","Beach","Skate Park","Outdoor","Outdoors","Park","Nature"],                          gradient: "from-lime-500 to-green-600",    icon: TreePine,        photo: "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=200&q=80" },
+const TIMES = ["Morning", "Afternoon", "Evening", "Late Night"];
+
+// One tile per plan type. Each experience's map_category is set in Xano from
+// the plan's main stop (the play, not the dinner before it), so a plan sits
+// under exactly one tile.
+const MAP_CATEGORIES: { label: string; icon: LucideIcon; photo: string }[] = [
+  { label: "Bars & Drinks",      icon: Wine,            photo: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=200&q=80" },
+  { label: "Food & Cafés",       icon: UtensilsCrossed, photo: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80" },
+  { label: "Museums & Art",      icon: Palette,         photo: "https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&w=200&q=80" },
+  { label: "Live Music & Shows", icon: Music,           photo: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?auto=format&fit=crop&w=200&q=80" },
+  { label: "Parks & Outdoors",   icon: TreePine,        photo: "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=200&q=80" },
+  { label: "Shopping & Markets", icon: ShoppingBag,     photo: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=200&q=80" },
+  { label: "Games & Activities", icon: Zap,             photo: "https://images.unsplash.com/photo-1525177089949-b1488a0ea5b6?auto=format&fit=crop&w=200&q=80" },
 ];
 
 
@@ -57,8 +60,13 @@ function extractNeighborhoods(experiences: Experience[]): NeighborhoodMap {
   return result;
 }
 
+// Curated plans use tiers ($ under $20pp, $$ $20 to $50, $$$ over $50); older
+// ones carry ranges like "USD 20 to USD 30".
+const TIER_MAX: Record<string, number> = { "$": 20, "$$": 50, "$$$": 100 };
+
 function parseMaxBudget(b: string): number {
   if (b === "NA" || !b) return 0;
+  if (TIER_MAX[b.trim()] != null) return TIER_MAX[b.trim()];
   const nums = b.match(/\d+/g);
   return nums ? Math.max(...nums.map(Number)) : 0;
 }
@@ -75,37 +83,9 @@ function budgetMatches(expBudgets: string[], budget: string): boolean {
   return true;
 }
 
-function venueTypeMatches(exp: Experience, selectedTypes: string[]): boolean {
-  if (!selectedTypes.length) return true;
-  // Build a wide haystack of strings to match against. Looking only at
-  // _location_details.location_type missed a lot of experiences where
-  // Xano hadn't populated that array, so we also fall back to place
-  // names, the experience's activities, and its title/description.
-  const haystack: string[] = [];
-  for (const place of exp.places_id ?? []) {
-    const details = place._location_details;
-    if (Array.isArray(details?.location_type)) haystack.push(...details!.location_type);
-    if (Array.isArray(details?.location_subtype)) haystack.push(...details!.location_subtype!);
-    if (Array.isArray(details?.location_variant)) haystack.push(...details!.location_variant!);
-    if (place.name) haystack.push(place.name);
-  }
-  if (Array.isArray(exp.activities)) haystack.push(...exp.activities);
-  if (exp.title) haystack.push(exp.title);
-  if (exp.description) haystack.push(exp.description);
-
-  const lowered = haystack.map((s) => (s || "").toLowerCase()).filter(Boolean);
-
-  return selectedTypes.some((sel) => {
-    const selLower = sel.toLowerCase();
-    return lowered.some((s) => {
-      if (s === selLower) return true;
-      // Multi-word filter values must appear as a substring ("Fine Dining" → "Fine Dining Restaurant").
-      if (selLower.includes(" ")) return s.includes(selLower);
-      // Single-word filters match on a token boundary so "Restaurant" hits
-      // "Italian Restaurant" and "Bar" hits "Cocktail Bar" without "Barbecue".
-      return s.split(/[^a-z0-9]+/).includes(selLower);
-    });
-  });
+function timeMatches(times: string[] | undefined, selectedTimes: string[]): boolean {
+  if (!selectedTimes.length) return true;
+  return (times ?? []).some((t) => selectedTimes.includes(t));
 }
 
 function settingMatches(settings: string[], selectedSettings: string[]): boolean {
@@ -156,14 +136,13 @@ function locationMatches(exp: Experience, borough: string, selectedNeighborhoods
   });
 }
 
-function filterExperiences(all: Experience[], { borough, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes }: { borough: string; selectedNeighborhoods: string[]; budgets: string[]; settings: string[]; venueTypes: string[]; quickVibeTypes: string[] }) {
-  // Combine quick vibe + venue type into one OR pool
-  const combinedTypes = [...new Set([...quickVibeTypes, ...venueTypes])];
+function filterExperiences(all: Experience[], { borough, selectedNeighborhoods, budgets, settings, times, vibes }: { borough: string; selectedNeighborhoods: string[]; budgets: string[]; settings: string[]; times: string[]; vibes: string[] }) {
   return all.filter((exp) => {
     if (!locationMatches(exp, borough, selectedNeighborhoods)) return false;
     if (budgets.length > 0 && !budgets.some((b) => budgetMatches(exp.budget ?? [], b))) return false;
     if (!settingMatches(exp.indoor_outdoor ?? [], settings)) return false;
-    if (!venueTypeMatches(exp, combinedTypes)) return false;
+    if (!timeMatches(exp.time_of_day, times)) return false;
+    if (vibes.length > 0 && !vibes.includes(exp.map_category ?? "")) return false;
     return true;
   });
 }
@@ -225,10 +204,8 @@ export function ExploreView({
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<string[]>([]);
   const [budgets, setBudgets] = useState<string[]>([]);
   const [settings, setSettings] = useState<string[]>([]);
-  const [venueTypes, setVenueTypes] = useState<string[]>([]);
-  // Quick Vibe UI was removed; keep an empty array so the existing filter
-  // pipeline (combinedTypes, fallback relaxations, resetExplore) keeps working.
-  const quickVibeTypes: string[] = [];
+  const [times, setTimes] = useState<string[]>([]);
+  const [vibes, setVibes] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [results, setResults] = useState<Experience[] | null>(null);
   const [resultsOpen, setResultsOpen] = useState(false);
@@ -325,8 +302,8 @@ export function ExploreView({
 
   // matchedExperiences = all when no filters active, filtered subset otherwise
   const matchedExperiences = useMemo(
-    () => filterExperiences(visibleExperiences, { borough: location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes }),
-    [visibleExperiences, location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes]
+    () => filterExperiences(visibleExperiences, { borough: location, selectedNeighborhoods, budgets, settings, times, vibes }),
+    [visibleExperiences, location, selectedNeighborhoods, budgets, settings, times, vibes]
   );
 
   const neighborhoodOptions = neighborhoods[location] ?? [];
@@ -364,11 +341,6 @@ export function ExploreView({
     setUserCoords(null);
   }
 
-  function handleVenueGrid(types: string[]) {
-    const allSelected = types.every((t) => venueTypes.includes(t));
-    setVenueTypes(allSelected ? venueTypes.filter((t) => !types.includes(t)) : [...new Set([...venueTypes, ...types])]);
-  }
-
   const handlePinClick = useCallback((exp: Experience) => {
     setPreviewExperience(exp);
   }, []);
@@ -387,15 +359,16 @@ export function ExploreView({
       )
         .flat()
         .filter((e) => !(e.creator_user_id != null && blocked.has(e.creator_user_id)));
-      const filters = { borough: location, selectedNeighborhoods, budgets, settings, venueTypes, quickVibeTypes };
+      const filters = { borough: location, selectedNeighborhoods, budgets, settings, times, vibes };
       let matched = filterExperiences(all, filters);
-      if (matched.length === 0 && (selectedNeighborhoods.length || budgets.length || settings.length || venueTypes.length || quickVibeTypes.length)) {
+      if (matched.length === 0 && (selectedNeighborhoods.length || budgets.length || settings.length || times.length || vibes.length)) {
         const relaxations = [
           { label: `${location} (any neighborhood)`, overrides: { selectedNeighborhoods: [] } },
-          { label: `${location} (any vibe)`,          overrides: { venueTypes: [], quickVibeTypes: [] } },
+          { label: `${location} (any vibe)`,          overrides: { vibes: [] } },
+          { label: `${location} (any time of day)`,   overrides: { times: [] } },
           { label: `${location} (any budget)`,        overrides: { budgets: [] } },
           { label: `${location} (indoor & outdoor)`,  overrides: { settings: [] } },
-          { label: "all of NYC",                       overrides: { borough: "All NYC", selectedNeighborhoods: [], budgets: [], settings: [], venueTypes: [], quickVibeTypes: [] } },
+          { label: "all of NYC",                       overrides: { borough: "All NYC", selectedNeighborhoods: [], budgets: [], settings: [], times: [], vibes: [] } },
         ];
         for (const { label, overrides } of relaxations) {
           const relaxed = filterExperiences(all, { ...filters, ...overrides });
@@ -480,10 +453,10 @@ export function ExploreView({
             What&apos;s the Vibe
           </p>
           <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar">
-            {VENUE_GRID.map(({ label, types, gradient, icon: Icon, photo }) => {
-              const active = types.some((t) => venueTypes.includes(t));
+            {MAP_CATEGORIES.map(({ label, icon: Icon, photo }) => {
+              const active = vibes.includes(label);
               return (
-                <button key={label} type="button" onClick={() => handleVenueGrid(types)}
+                <button key={label} type="button" onClick={() => toggleItem(vibes, setVibes, label)}
                   className="relative flex-shrink-0 w-[100px] h-[100px] rounded-2xl overflow-hidden transition-all"
                   style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
                   <Image src={photo} fill alt={label} className="object-cover" sizes="100px" />
@@ -639,6 +612,18 @@ export function ExploreView({
                     <button type="button" key={b} onClick={() => toggleItem(budgets, setBudgets, b)}
                       className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${budgets.includes(b) ? "bg-[#FF9A56] text-white" : "bg-[#f2f4f7] text-[#1d2939]"}`}>
                       {b}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* When */}
+              <div>
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">When</p>
+                <div className="flex flex-wrap gap-2">
+                  {TIMES.map((t) => (
+                    <button type="button" key={t} onClick={() => toggleItem(times, setTimes, t)}
+                      className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${times.includes(t) ? "bg-[#FF9A56] text-white" : "bg-[#f2f4f7] text-[#1d2939]"}`}>
+                      {t}
                     </button>
                   ))}
                 </div>

@@ -9,6 +9,7 @@ import { useToast } from "@/components/toast";
 import { haptic } from "@/lib/haptics";
 import { isNew } from "@/lib/discover-new";
 import { getPlaceLocation } from "@/lib/place-location";
+import { mainPlaceId } from "@/lib/card-images";
 
 function getPlaceImage(place: Place): string | null {
   return (place.display_images ?? []).find((img) => img.url)?.url
@@ -43,8 +44,9 @@ export function ExperienceCard({
     (p) => (p.display_images?.length ?? 0) > 0 || (p.images?.length ?? 0) > 0
   );
   const initialIndex = (() => {
-    if (initialPlaceId == null) return 0;
-    const idx = placesWithImages.findIndex((p) => p.id === initialPlaceId);
+    const openOn = initialPlaceId ?? mainPlaceId(experience);
+    if (openOn == null) return 0;
+    const idx = placesWithImages.findIndex((p) => p.id === openOn);
     return idx >= 0 ? idx : 0;
   })();
   const [activeIndex, setActiveIndex] = useState(initialIndex);

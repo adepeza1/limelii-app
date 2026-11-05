@@ -19,12 +19,22 @@ function placeImage(place: Place): string | null {
 // not the underlying data. Returns a Map of experience id → the place id the
 // card should open on; experiences with no images are absent and render with
 // default behavior.
+// The stop a curated plan is built around (e.g. the play between dinner and
+// drinks). Its photo is the card's cover.
+export function mainPlaceId(exp: Experience): number | undefined {
+  return Array.isArray(exp.stops) ? exp.stops.find((s) => s.stop_type === "main")?.place_id : undefined;
+}
+
 export function dedupeCardImages(experiences: Experience[]): Map<number, number> {
   const used = new Set<string>();
   const initialPlaceIds = new Map<number, number>();
   for (const exp of experiences) {
     const places = Array.isArray(exp.places_id) ? exp.places_id : [];
-    const withImage = places.filter((p) => placeImage(p) != null);
+    const mainId = mainPlaceId(exp);
+    // Main stop first, so it's the cover unless another card already shows its photo
+    const withImage = places
+      .filter((p) => placeImage(p) != null)
+      .sort((a, b) => Number(b.id === mainId) - Number(a.id === mainId));
     if (withImage.length === 0) continue;
     const pick = withImage.find((p) => !used.has(placeImage(p)!)) ?? withImage[0];
     used.add(placeImage(pick)!);

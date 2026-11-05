@@ -47,8 +47,14 @@ export function stopTypeLabel(stopType: string | null | undefined): string | nul
     case "watch":
       return "Watch here";
     case "afters":
-    case "after":
       return "Afters";
+    // Curated plans: the main stop leads the carousel, the rest say when they happen
+    case "main":
+      return "Main event";
+    case "before":
+      return "Before";
+    case "after":
+      return "After";
     default:
       return null;
   }

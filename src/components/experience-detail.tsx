@@ -369,26 +369,28 @@ export function ExperienceDetail({
           {renderStops.map(({ place, teamName, teamCode, label }, index) => {
             const details = place._location_details;
             const address = getFullAddress(place);
-            // "Watch here" is the main event → highlighted; the rest are muted.
-            const purposeHighlighted = label === "Watch here";
+            // The main event ("Watch here" / "Main event") is highlighted; the rest are muted.
+            const purposeHighlighted = label === "Watch here" || label === "Main event";
             return (
               <div key={`${place.id}-${index}`} className="snap-start shrink-0 w-full flex flex-col px-[22px]">
-                {teamName && (
+                {(teamName || label) && (
                   <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1">
-                      {teamCode && (
-                        <Image
-                          src={flagUrl(teamCode)}
-                          alt=""
-                          width={18}
-                          height={13}
-                          className="rounded-[2px] object-cover"
-                        />
-                      )}
-                      <span className="text-xs font-semibold text-black">
-                        {teamName}
-                      </span>
-                    </div>
+                    {teamName && (
+                      <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1">
+                        {teamCode && (
+                          <Image
+                            src={flagUrl(teamCode)}
+                            alt=""
+                            width={18}
+                            height={13}
+                            className="rounded-[2px] object-cover"
+                          />
+                        )}
+                        <span className="text-xs font-semibold text-black">
+                          {teamName}
+                        </span>
+                      </div>
+                    )}
                     {label && (
                       <div
                         className="inline-flex items-center rounded-full px-2.5 py-1"

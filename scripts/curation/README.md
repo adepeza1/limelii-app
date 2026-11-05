@@ -37,7 +37,11 @@ Anything still marked `DRAFT` stays private and can be reviewed later.
    Web searches are limited to about 200 per turn across all agents, so keep
    agents at 10 to 15 drafts each. Stops left unverified are marked
    `NOT VERIFIED OPEN` in `Notes`.
-5. Insert with `insert_drafts.py drafts/*.json`.
+5. Insert with `insert_drafts.py drafts/*.json`. Every draft needs a
+   `map_category` (one of the map's seven tiles, picked from its main stop) and
+   usually a `main_place_id`. The script stores `stops` with the main stop first
+   ("Main event" in the app) and the rest marked before/after it; `places_id`
+   keeps walking order.
 6. Report what was drafted, published and expired.
 
 ## Categories
